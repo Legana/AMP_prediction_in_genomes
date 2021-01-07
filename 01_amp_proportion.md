@@ -1,14 +1,7 @@
----
-title: "Precision recall for AMP proportions in a genome"
-output: github_document
----
+Precision recall for AMP proportions in a genome
+================
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-```
-
-
-```{r}
+``` r
 library(tidyverse)
 library(caret)
 library(patchwork)
@@ -17,24 +10,30 @@ library(viridis)
 source("R/calc_cm_metrics.R")
 ```
 
-To start, we read in ampir's v_0.1 trained model as well as the test dataset
-```{r}
+To start, we read in ampir’s v\_0.1 trained model as well as the test
+dataset
+
+``` r
 ampir_v0.1 <- readRDS("ampir_0.1.0_data/svm_Radial98_final.rds")
 features98Test <- readRDS("ampir_0.1.0_data//features98TestNov19.rds")
 ```
 
+We then use the ampir model to predict the proteins in the test set. We
+then add the actual cases to the prediction outcome.
 
-We then use the ampir model to predict the proteins in the test set. We then add the actual cases to the prediction outcome.
-```{r}
+``` r
 test_pred_prob <- predict(ampir_v0.1, features98Test, type = "prob")
 
 ampir_prob_data <- test_pred_prob %>%
   add_column(actual = features98Test$Label)
 ```
 
-To create an idea what to set the probability threshold to for AMP prediction in genomes, a (precision recall (recall aka sensitivity) probability curve was constructed using a dataset where AMPs only comprise approximately 1% (10/996).`
+To create an idea what to set the probability threshold to for AMP
+prediction in genomes, a (precision recall (recall aka sensitivity)
+probability curve was constructed using a dataset where AMPs only
+comprise approximately 1% (10/996).\`
 
-```{r}
+``` r
 ampir_prob_data_bg <- ampir_prob_data[grep("Bg", ampir_prob_data$actual),]
 
 ampir_prob_data_tg_10 <- ampir_prob_data[sample(grep("Tg", ampir_prob_data$actual), 10),]
@@ -42,25 +41,35 @@ ampir_prob_data_tg_10 <- ampir_prob_data[sample(grep("Tg", ampir_prob_data$actua
 ampir_prob_data_bg_tg10 <- rbind(ampir_prob_data_tg_10, ampir_prob_data_bg)
 ```
 
-We then use the function `calc_cm_metrics` to calculate a confusion matrix and some associated performance metrics over a range of predicted probability values. The original output of the function is a vector. To use multiple probability threshold, `map_df` is used for iteration and to convert the output to a dataframe. It is then converted to a long format focusing on the precision and recall columns using `pivot_longer` (previously `gather`)
+We then use the function `calc_cm_metrics` to calculate a confusion
+matrix and some associated performance metrics over a range of predicted
+probability values. The original output of the function is a vector. To
+use multiple probability threshold, `map_df` is used for iteration and
+to convert the output to a dataframe. It is then converted to a long
+format focusing on the precision and recall columns using `pivot_longer`
+(previously `gather`)
 
-
-```{r}
+``` r
 pr_curve_sample <- map_df(seq(0.01, 0.99, 0.01), calc_cm_metrics, ampir_prob_data_bg_tg10)
 
 pr_curve_sample_long <- pivot_longer(pr_curve_sample, cols = c("Precision", "Recall"), names_to = "metric", values_to = "value")
 ```
 
-
-```{r}
+``` r
 ggplot(pr_curve_sample_long, aes(x=p_threshold, y=value)) +
   geom_line(aes(color = metric)) 
 ```
 
-1% is a very small proportion and the curve is creating "big steps". To try to circumvent it, 100 random selection of 1% (10 AMPs) were used to average the curves.
+![](01_amp_proportion_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-First `replicate` and `slice_sample` were used to select 10 random AMPs 100 times which were bound together in a table with `rbind`. 
-```{r}
+1% is a very small proportion and the curve is creating “big steps”. To
+try to circumvent it, 100 random selection of 1% (10 AMPs) were used to
+average the curves.
+
+First `replicate` and `slice_sample` were used to select 10 random AMPs
+100 times which were bound together in a table with `rbind`.
+
+``` r
 ampir_prob_data_tg <- filter(ampir_prob_data, actual == "Tg")
 
 
@@ -69,20 +78,28 @@ samples_list <- replicate(n = 100, ampir_prob_data_tg %>%
                              rbind(ampir_prob_data_bg), simplify = F)
 ```
 
-Then a nested loop was required to use `calc_cm_metrics` with a range of probability thresholds over the 100 dataframe samples
-```{r}
+Then a nested loop was required to use `calc_cm_metrics` with a range of
+probability thresholds over the 100 dataframe samples
+
+``` r
 samples_list_metrics <- lapply(seq_along(samples_list), function(i) {
                                map_df(seq(0.01, 0.99, 0.01),
                                         calc_cm_metrics, 
                                         samples_list[[i]])})
 ```
 
+Now I have a list with 100 dfs in it that each contain metrics
+calculated with `calc_cm_metrics` from 100 dfs that each contain 10
+random AMPs and 996 background proteins.
 
-Now I have a list with 100 dfs in it that each contain metrics calculated with `calc_cm_metrics` from 100 dfs that each contain 10 random AMPs and 996 background proteins.
+I want to average the precision and recall columns over the 0.01 - 0.99
+p\_threshold range. To do this I bind all the dfs in the list together
+into one big df. Then I use the `group_by` function to group the df by
+the p\_threshold and then use `summarise` to create two new columns that
+contain the calculated average of precision and recall. finally convert
+it into long format again.
 
-I want to average the precision and recall columns over the 0.01 - 0.99 p_threshold range.
-To do this I bind all the dfs in the list together into one big df. Then I use the `group_by` function to group the df by the p_threshold and then use `summarise` to create two new columns that contain the calculated average of precision and recall. finally convert it into long format again.
-```{r}
+``` r
 samples_metrics <- bind_rows(samples_list_metrics, .id = "sample")
 
 samples_metrics_averages <- samples_metrics %>% 
@@ -95,10 +112,9 @@ samples_metrics_averages <- samples_metrics %>%
                 mutate(value = coalesce(value, 1)) #replace 0.99 prob NaN value with 1
 ```
 
-
 ### Average plot using an everage of 1% AMPs in a test set, 100 times
 
-```{r}
+``` r
 ggplot(samples_metrics_averages, aes(x=p_threshold, y=value)) +
   geom_line(aes(color = metric)) + 
   scale_x_continuous(breaks=c(0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.00)) +
@@ -113,20 +129,26 @@ ggplot(samples_metrics_averages, aes(x=p_threshold, y=value)) +
         axis.line = element_line(colour = "grey")) +
   guides(color = guide_legend(reverse=TRUE)) +
   ggtitle("A")
-
 ```
 
-## Theoretical AMP content - alpha 
+![](01_amp_proportion_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
-A new variable, $\alpha$, was introduced to represent the percentage of AMPs in the test set to more easily create precision-recall curves for various AMP proportions. The calculation for the recall metric for $\alpha$ remains the same but the precision metric has been slightly modified (see below):
+## Theoretical AMP content - alpha
 
+A new variable, \(\alpha\), was introduced to represent the percentage
+of AMPs in the test set to more easily create precision-recall curves
+for various AMP proportions. The calculation for the recall metric for
+\(\alpha\) remains the same but the precision metric has been slightly
+modified (see below):
 
-$$Precision_{\alpha} = \frac{TP\alpha}{TP\alpha + FP(1-\alpha)}$$
+\[Precision_{\alpha} = \frac{TP\alpha}{TP\alpha + FP(1-\alpha)}\]
 
-$$Recall_{\alpha} = \frac{TP}{TP + FN}$$
+\[Recall_{\alpha} = \frac{TP}{TP + FN}\]
 
-Function that uses the recall-precision metric calculations for any $alpha$ value
-```{r}
+Function that uses the recall-precision metric calculations for any
+\(alpha\) value
+
+``` r
 calc_precision_recall <- function(df,alpha) {
   df %>% 
   mutate(Recall = Recall) %>% 
@@ -136,22 +158,26 @@ calc_precision_recall <- function(df,alpha) {
 ```
 
 Calculate metrics from real predicted data
-```{r}
+
+``` r
 ampir_roc_data <- map_df(seq(0.01, 0.99, 0.01), calc_cm_metrics, ampir_prob_data)
 ```
 
-Use the function for a range of $alpha$ values and collapse to data frame
+Use the function for a range of \(alpha\) values and collapse to data
+frame
 
-```{r}
+``` r
 pr_data <- do.call(rbind,lapply(c(0.01,0.05,0.1,0.5),function(alpha) {
   calc_precision_recall(ampir_roc_data,alpha) %>% add_column(alpha=alpha)
 }))
 ```
 
+Plot an explicit axis for `p_threshold`. This is useful for choosing the
+threshold value. Also note that as \(\alpha\) gets smaller and smaller
+the Precision curve shifts so that high values of precision are only
+achieved for very high `p_threshold` values.
 
-Plot an explicit axis for `p_threshold`. This is useful for choosing the threshold value. Also note that as $\alpha$ gets smaller and smaller the Precision curve shifts so that high values of precision are only achieved for very high `p_threshold` values.
-
-```{r}
+``` r
 pr_data_long <- pr_data %>% gather("metric","value",-p_threshold,-alpha)
 
 
@@ -178,14 +204,22 @@ ggplot(pr_data_long,aes(x=p_threshold,y=value)) +
   guides(linetype = guide_legend(reverse=TRUE))
 ```
 
+![](01_amp_proportion_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
-```{r}
+``` r
 ggsave("figures/alphas.png", width = 7, height=5)
 ```
 
-Plot using a traditional precision vs recall curve.  This is useful in the sense that it very clearly shows the tradeoff between the two. A useful way to think of Precision is that it defines the "Purity" of our predicted set of AMPs whereas the Sensitivity or Recall defines the "Completeness" of the predicted AMP set.  We want to choose the p_threshold so that there is a balance or Purity and Completeness.  When `alpha` is high this is easy to do, but when it is low it becomes a very difficult tradeoff.
+Plot using a traditional precision vs recall curve. This is useful in
+the sense that it very clearly shows the tradeoff between the two. A
+useful way to think of Precision is that it defines the “Purity” of our
+predicted set of AMPs whereas the Sensitivity or Recall defines the
+“Completeness” of the predicted AMP set. We want to choose the
+p\_threshold so that there is a balance or Purity and Completeness. When
+`alpha` is high this is easy to do, but when it is low it becomes a very
+difficult tradeoff.
 
-```{r}
+``` r
 ggplot(pr_data, aes(x=Recall, y=Precision)) +
   geom_line(aes(group=as.factor(alpha), colour = as.factor(alpha))) + 
   scale_color_viridis(discrete = TRUE) +
@@ -196,17 +230,21 @@ ggplot(pr_data, aes(x=Recall, y=Precision)) +
         axis.line = element_line(colour = "grey")) +
   labs(colour = "alpha") +
    guides(color = guide_legend(reverse=TRUE))
+```
 
+![](01_amp_proportion_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+``` r
 ggsave("figures/alpha_gradient.png", height = 5, width = 7)
 ```
 
-
 Extract 1% alpha value
-```{r}
+
+``` r
 pr_data_alpha1_long <- pr_data_long %>% filter(alpha == 0.01)
 ```
 
-```{r}
+``` r
 ggplot(filter(pr_data_alpha1_long, p_threshold >= 0.5), aes(x=p_threshold, y=value)) + 
   geom_line(aes(colour = metric)) + 
   labs(x = "Probability threshold", y = "", colour = "") +
@@ -219,12 +257,13 @@ ggplot(filter(pr_data_alpha1_long, p_threshold >= 0.5), aes(x=p_threshold, y=val
         axis.line = element_line(colour = "grey")) +
   guides(colour = guide_legend(reverse = TRUE)) +
   ggtitle("B")
-
 ```
+
+![](01_amp_proportion_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ## Comparing theoretical alpha plot with real average content
 
-```{r}
+``` r
 average_plot1perc <- ggplot(samples_metrics_averages, aes(x=p_threshold, y=value)) +
   geom_line(aes(color = metric)) + 
   scale_x_continuous(breaks=c(0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.00)) +
@@ -257,4 +296,3 @@ average1percvsalpha1pc <- average_plot1perc / alpha_001plot
 
 ggsave("figures/alpha_vs_average.png", average1percvsalpha1pc)
 ```
-
