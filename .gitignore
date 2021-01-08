@@ -44,3 +44,4 @@ vignettes/*.pdf
 # Data folders
 /data/
 /figures/
+data_amp_pred.tgz
