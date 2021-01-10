@@ -1,6 +1,25 @@
 Precision recall for AMP proportions in a genome
 ================
 
+  - [1 Initial look at the precision and recall curves for a low AMP
+    proportion](#initial-look-at-the-precision-and-recall-curves-for-a-low-amp-proportion)
+      - [1.0.1 Plot](#plot)
+  - [2 Average precision and recall curves for a low AMP
+    proportion](#average-precision-and-recall-curves-for-a-low-amp-proportion)
+      - [2.0.1 Plot](#plot-1)
+  - [3 Theoretical AMP proportion in a genome -
+    alpha](#theoretical-amp-proportion-in-a-genome---alpha)
+      - [3.1 alpha equation and
+        implementation](#alpha-equation-and-implementation)
+          - [3.1.1 Plot](#plot-2)
+      - [3.2 Traditional precision-recall
+        curve](#traditional-precision-recall-curve)
+          - [3.2.1 Plot](#plot-3)
+      - [3.3 Comparing the theoretical 0.01 alpha value with the
+        averaged 0.01 AMP proportion from a real test
+        set](#comparing-the-theoretical-0.01-alpha-value-with-the-averaged-0.01-amp-proportion-from-a-real-test-set)
+          - [3.3.1 Plot](#plot-4)
+
 To start, we read in ampir’s v\_0.1 trained model as well as the test
 dataset
 
@@ -19,7 +38,7 @@ ampir_prob_data <- test_pred_prob %>%
   add_column(actual = features98Test$Label)
 ```
 
-## Initial look at the precision and recall curves for a low AMP proportion
+# 1 Initial look at the precision and recall curves for a low AMP proportion
 
 To create an idea what to set the probability threshold to for AMP
 prediction in genomes, the precision and recall (AKA sensitivity) curves
@@ -51,6 +70,8 @@ pr_curve_sample <- map_df(seq(0.01, 0.99, 0.01), calc_cm_metrics, ampir_prob_dat
 pr_curve_sample_long <- pivot_longer(pr_curve_sample, cols = c("Precision", "Recall"), names_to = "metric", values_to = "value")
 ```
 
+### 1.0.1 Plot
+
 ![](01_amp_proportion_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 **Figure 1.1:** The precision and recall curves over a range of
@@ -61,7 +82,7 @@ v.0.1 test set
 To smoothen out the curves, 100 random selection of 1% (10 AMPs) were
 used to average the curves.
 
-## Average precision and recall curves for a low AMP proportion
+# 2 Average precision and recall curves for a low AMP proportion
 
 First `replicate` and `slice_sample` were used to select 10 random AMPs
 100 times which were bound together in a table with `rbind`.
@@ -110,18 +131,24 @@ samples_metrics_averages <- samples_metrics %>%
                 mutate(value = coalesce(value, 1)) #replace 0.99 prob NaN value with 1
 ```
 
+### 2.0.1 Plot
+
 ![](01_amp_proportion_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 **Figure 1.2:** The precision and recall curves over a range of
 probability thresholds for an average AMP proportion of 0.01 within the
 ampir v.0.1 test set
 
-## Theoretical AMP proportion in a genome - alpha
+# 3 Theoretical AMP proportion in a genome - alpha
 
 A new variable, ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha
 "\\alpha"), was introduced to represent the percentage of AMPs in the
 test set to more easily create precision-recall curves for various AMP
-proportions. The calculation for the recall metric for
+proportions.
+
+## 3.1 alpha equation and implementation
+
+The calculation for the recall metric for
 ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha")
 remains the same but the precision metric has been slightly modified
 (see below):
@@ -165,6 +192,8 @@ pr_data <- do.call(rbind,lapply(c(0.01,0.05,0.1,0.5),function(alpha) {
 }))
 ```
 
+### 3.1.1 Plot
+
 Plot an explicit axis for `p_threshold` using four different
 ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha")
 values. This is useful for choosing the threshold value. It shows that
@@ -178,28 +207,34 @@ of precision are only achieved for very high `p_threshold` values.
 probability thresholds for four different proportion of AMPs in a
 genome.
 
-Plot using a traditional precision vs recall curve. This is useful in
-the sense that it very clearly shows the tradeoff between the two. A
-useful way to think of Precision is that it defines the “Purity” of our
-predicted set of AMPs whereas the Sensitivity or Recall defines the
-“Completeness” of the predicted AMP set. We want to choose the
-p\_threshold so that there is a balance or Purity and Completeness. When
+## 3.2 Traditional precision-recall curve
+
+Using a traditional precision-recall curve is useful in the sense that
+it very clearly shows the tradeoff between the two. A useful way to
+think of Precision is that it defines the “Purity” of our predicted set
+of AMPs whereas the Sensitivity or Recall defines the “Completeness” of
+the predicted AMP set. We want to choose the p\_threshold so that there
+is a balance or Purity and Completeness. When
 ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha") is
 high this is easy to do, but when it is low it becomes a very difficult
 tradeoff.
+
+### 3.2.1 Plot
 
 ![](01_amp_proportion_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 **Figure 1.3:** A traditional precision-recall curve depicting various
 alpha values that represent different proportions of AMPs in a genome
 
-## Comparing the theoretical 0.01 alpha value with the averaged 0.01 AMP proportion from a real test set
+## 3.3 Comparing the theoretical 0.01 alpha value with the averaged 0.01 AMP proportion from a real test set
 
 Extract 1% alpha value
 
 ``` r
 pr_data_alpha1_long <- pr_data_long %>% filter(alpha == 0.01)
 ```
+
+### 3.3.1 Plot
 
 The precision recall curves plot for
 ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha") =
