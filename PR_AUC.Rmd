@@ -7,11 +7,15 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(caret)
+library(precrec)
+```
 
 To start, we read in ampir's v_0.1 trained model as well as the test dataset
 ```{r}
-ampir_v0.1 <- readRDS("ampir_0.1.0_data/svm_Radial98_final.rds")
-features98Test <- readRDS("ampir_0.1.0_data//features98TestNov19.rds")
+ampir_v0.1 <- readRDS("data/ampir_0.1.0_data/svm_Radial98_final.rds")
+features98Test <- readRDS("data/ampir_0.1.0_data//features98TestNov19.rds")
 ```
 
 We then use the ampir model to predict the proteins in the test set. We then add the actual cases to the prediction outcome.
@@ -25,7 +29,6 @@ ampir_prob_data<- test_pred_prob %>%
 calculate precision recall auc
 ```{r}
 
-library("precrec")
 
 sscurves <- evalmod(scores = ampir_prob_data$Tg, labels = ampir_prob_data$actual)
 
