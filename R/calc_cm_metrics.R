@@ -11,6 +11,7 @@ calc_cm_metrics <- function(p_threshold, df) {
   Recall <- round(TP / (TP + FN), digits = 3) # aka sensitivity, TPR
   Precision <- round(TP/ (TP + FP), digits = 3) # positive predictive value
   FPR <- FP / (TN + FP)
+  #MCC <- (TP*TN) - (FP*FN) / sqrt((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))
   
   cm <- c(TP, FP, TN, FN, Specificity, Recall, Precision, FPR, p_threshold)
   names(cm) <-c("TP", "FP", "TN", "FN", "Specificity", "Recall", "Precision", "FPR", "p_threshold") 
