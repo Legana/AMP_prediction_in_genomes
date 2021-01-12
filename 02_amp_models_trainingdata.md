@@ -1,32 +1,88 @@
 Training datasets in other AMP predictors
 ================
 
+  - [1 Introduction](#introduction)
+  - [2 AMP predictor data](#amp-predictor-data)
+  - [3 Plots](#plots)
+
+# 1 Introduction
+
+The effectiveness of supervised learning methods for predictive modeling
+is highly affected by the data that were used to train the model with.
+Supervised learning is a part of machine learning which finds patterns
+between data characteristics and labels (positive and negative) that are
+assigned to the training data used to facilitate learning of the model.
+Once the model has been trained, it can then predict which label fits
+best from new data it is used or tested on. For antimicrobial peptide
+(AMP) prediction, positive data refers to AMP sequences and negative
+data generally refers to sequences that presumably do not have
+antimicrobial activity (non-AMPs).
+
+# 2 AMP predictor data
+
+The training and test sets of six recent AMP predictors were examined to
+assess their effectiveness in genome-wide AMP prediction.
+
+**Table 2.1:** Summary table of the number of positive and negative
+sequences present in the training and test set in six AMP predictors
+
+| AMP predictor  | Train - AMPs | Train - non-AMPs | Test - AMPs | Test - non-AMPs |
+| :------------- | :----------: | :--------------: | :---------: | :-------------: |
+| iAMP-2L        |     897      |      2,405       |     920     |       920       |
+| amPEP          |    3,268     |     166,791      |    *NS*     |      *NS*       |
+| Deep-ampEP30   |    1,529     |      1,529       |     94      |       94        |
+| amPEPpy        |    3,268     |      3,268       |    *NS*     |      *NS*       |
+| AMP Scanner v2 |    1,066     |      1,066       |     712     |       712       |
+| AMPlify        |    3,338     |      3,338       |     835     |       835       |
+
+**iAMP-2L Data**
+
+The benchmark data provided by [Xiao et
+al. 2013](https://doi.org/10.1016/j.ab.2013.01.019) used for
+[iAMP-2L](http://www.jci-bioinfo.cn/iAMP/data.html) has been used in
+several studies to provide a somewhat independent estimate of prediction
+accuracy. Their training data, or benchmark dataset as they termed it,
+comprises of 897 AMPs and 2,405 non-AMPs. Their test or independent
+dataset comprises of 920 AMPs and 920 non-AMPs.
+
 ``` r
-library(ampir)
-library(tidyverse)
+iAMP2L_train <- read_faa("data/amp_predictors/iAMP-2L/xiao_benchmark.fasta") %>% 
+  mutate(class = ifelse(grepl(seq_name,pattern = "^AP"), "AMP", "non-AMP")) %>% 
+  distinct(seq_name, .keep_all = TRUE) %>%
+  add_column(dataset="Train") 
+  
+iAMP2L_test <- read_faa("data/amp_predictors/iAMP-2L/xiao_independent.fasta") %>% 
+  mutate(class = ifelse(grepl(seq_name,pattern = "^AP"), "AMP", "non-AMP")) %>%
+  add_column(dataset="Test") 
+  
+iAMP2L_data <- rbind(iAMP2L_train, iAMP2L_test) %>%
+  mutate(length = nchar(seq_aa)) %>% add_column(predictor="iAMP-2L")
 ```
 
 **AmPEP Training Data**
 
 The AmPEP 2018 AMP predictor provides its training data available
 directly for download from
-<https://cbbio.cis.um.edu.mo/software/AmPEP/>. The length distribution
-of sequences in this database is interesting. It shows that sequences
-classified as AMPs form a clear peak corresponding to mature peptides
-whereas non-AMP (background) sequences are clearly larger and more
-likely to represent full length proteins.
+<https://cbbio.cis.um.edu.mo/software/AmPEP/>. The final training
+dataset used by amPEP is a large dataset of 166,791 non-AMP sequences
+and 3,268 AMPs. amPEP used the Xiao et al. 2013 dataset from the iAMP-2L
+predictor as a test set (see above).
 
 ``` r
 ampep_data <- read_faa("data/amp_predictors/amPEP/M_model_train_nonAMP_sequence.fasta") %>% add_column(class="non-AMP") %>% 
   rbind(read_faa("data/amp_predictors/amPEP/M_model_train_AMP_sequence.fasta") %>% add_column(class="AMP")) %>% 
+  add_column(dataset = "Train") %>%
   mutate(length = nchar(seq_aa)) %>% add_column(predictor="AmPEP") %>%
   mutate(seq_name = paste0("amPEP_trainset_neg", 1:n()))
 ```
 
 AmPEP was redesigned in 2020 as Deep-AmPEP30 to focus on short AMPs ( \<
-30 amino acids) [Yan et al](https://doi.org/10.1016/j.omtn.2020.05.006)
-and its training and test data is available
-[here](https://cbbio.online/AxPEP/?action=dataset).
+30 amino acids) by [Yan et
+al](https://doi.org/10.1016/j.omtn.2020.05.006) and its training and
+test data is available
+[here](https://cbbio.online/AxPEP/?action=dataset). Deep-AmPEP30’s
+training set consists of 1,529 AMPs and non-AMPs and their test set
+consists of 94 AMPs and non-AMPs.
 
 ``` r
 deep_ampep_data <- read_faa("data/amp_predictors/deepamPEP30/train_ne.fasta") %>%
@@ -51,7 +107,7 @@ amPEPpy’s [GitHub page](https://github.com/tlawrence3/amPEPpy).
 ``` r
 ampeppy_data <- read_faa("data/amp_predictors/amPEPpy/M_model_train_nonAMP_sequence.numbered.proplen.subsample.fasta") %>% add_column(class="non-AMP") %>% 
   rbind(read_faa("data/amp_predictors/amPEPpy/M_model_train_AMP_sequence.numbered.fasta") %>% add_column(class="AMP")) %>% 
-  mutate(length = nchar(seq_aa)) %>% add_column(predictor="AmPEPpy")
+  add_column(dataset = "Train") %>% mutate(length = nchar(seq_aa)) %>% add_column(predictor="AmPEPpy")
 ```
 
 **AMP Scanner v2 Data**
@@ -77,29 +133,61 @@ ampscan_test_data <- rbind(read_faa("data/amp_predictors/AMP_Scan2_OrigPaper_Dat
 ampscan_data <- rbind(ampscan_train_data, ampscan_test_data) %>%
   mutate(class = case_when(str_detect(seq_name, "^Uni") ~ "non-AMP", TRUE ~ "AMP")) %>%
     mutate(length = nchar(seq_aa)) %>% 
-    add_column(predictor="AMP Scanner v2")
+    add_column(predictor="AMP Scanner v2") %>%
+  relocate(class, .before = dataset)
 ```
 
-**iAMP-2L Data**
+**AMPlify data**
 
-The benchmark data provided by [Xiao et
-al. 2013](https://doi.org/10.1016/j.ab.2013.01.019) used for
-[iAMP-2L](http://www.jci-bioinfo.cn/iAMP/data.html) has been used in
-several studies to provide a somewhat independent estimate of prediction
-accuracy. Their training data, or benchmark dataset as they termed it,
-comprises of 897 AMPs and 2,405 non-AMPs. Their test or independent
-dataset comprises of 920 AMPs and 920 non-AMPs.
+AMPlify used multiple attention mechanisms and ensemble deep learning to
+create an AMP prediction model ([Li et
+al. 2020](https://doi.org/10.1101/2020.06.16.155705)). Similar to most
+AMP predictors, a proportion of their AMP dataset originated from the
+general [Antimicrobial Peptide Database](http://aps.unmc.edu/AP).
+However, they also used the [Database of Anuran Defense
+Peptides](http://split4.pmfst.hr/dadp/0) which focuses on AMPs from
+frogs and toads. Their negative dataset originated from Swiss-Prot and,
+like most AMP predictors, they excluded any proteins that had
+annotations which referred to potential antimicrobial activity. However,
+like ampir, they retain the secreted proteins. Their data is available
+from the [AMPlify’s software GitHub
+page](https://github.com/bcgsc/AMPlify). Their training set consists of
+3,338 AMPs and 3,338 non-AMPs and their test set consists of 835 AMPs
+and 835 non-AMPs.
 
 ``` r
-iAMP2L_train <- read_faa("data/amp_predictors/iAMP-2L/xiao_benchmark.fasta") %>% 
-  mutate(class = ifelse(grepl(seq_name,pattern = "^AP"), "AMP", "non-AMP")) %>% 
-  distinct(seq_name, .keep_all = TRUE) %>%
-  add_column(dataset="Train") 
-  
-iAMP2L_test <- read_faa("data/amp_predictors/iAMP-2L/xiao_independent.fasta") %>% 
-  mutate(class = ifelse(grepl(seq_name,pattern = "^AP"), "AMP", "non-AMP")) %>%
-  add_column(dataset="Test") 
-  
-iAMP2L <- rbind(iAMP2L_train, iAMP2L_test) %>%
-  mutate(length = nchar(seq_aa)) %>% add_column(database="iAMP-2L")
+amplify_data <- read_faa("data/amp_predictors/AMPlify/AMP_train_20190414.fa") %>%
+   rbind(read_faa("data/amp_predictors/AMPlify/non_AMP_train_20190414.fa")) %>%
+  add_column(dataset = "Train") %>%
+  rbind(read_faa("data/amp_predictors/AMPlify/AMP_test_20190414.fa") %>%
+  rbind(read_faa("data/amp_predictors/AMPlify/non_AMP_test_20190414.fa")) %>%
+          add_column(dataset = "Test")) %>%
+  mutate(class = case_when(str_detect(seq_name, "^trAMP") ~ "AMP", TRUE ~ "non-AMP")) %>%
+  mutate(length = nchar(seq_aa)) %>% add_column(predictor="AMPlify") %>% relocate(class, .before = dataset)
 ```
+
+# 3 Plots
+
+``` r
+ggplot(all_predictor_data, aes(x=length)) +
+  geom_histogram(aes(colour = class)) +
+  facet_wrap(~predictor, ncol = 2, scales = "free")
+```
+
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+``` r
+ggplot(filter(all_predictor_data,dataset == "Train"), aes(x=length)) +
+  geom_histogram(aes(colour = class)) +
+  facet_wrap(~predictor, ncol = 2, scales = "free")
+```
+
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
+
+``` r
+ggplot(filter(all_predictor_data,dataset == "Test"), aes(x=length)) +
+  geom_histogram(aes(colour = class)) +
+  facet_wrap(~predictor, ncol = 2, scales = "free")
+```
+
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-9-3.png)<!-- -->
