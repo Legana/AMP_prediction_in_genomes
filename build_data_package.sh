@@ -25,7 +25,10 @@ echo data/amp_predictors/AMP_Scan2_OrigPaper_Dataset/AMP.te.fa >> data_list
 echo data/amp_predictors/AMP_Scan2_OrigPaper_Dataset/DECOY.te.fa >> data_list
 echo data/amp_predictors/iAMP-2L/xiao_benchmark.fasta >> data_list
 echo data/amp_predictors/iAMP-2L/xiao_independent.fasta >> data_list
-
+echo data/amp_predictors/AMPlify/AMP_test_20190414.fa >> data_list
+echo data/amp_predictors/AMPlify/AMP_train_20190414.fa >> data_list
+echo data/amp_predictors/AMPlify/non_AMP_test_20190414.fa >> data_list
+echo data/amp_predictors/AMPlify/non_AMP_train_20190414.fa >> data_list
 
 tar -zcvf data_amp_pred.tgz -T data_list
 
