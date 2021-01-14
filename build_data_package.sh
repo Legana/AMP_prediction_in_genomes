@@ -30,6 +30,9 @@ echo data/amp_predictors/AMPlify/AMP_train_20190414.fa >> data_list
 echo data/amp_predictors/AMPlify/non_AMP_test_20190414.fa >> data_list
 echo data/amp_predictors/AMPlify/non_AMP_train_20190414.fa >> data_list
 
+# AMPs from the Swiss-Prot database (accessed January 2021)
+echo data/uniprot-keyword Antimicrobial+[KW-0929] -filtered-reviewed yes.tab >> data_list
+
 tar -zcvf data_amp_pred.tgz -T data_list
 
 rm data_list
