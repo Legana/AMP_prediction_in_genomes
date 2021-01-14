@@ -34,6 +34,7 @@ The training and test sets of six recent AMP predictors were examined to assess 
 | AMP Scanner v2 | 1,066 | 1,066 | 712 | 712
 | AMPlify | 3,338 | 3,338 | 835 | 835
 
+*NS: not specified
 
 **iAMP-2L Data**
 
@@ -141,7 +142,6 @@ all_predictor_data <- rbind(iAMP2L_data, ampep_data, deep_ampep_data, ampeppy_da
 ggplot(all_predictor_data, aes(x=length)) +
   geom_histogram(aes(colour = class)) +
   facet_wrap(~predictor, ncol = 2, scales = "free")
-
 
 ggplot(filter(all_predictor_data,dataset == "Train"), aes(x=length)) +
   geom_histogram(aes(colour = class)) +

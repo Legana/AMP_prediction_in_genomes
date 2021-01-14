@@ -35,6 +35,8 @@ sequences present in the training and test set in six AMP predictors
 | AMP Scanner v2 |    1,066     |      1,066       |     712     |       712       |
 | AMPlify        |    3,338     |      3,338       |     835     |       835       |
 
+\*NS: not specified
+
 **iAMP-2L Data**
 
 The benchmark data provided by [Xiao et
