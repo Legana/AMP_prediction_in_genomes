@@ -1,0 +1,21 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+```
+
+ERROR: dependency ‘devtools’ is not available for package ‘AmpGram’
+* removing ‘/usr/local/lib/R/4.0/site-library/AmpGram’
+Warning in install.packages :
+  installation of package ‘AmpGram’ had non-zero exit status
+  
+  
+  
+  lame .
