@@ -12,6 +12,7 @@ This repository looks at how best to predict AMPs in genomes and how to assess p
 - [Training data used in AMP predictors](02_amp_models_trainingdata.md) : Rmd file [02_amp_models_trainingdata.Rmd](02_amp_models_trainingdata.Rmd)
 - [Benchmarking AMP predictors](03_benchmarking.md) : Rmd file [03_benchmarking.Rmd](03_benchmarking.Rmd)
 - [Taxonomic composition of SwissProt AMPs](04_taxonomic_composition.md) : Rmd file [04_taxonomic_composition.Rmd](04_taxonomic_composition.Rmd)
+- [Taxonomic bias effect on model performance](05_taxonomic_bias_effect.md) : Rmd file [05_taxonomic_bias_effect.Rmd](05_taxonomic_bias_effect.Rmd)
 
 
 The files required to run the code in these Rmd files can be obtained [here](https://cloudstor.aarnet.edu.au/plus/s/duG3rETLzipwW7Z) or by using the command:

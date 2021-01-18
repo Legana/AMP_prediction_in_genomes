@@ -12,6 +12,9 @@ assess prediction performance
   - [Taxonomic composition of SwissProt
     AMPs](04_taxonomic_composition.md) : Rmd file
     [04\_taxonomic\_composition.Rmd](04_taxonomic_composition.Rmd)
+  - [Taxonomic bias effect on model
+    performance](05_taxonomic_bias_effect.md) : Rmd file
+    [05\_taxonomic\_bias\_effect.Rmd](05_taxonomic_bias_effect.Rmd)
 
 The files required to run the code in these Rmd files can be obtained
 [here](https://cloudstor.aarnet.edu.au/plus/s/duG3rETLzipwW7Z) or by
