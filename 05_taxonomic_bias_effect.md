@@ -1,0 +1,62 @@
+Taxonomic bias effect on model performance
+================
+
+Known AMPs are not evenly distributed and are taxonomically biased. This
+might influence the ability of a predictor to predict AMPs in an
+organism that is not represented, or does not have close relatives, in
+the positive AMP dataset. To investigate this, a predictive model was
+trained on deuterostomes and tested on protostomes. Deuterostomia and
+Protostomia are two well established clades that comprise the bilaterian
+animals, which split over 500 million years ago [Heger et
+al. 2020](https://doi.org/10.7554/eLife.45530).
+
+AMPs (the positive datasets) were obtained from Swiss-Prot (accessed 15
+January 2021) using the keyword “Antimicrobial \[KW-0929\]” and saved as
+a tab separated file which included the Taxonomic Lineage (all) and the
+sequence column. Deuterostome and protostome AMPs (1,702 and 712,
+respectively) were extracted from this file.
+
+``` r
+swissprot_amps <- read_tsv("data/uniprot-keyword Antimicrobial+[KW-0929] -filtered-reviewed yes.tab") %>%
+    rename(Taxonomic_lineage = `Taxonomic lineage (all)`) %>%
+    rename(Entry_name = `Entry name`) %>%
+    mutate(Taxonomic_lineage = case_when(
+       str_detect(Taxonomic_lineage, "Deuterostomia") ~ "Deuterostome",
+       str_detect(Taxonomic_lineage, "Protostomia") ~ "Protostome",
+                                        TRUE ~ Taxonomic_lineage))
+```
+
+# extract AMPs 0 - 300 maybe for both superphyla and also match negative dataset to this sequence length to avoid length bias in the model
+
+``` r
+deuterostome_amps <- filter(swissprot_amps, Taxonomic_lineage == "Deuterostome") %>% select(Entry_name, Sequence)
+
+protostome_amps <- filter(swissprot_amps, Taxonomic_lineage == "Protostome") %>% select(Entry_name, Sequence)
+```
+
+Plot the sequence length distribution for Deuterostome and Protostome
+AMPs
+![](05_taxonomic_bias_effect_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+The negative datasets were also obtained from Swiss-Prot using the
+taxonomy terms Deuterostomia \[33511\] or Protostomia \[33317\] and
+excluded the AMPs by using the NOT “Antimicrobial” keyword.
+
+``` r
+deuterostome_neg <- read_faa("data/uniprot-taxonomy Deuterostomia+[33511] +reviewed yes+NOT+keyword--.fasta") %>%
+  mutate(Length = nchar(seq_aa))
+protostome_neg <- read_faa("data/uniprot-taxonomy Protostomia+[33317] +reviewed yes+NOT+keyword--.fasta") %>%
+  mutate(Length = nchar(seq_aa))
+```
+
+``` r
+deut_neg_lengths <- ggplot(deuterostome_neg, aes(Length)) + 
+  geom_histogram()
+
+prot_neg_lengths <- ggplot(protostome_neg, aes(Length)) + 
+  geom_histogram()
+
+deut_neg_lengths + prot_neg_lengths
+```
+
+![](05_taxonomic_bias_effect_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->

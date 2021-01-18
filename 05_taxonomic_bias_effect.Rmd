@@ -4,12 +4,13 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
 ```{r, echo = FALSE}
 library(tidyverse)
 library(ampir)
+library(patchwork)
 set.seed(345)
 ```
 
@@ -30,26 +31,39 @@ swissprot_amps <- read_tsv("data/uniprot-keyword Antimicrobial+[KW-0929] -filter
 
 # extract AMPs 0 - 300 maybe for both superphyla and also match negative dataset to this sequence length to avoid length bias in the model 
 ```{r}
-
-ggplot(filter(swissprot_amps, Taxonomic_lineage == "Deuterostome"), aes(Length)) + 
-  geom_histogram()
-
-
 deuterostome_amps <- filter(swissprot_amps, Taxonomic_lineage == "Deuterostome") %>% select(Entry_name, Sequence)
 
 protostome_amps <- filter(swissprot_amps, Taxonomic_lineage == "Protostome") %>% select(Entry_name, Sequence)
+```
 
+Plot the sequence length distribution for Deuterostome and Protostome AMPs
+```{r, echo = FALSE}
+deut_pos_lengths <- ggplot(filter(swissprot_amps, Taxonomic_lineage == "Deuterostome"), aes(Length)) + 
+  geom_histogram()
 
+prot_pos_lengths <- ggplot(filter(swissprot_amps, Taxonomic_lineage == "Protostome"), aes(Length)) + 
+  geom_histogram()
 
+deut_pos_lengths + prot_pos_lengths
+```
+
+The negative datasets were also obtained from Swiss-Prot using the taxonomy terms Deuterostomia [33511] or Protostomia [33317] and excluded the AMPs by using the NOT "Antimicrobial" keyword.
+
+```{r}
+deuterostome_neg <- read_faa("data/uniprot-taxonomy Deuterostomia+[33511] +reviewed yes+NOT+keyword--.fasta") %>%
+  mutate(Length = nchar(seq_aa))
+protostome_neg <- read_faa("data/uniprot-taxonomy Protostomia+[33317] +reviewed yes+NOT+keyword--.fasta") %>%
+  mutate(Length = nchar(seq_aa))
 ```
 
 ```{r}
-deuterostome_neg <- read_faa("data/unip")
+deut_neg_lengths <- ggplot(deuterostome_neg, aes(Length)) + 
+  geom_histogram()
+
+prot_neg_lengths <- ggplot(protostome_neg, aes(Length)) + 
+  geom_histogram()
+
+deut_neg_lengths + prot_neg_lengths
 ```
-
-
-The negative datasets were also obtained from Swiss-Prot using the taxonomy terms Deuterostomia [33511] or Protostomia [33317].
-
-and taxonomy Deuterostomia [33511] or Protostomia [33317] which resulted in 1,702 and 712 AMPS, respectively. 
 
 
