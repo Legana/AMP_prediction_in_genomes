@@ -40,7 +40,7 @@ echo data/uniprot-taxonomy Protostomia+[33317] +reviewed yes+NOT+keyword--.fasta
 echo cache/deuterostome_neg.rds >> data_list
 echo cache/protostome_neg.rds >> data_list
 echo cache/features_deutTrain.rds >> data_list
-echo cache/cache/features_deutTest.rds >> data_list
+echo cache/features_deutTest.rds >> data_list
 echo cache/features_protostome.rds >> data_list
 echo cache/deut_svm.rds >> data_list
 
