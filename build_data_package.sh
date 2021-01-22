@@ -35,6 +35,14 @@ echo data/uniprot-keyword Antimicrobial+[KW-0929] -filtered-reviewed yes.tab >> 
 echo data/uniprot-taxonomy Deuterostomia+[33511] +reviewed yes+NOT+keyword--.fasta >> data_list
 echo data/uniprot-taxonomy Protostomia+[33317] +reviewed yes+NOT+keyword--.fasta >> data_list
 
+# Deuterostome and protostome model data
+
+echo cache/deuterostome_neg.rds >> data_list
+echo cache/protostome_neg.rds >> data_list
+echo cache/features_deutTrain.rds >> data_list
+echo cache/cache/features_deutTest.rds >> data_list
+echo cache/features_protostome.rds >> data_list
+echo cache/deut_svm.rds >> data_list
 
 tar -zcvf data_amp_pred.tgz -T data_list
 
