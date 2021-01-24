@@ -1,0 +1,14 @@
+Benchmarking predictors
+================
+
+The reference proteomes for the organisms *Homo sapiens* (human),
+proteome ID: up000005640, and *Arabidopsis thaliana* (mouse-ear cress),
+proteome ID: up000006548, were downloaded from UniProt proteomes
+(accessed 23 Jan 2021). *H. sapiens* contained 20,379 reviewed proteins
+and 55,398 unreviewed proteins. *A. thaliana* contained 15,956 reviewed
+and 23,390 unreviewed proteins.
+
+[Gabere & Noble 2017](https://doi.org/10.1093/bioinformatics/btx081)
+
+statistical (DeLong) test to compare AUROC [DeLong
+1988](https://pubmed.ncbi.nlm.nih.gov/3203132/)
