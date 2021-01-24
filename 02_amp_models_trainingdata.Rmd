@@ -33,6 +33,7 @@ The training and test sets of six recent AMP predictors were examined to assess 
 | amPEPpy | 3,268 | 3,268 | *NS* | *NS* |
 | AMP Scanner v2 | 1,066 | 1,066 | 712 | 712
 | AMPlify | 3,338 | 3,338 | 835 | 835
+| AmpGram | 2,216 | 2,216 | 247 | 247
 
 *NS: not specified
 
@@ -132,15 +133,22 @@ amplify_data <- read_faa("data/amp_predictors/AMPlify/AMP_train_20190414.fa") %>
 
 ```
 
+AmpGram was created in 2020 and in addition to the standard AMPs, it also focuses on predicting longer proteins that contain antimicrobial activity, such as the milk protein, lactoferrin, and on non-AMP proteins which produce antimicrobial proteolysis products, such as human thrombin. AmpGram uses amino acid motifs and the random forest model to classify AMPs [Burdukiewicz et al. 2020](https://doi.org/10.3390/ijms21124310). AmpGram's analysis details and data can be obtained from [AmpGram's analysis repository](https://github.com/michbur/AmpGram-analysis). Their training data is not specified as a file but their benchmark data can be found in the `benchmark.fasta` file. This test set contains 247 AMP and non-AMP sequences. AmpGram also used the dataset from [Gabere and Noble 2017](https://doi.org/10.1093/bioinformatics/btx081) which used AMPs from the [DAMPD](https://dx.doi.org/10.1093%2Fnar%2Fgkr1063) and [APD3](https://doi.org/10.1093/nar/gkv1278) AMP databases and non-AMPs from UniProt.
+
+```{r}
+ampgram_test_data <- read_faa("data/amp_predictors/AmpGram/benchmark.fasta") %>% mutate(class = case_when(str_detect(seq_name, "^dbAMP") ~ "AMP", TRUE ~ "non-AMP")) %>% add_column(dataset = "Test") %>% mutate(length = nchar(seq_aa)) %>% add_column(predictor = "AmpGram")
+```
+
+
 ```{r, echo = FALSE}
-all_predictor_data <- rbind(iAMP2L_data, ampep_data, deep_ampep_data, ampeppy_data, ampscan_data, amplify_data)
+all_predictor_data <- rbind(iAMP2L_data, ampep_data, deep_ampep_data, ampeppy_data, ampscan_data, amplify_data, ampgram_test_data)
 ```
 
 # Plots
 
 ```{r}
 ggplot(all_predictor_data, aes(x=length)) +
-  geom_histogram(aes(colour = class)) +
+  geom_density(aes(colour = class)) +
   facet_wrap(~predictor, ncol = 2, scales = "free")
 
 ggplot(filter(all_predictor_data,dataset == "Train"), aes(x=length)) +

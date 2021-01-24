@@ -1,9 +1,9 @@
 Training datasets in other AMP predictors
 ================
 
-  - [1 Introduction](#introduction)
-  - [2 AMP predictor data](#amp-predictor-data)
-  - [3 Plots](#plots)
+-   [1 Introduction](#introduction)
+-   [2 AMP predictor data](#amp-predictor-data)
+-   [3 Plots](#plots)
 
 # 1 Introduction
 
@@ -27,13 +27,14 @@ assess their effectiveness in genome-wide AMP prediction.
 sequences present in the training and test set in six AMP predictors
 
 | AMP predictor  | Train - AMPs | Train - non-AMPs | Test - AMPs | Test - non-AMPs |
-| :------------- | :----------: | :--------------: | :---------: | :-------------: |
+|:---------------|:------------:|:----------------:|:-----------:|:---------------:|
 | iAMP-2L        |     897      |      2,405       |     920     |       920       |
 | amPEP          |    3,268     |     166,791      |    *NS*     |      *NS*       |
 | Deep-ampEP30   |    1,529     |      1,529       |     94      |       94        |
 | amPEPpy        |    3,268     |      3,268       |    *NS*     |      *NS*       |
 | AMP Scanner v2 |    1,066     |      1,066       |     712     |       712       |
 | AMPlify        |    3,338     |      3,338       |     835     |       835       |
+| AmpGram        |    2,216     |      2,216       |     247     |       247       |
 
 \*NS: not specified
 
@@ -78,8 +79,8 @@ ampep_data <- read_faa("data/amp_predictors/amPEP/M_model_train_nonAMP_sequence.
   mutate(seq_name = paste0("amPEP_trainset_neg", 1:n()))
 ```
 
-AmPEP was redesigned in 2020 as Deep-AmPEP30 to focus on short AMPs ( \<
-30 amino acids) by [Yan et
+AmPEP was redesigned in 2020 as Deep-AmPEP30 to focus on short AMPs (
+&lt; 30 amino acids) by [Yan et
 al](https://doi.org/10.1016/j.omtn.2020.05.006) and its training and
 test data is available
 [here](https://cbbio.online/AxPEP/?action=dataset). Deep-AmPEP30’s
@@ -168,15 +169,36 @@ amplify_data <- read_faa("data/amp_predictors/AMPlify/AMP_train_20190414.fa") %>
   mutate(length = nchar(seq_aa)) %>% add_column(predictor="AMPlify") %>% relocate(class, .before = dataset)
 ```
 
+AmpGram was created in 2020 and in addition to the standard AMPs, it
+also focuses on predicting longer proteins that contain antimicrobial
+activity, such as the milk protein, lactoferrin, and on non-AMP proteins
+which produce antimicrobial proteolysis products, such as human
+thrombin. AmpGram uses amino acid motifs and the random forest model to
+classify AMPs [Burdukiewicz et
+al. 2020](https://doi.org/10.3390/ijms21124310). AmpGram’s analysis
+details and data can be obtained from [AmpGram’s analysis
+repository](https://github.com/michbur/AmpGram-analysis). Their training
+data is not specified as a file but their benchmark data can be found in
+the `benchmark.fasta` file. This test set contains 247 AMP and non-AMP
+sequences. AmpGram also used the dataset from [Gabere and Noble
+2017](https://doi.org/10.1093/bioinformatics/btx081) which used AMPs
+from the [DAMPD](https://dx.doi.org/10.1093%2Fnar%2Fgkr1063) and
+[APD3](https://doi.org/10.1093/nar/gkv1278) AMP databases and non-AMPs
+from UniProt.
+
+``` r
+ampgram_test_data <- read_faa("data/amp_predictors/AmpGram/benchmark.fasta") %>% mutate(class = case_when(str_detect(seq_name, "^dbAMP") ~ "AMP", TRUE ~ "non-AMP")) %>% add_column(dataset = "Test") %>% mutate(length = nchar(seq_aa)) %>% add_column(predictor = "AmpGram")
+```
+
 # 3 Plots
 
 ``` r
 ggplot(all_predictor_data, aes(x=length)) +
-  geom_histogram(aes(colour = class)) +
+  geom_density(aes(colour = class)) +
   facet_wrap(~predictor, ncol = 2, scales = "free")
 ```
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
 ggplot(filter(all_predictor_data,dataset == "Train"), aes(x=length)) +
@@ -184,7 +206,7 @@ ggplot(filter(all_predictor_data,dataset == "Train"), aes(x=length)) +
   facet_wrap(~predictor, ncol = 2, scales = "free")
 ```
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
 
 ``` r
 ggplot(filter(all_predictor_data,dataset == "Test"), aes(x=length)) +
@@ -192,4 +214,4 @@ ggplot(filter(all_predictor_data,dataset == "Test"), aes(x=length)) +
   facet_wrap(~predictor, ncol = 2, scales = "free")
 ```
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-9-3.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-10-3.png)<!-- -->
