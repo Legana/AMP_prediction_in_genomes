@@ -238,3 +238,13 @@ knitr::kable(calculate_model_metrics(deut_predict_and_actual))
 knitr::kable(calculate_model_metrics(proto_predict_and_actual))
 ```
 
+
+make model with same deut numbers as protostome data 
+
+2) how much protostome data do we need to fix the problem. 
+how much data do we need to imprve model (eg how important is it to have equal representation rather than just more data)
+
+1 axis pure deuterostome 1 axis pure protostome
+use different ratios of protostome and deuterostome data model , 
+
+
