@@ -32,7 +32,7 @@ calculate_model_metrics <- function(df) {
   df1 <- data.frame(FPR, Accuracy, Specificity, Recall, Precision, F1, MCC)
   
   df2 <- evalmod(scores = df$Pos, labels = df$Label, mode = "rocprc") %>% 
-    auc() %>% 
+    precrec::auc() %>% 
     select(curvetypes, aucs) %>% 
     pivot_wider(names_from = curvetypes, values_from = aucs) %>% 
     rename(AUROC = "ROC", AUPRC = "PRC") %>% 
