@@ -8,7 +8,71 @@ proteome ID: up000006548, were downloaded from UniProt proteomes
 and 55,398 unreviewed proteins. *A. thaliana* contained 15,956 reviewed
 and 23,390 unreviewed proteins.
 
-[Gabere & Noble 2017](https://doi.org/10.1093/bioinformatics/btx081)
+``` r
+human_proteome <- read_tsv("data/proteomes/uniprot-proteome UP000005640.tab") %>% mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg"))
+cress_proteome <- read_tsv("data/proteomes/uniprot-proteome UP000006548.tab") %>% mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg"))
 
-statistical (DeLong) test to compare AUROC [DeLong
-1988](https://pubmed.ncbi.nlm.nih.gov/3203132/)
+reference_proteomes <- rbind(human_proteome, cress_proteome)
+```
+
+## ampir
+
+``` r
+cress_pred_ampir_prec <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps()
+cress_pred_ampir_mat <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(model = "mature")
+
+human_pred_ampir_prec <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps()
+human_pred_ampir_mat <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(model = "mature")
+```
+
+To use the human and *Arabidopsis* proteomes in other predictors, first
+the non-standard amino acids are removed. This is because the majority
+of AMP predictors only accept sequences that contain standard amino
+acids. ampir contains a function that removes everything which is not a
+standard amino acid, but other predictors, such as AMP scanner, require
+sequences to be preprocessed to have these sequences removed prior to
+analysing the sequences. Therefore, the `remove_nonstandard_aa.R`
+function from ampir is used to remove sequences that contain nonstandard
+amino acids, and ampir’s `df_to_faa.R` function is used to write the
+files as FASTA files as input to other predictors. In addition, due to
+sequence amount restrictions using predictor web interfaces, the
+*Arabidopsis* proteome is split in half and the human proteome is split
+threefold.
+
+``` r
+arab_prot_clean <- read_faa("data/proteomes/arabidopsis-proteomeUP000006548.fasta") %>% remove_nonstandard_aa() 
+df_to_faa(arab_prot_clean, "cache/arab_proteome_standardaa.fasta")
+
+arab_prot_clean %>% slice((1:19669)) %>% df_to_faa("cache/arab_prot_clean1.fasta")
+arab_prot_clean %>% slice((19670:n())) %>% df_to_faa("cache/arab_prot_clean2.fasta")
+
+homo_prot_clean <- read_faa("data/proteomes/human-proteomeUP000005640.fasta") %>% remove_nonstandard_aa()
+df_to_faa(homo_prot_clean, "cache/homo_proteome_standardaa.fasta")
+
+homo_prot_clean %>% slice((1:22494)) %>% df_to_faa("cache/homo_prot_clean1.fasta")
+homo_prot_clean %>% slice((22495:44988)) %>% df_to_faa("cache/homo_prot_clean2.fasta")
+homo_prot_clean %>% slice((44989:n())) %>% df_to_faa("cache/homo_prot_clean3.fasta")
+```
+
+## Antimicrobial Peptide Scanner vr. 2
+
+AMP scanner vr. 2 (model Feb 2020)
+
+``` r
+ampscanner_file_paths <- c(list.files("data/prediction_results/ampscanner_v2", pattern="*.csv",full.names = T))
+
+ampscan_genome_bench <- do.call(rbind,lapply(ampscanner_file_paths,read_csv)) %>% 
+  separate(SeqID,into = c("database","Entry","Entry name"),sep = "\\|") %>% 
+  left_join(reference_proteomes,by="Entry") %>% 
+  select(ID=Entry,prob_AMP=Prediction_Probability,Organism,Label) %>% 
+  add_column(method="ampscannerv2")
+```
+
+## AmpGram
+
+``` r
+#do little data first, not working 
+#arab_ampgram <- read_txt("cache/arab_proteome_standardaa.fasta")
+  
+#arab_ampgram_pred <- predict(AmpGram_model, arab_ampgram)
+```
