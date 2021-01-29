@@ -29,7 +29,7 @@ swissprot_amps <- read_tsv("data/uniprot-keyword Antimicrobial+[KW-0929] -filter
                                         TRUE ~ Taxonomic_lineage))
 ```
 
-Investigate large AMP sequences
+*Investigate large AMP sequences*
 
 ``` r
 deut_long <- filter(swissprot_amps, Taxonomic_lineage == "Deuterostome" & Length >= 500)
@@ -162,6 +162,11 @@ the model.
 trainIndex <-createDataPartition(y = deuterostome_feats$Label, p=.8, list = FALSE)
 features_deutTrain <- deuterostome_feats[trainIndex,]
 features_deutTest <- deuterostome_feats[-trainIndex,]
+
+
+trainIndex2 <-createDataPartition(y = deuterostome_feats$Label, p=.4319, list = FALSE)
+features_deutTrain2 <- deuterostome_feats[trainIndex2,]
+features_deutTest2 <- deuterostome_feats[-trainIndex2,]
 ```
 
 ## Model training
@@ -268,7 +273,7 @@ calculate_model_metrics <- function(df) {
   
   df1 <- data.frame(FPR, Accuracy, Specificity, Recall, Precision, F1, MCC)
   
-  df2 <- evalmod(scores = df$Pos, labels = df$Label, mode = "rocprc") %>% auc() %>%  select(curvetypes, aucs) %>% pivot_wider(names_from = curvetypes, values_from = aucs) %>% rename(AUROC = "ROC", AUPRC = "PRC") %>% round(digits = 3)
+  df2 <- evalmod(scores = df$Pos, labels = df$Label, mode = "rocprc") %>% precrec::auc() %>% select(curvetypes, aucs) %>% pivot_wider(names_from = curvetypes, values_from = aucs) %>% rename(AUROC = "ROC", AUPRC = "PRC") %>% round(digits = 3)
   
   cbind(df1, df2)
   
@@ -297,3 +302,129 @@ set
 |   FPR | Accuracy | Specificity | Recall | Precision |    F1 |   MCC | AUROC | AUPRC |
 |------:|---------:|------------:|-------:|----------:|------:|------:|------:|------:|
 | 0.112 |    0.837 |       0.888 |   0.34 |     0.237 | 0.279 | 0.195 |  0.73 | 0.219 |
+
+## Model with equal data ratio
+
+Currently the deuterostome model is trained with 1,328 AMPs and 1,3280
+non-AMPs and tested on 332 AMPs and 3,320 non-AMPs The protostome test
+set contains 717 AMPs and 7,170 non-AMPs. Therefore, the deuterostome
+model contains almost twice the data than what is available for the
+protostome group. To test whether this data amount difference impacts on
+the performance of the model, i.e., test if the increased performance of
+the deuterostome model on protostome data is actually due to lack of
+taxonomic representation, or if the increased performance is due to
+unequal representstion, a second deuterostome model was created which
+was trained on 717 AMPs and 7,170 non-AMPs, the data amount equal to the
+protostome data.
+
+``` r
+trainIndex2 <-createDataPartition(y = deuterostome_feats$Label, p=.4319, list = FALSE)
+features_deutTrain2 <- deuterostome_feats[trainIndex2,]
+features_deutTest2 <- deuterostome_feats[-trainIndex2,]
+
+
+model_weights2 <- ifelse(features_deutTrain2$Label == "Pos",
+                        (1/table(features_deutTrain2$Label)[1]) * 0.5,
+                        (1/table(features_deutTrain2$Label)[2]) * 0.5)
+
+
+trctrl_prob <- trainControl(method = "repeatedcv", number = 10, repeats = 3, classProbs = TRUE)
+
+deut_svm2 <- train(Label~.,
+                       data = features_deutTrain2[,c(2:28,46)],
+                       method="svmRadial",
+                       trControl = trctrl_prob,
+                       preProcess = c("center", "scale"),
+                       weights = model_weights2,
+                       metric = "Kappa",
+                       tuneLength = 6)
+```
+
+The second deuterostome test set contains 943 AMPs and 9430 non-AMPs. To
+make it even to the model training set and to the protostome test set
+(in case it affects performance), the second deuterostome was subsetted
+to contain 717 AMPs and 7,170 non-AMPs.
+
+*Use the second deuterostome model to predict sequences from three test
+sets: two deuterostome test sets (full and a subset) and the protostome
+test set*
+
+``` r
+deut_predict_and_actual2 <- predict(deut_svm2, features_deutTest2, type = "prob") %>%
+  add_column(Label = features_deutTest2$Label)
+
+deut_test_cut <- features_deutTest2 %>% slice(c(1:717, 3204:10373))
+deut_test_cut_pred_and_act <- predict(deut_svm2, deut_test_cut, type = "prob") %>% add_column(Label = deut_test_cut$Label)
+
+proto_predict_and_actual2 <- predict(deut_svm2, protostome_feats, type = "prob") %>% add_column(Label = protostome_feats$Label)
+```
+
+## Calculating performance of both models on test sets
+
+``` r
+p1 <- calculate_model_metrics(proto_predict_and_actual) %>% mutate(Model = "Deut1") %>% mutate(Data = "Protostome")
+p2 <- calculate_model_metrics(proto_predict_and_actual2) %>% mutate(Model = "Deut2") %>% mutate(Data = "Protostome")
+
+d1 <- calculate_model_metrics(deut_predict_and_actual) %>% mutate(Model = "Deut1") %>% mutate(Data = "Deut1") 
+d2 <- calculate_model_metrics(deut_predict_and_actual2) %>% mutate(Model = "Deut2") %>% mutate(Data = "Deut2") 
+d3 <- calculate_model_metrics(deut_test_cut_pred_and_act) %>% mutate(Model = "Deut2") %>% mutate(Data = "Deut2 subset") 
+
+models_performance <- rbind(p1, p2, d1, d2, d3) 
+```
+
+**Table 5.4:** Performance of both deuterostome models on all test sets
+
+| Accuracy | Specificity | Recall | Precision |    F1 |   MCC | AUROC | AUPRC | Model | Data         |
+|---------:|------------:|-------:|----------:|------:|------:|------:|------:|:------|:-------------|
+|    0.837 |       0.888 |  0.340 |     0.237 | 0.279 | 0.195 | 0.730 | 0.219 | Deut1 | Protostome   |
+|    0.830 |       0.881 |  0.333 |     0.223 | 0.267 | 0.180 | 0.731 | 0.202 | Deut2 | Protostome   |
+|    0.978 |       0.991 |  0.848 |     0.906 | 0.876 | 0.864 | 0.982 | 0.916 | Deut1 | Deut1        |
+|    0.973 |       0.991 |  0.783 |     0.897 | 0.836 | 0.823 | 0.968 | 0.890 | Deut2 | Deut2        |
+|    0.972 |       0.991 |  0.775 |     0.895 | 0.831 | 0.817 | 0.963 | 0.878 | Deut2 | Deut2 subset |
+
+\***F1:** F1 score, **AUROC:**: area under the ROC curve, **AUPRC:**,
+area under the precision-recall curve
+
+**Model and Data details:**  
+*Deut1 model*: rSVM (support vector machine with radial kernel) model
+trained with 1,328 AMPs and 1,3280 non-AMPs  
+*Deut2 model*: rSVM model trained with 717 AMPs and 7,170 non-AMPs  
+*Deut1 data*: test set with 332 AMPs and 3,320 non-AMPs  
+*Deut2 data*: test set with 943 AMPs and 9430 non-AMPs  
+*Deut2 subset*: subset of Deut2 test set with 717 AMPs and 7,170
+non-AMPs  
+*Protostome data*: test set with 717 AMPs and 7,170 non-AMPs  
+Note that both the Deut1 and Deut2 training and test datasets consisted
+of a random selection from the original deuterostome data. None of the
+sequences present in the test datasets were present in their associated
+training datasets.
+
+The performance of the first deuterostome model compared to the second
+deuterostome model on the test sets look to be fairly similar. The
+greatest difference are between the performance of the models between
+the deuterostome and protostome test sets. To test the potential
+statistical significance of these performances, DeLong tests within the
+[pROC R package](https://doi.org/10.1186/1471-2105-12-77) to test the
+differences between two AUROCs based on confidence intervals and
+standard errors [DeLong et al. 1988](https://doi.org/10.2307/2531595)
+were employed.
+
+**Table 5.5:** Statistical significance of models performance on
+different data based on AUCs using DeLong tests
+
+| Model and data 1 vs. model and data 2                              |           P-value           |
+|:-------------------------------------------------------------------|:---------------------------:|
+| Deut1 on protostome1 data vs. Deut2 on protostome1 data            |            0.054            |
+| Deut1 on protostome1 data vs. Deut2 on deuterostome1 data          | &lt; 2.2 x 10<sup>-16</sup> |
+| Deut2 on protostome1 data vs. Deut2 on deuterostome2 data          | &lt; 2.2 x 10<sup>-16</sup> |
+| Deut2 on deuterostome2 data vs. Deut2 on deuterostome2 subset data |           0.3926            |
+
+**Table 5.5:** Statistical significance of models performance on
+different data based on AUCs using DeLong tests
+
+| Model1 | Model2 |    Data 1     |        Data 2        |           P-value           |
+|:-------|:------:|:-------------:|:--------------------:|:---------------------------:|
+| Deut1  | Deut2  |  protostome1  |     protostome1      |            0.054            |
+| Deut1  | Deut2  |  protostome1  |    deuterostome1     | &lt; 2.2 x 10<sup>-16</sup> |
+| Deut2  | Deut2  |  protostome1  | deuterostome2 subset | &lt; 2.2 x 10<sup>-16</sup> |
+| Deut2  | Deut2  | deuterostome2 | deuterostome2 subset |            0.039            |
