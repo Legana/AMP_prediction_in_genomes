@@ -1,6 +1,6 @@
 # This function calculates multiple performance metrics for a classification model with probabilities output
 
-## Input to the function is a dataframe with "Neg" and Pos" named columns that contain the predicted probabilities from the
+## Input to the function is a dataframe with "prob_AMP" (or "Pos") named columns that contain the predicted probabilities from the
 ##   caret R package `predict(MODELNAME, TESTSET, type = "prob")` function. 
 ## The third required column is a column named "Label" which contains the actual class types ("Pos" or "Neg") for each prediction result
 ##   ( added from the test set, e.g. `add_column(Label = Testset$Label)` )
@@ -13,6 +13,8 @@ library(tidyverse)
 library(precrec)
 
 calculate_model_metrics <- function(df) {
+  
+  df$Pos <- df$prob_AMP
   
   TP <- df %>% filter((Label=="Pos")) %>% filter(Pos >= 0.5) %>% n_distinct() %>% as.numeric()
   FP <- df %>% filter((Label=="Neg")) %>% filter(Pos >= 0.5) %>% n_distinct() %>% as.numeric()
