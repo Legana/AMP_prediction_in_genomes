@@ -18,11 +18,34 @@ reference_proteomes <- rbind(human_proteome, cress_proteome)
 ## ampir
 
 ``` r
-cress_pred_ampir_prec <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps()
-cress_pred_ampir_mat <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(model = "mature")
+cress_pred_ampir_prec <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3) %>% add_column(Model = "ampir_precursor")
 
-human_pred_ampir_prec <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps()
-human_pred_ampir_mat <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(model = "mature")
+cress_pred_ampir_mat <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = "mature")%>% add_column(Model = "ampir_mature")
+
+human_pred_ampir_prec <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3) %>% add_column(Model = "ampir_precursor")
+
+human_pred_ampir_mat <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = "mature") %>% add_column(Organism = "Homo sapiens") %>% add_column(Model = "ampir_mature") %>% mutate(Label = human_proteome$Label)
+```
+
+In addition to ampir’s standard models (`ampir_precursor` and
+`ampir_mature`), a special model was trained with sequences present in
+the `ampir_precursor` model, **minus** any *H. sapiens* or *A. thaliana*
+proteins (see ampir’s analysis repository,
+[AMP\_pub](https://github.com/Legana/AMP_pub), workflow
+02\_build\_training\_data for details). This was done to remove any
+potential biases when testing the trained models on the *H. sapiens* and
+*A. thaliana* proteomes.
+
+``` r
+ampir_prec_model_nobench <- readRDS("data/ampir_v1/tuned_precursor_imbal_nobench.rds")
+
+cress_pred_ampir_nobench <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_prec_model_nobench) %>% add_column(Model = "ampir_precursor_nobench")
+
+human_pred_ampir_nobench <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_prec_model_nobench) %>% add_column(Model = "ampir_precursor_nobench")
+```
+
+``` r
+ampir_proteome_predictions <- rbind(cress_pred_ampir_prec, cress_pred_ampir_mat, cress_pred_ampir_nobench, human_pred_ampir_prec, human_pred_ampir_mat, human_pred_ampir_nobench) %>% left_join(reference_proteomes, by = "Entry name") %>% select(ID = `Entry name`, prob_AMP, Organism, Label, Model)
 ```
 
 To use the human and *Arabidopsis* proteomes in other predictors, first
@@ -63,9 +86,21 @@ ampscanner_file_paths <- c(list.files("data/prediction_results/ampscanner_v2", p
 
 ampscan_genome_bench <- do.call(rbind,lapply(ampscanner_file_paths,read_csv)) %>% 
   separate(SeqID,into = c("database","Entry","Entry name"),sep = "\\|") %>% 
-  left_join(reference_proteomes,by="Entry") %>% 
-  select(ID=Entry,prob_AMP=Prediction_Probability,Organism,Label) %>% 
-  add_column(method="ampscannerv2")
+  left_join(reference_proteomes,by="Entry name") %>% 
+  select(ID = `Entry name`, prob_AMP = Prediction_Probability, Organism, Label) %>% 
+  add_column(Model = "AMPscanner_v2")
+```
+
+## amPEP
+
+``` r
+ampep_file_paths <- c("data/prediction_results/ampep/arab_proteome_standardaa_ampep.txt","data/prediction_results/ampep/homo_proteome_standardaa_ampep.txt")
+
+ampep_genome_bench <- do.call(rbind,lapply(ampep_file_paths,read_csv)) %>% 
+  separate(Row, into = c("database","Entry","Entry name"),sep = "\\|") %>% 
+  left_join(reference_proteomes, by = "Entry name") %>% 
+  select(ID = `Entry name`, prob_AMP = score, Organism, Label) %>% 
+  add_column(Model = "amPEP")
 ```
 
 ## AmpGram
