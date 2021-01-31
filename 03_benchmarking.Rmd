@@ -27,19 +27,39 @@ reference_proteomes <- rbind(human_proteome, cress_proteome)
 ## ampir 
 
 ```{r, eval = FALSE}
-cress_pred_ampir_prec <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps()
-cress_pred_ampir_mat <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(model = "mature")
+cress_pred_ampir_prec <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3) %>% add_column(Organism = "Arabidopsis thaliana") %>% add_column(Model = "ampir_precursor")
 
-human_pred_ampir_prec <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps()
-human_pred_ampir_mat <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(model = "mature")
+cress_pred_ampir_mat <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = "mature") %>% add_column(Organism = "Arabidopsis thaliana") %>% add_column(Model = "ampir_mature")
 
+human_pred_ampir_prec <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3) %>% add_column(Organism = "Homo sapiens") %>% add_column(Model = "ampir_precursor")
+
+human_pred_ampir_mat <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = "mature") %>% add_column(Organism = "Homo sapiens") %>% add_column(Model = "ampir_mature")
+```
+
+In addition to ampir's standard models (`ampir_precursor` and `ampir_mature`), a special model was trained with sequences present in the `ampir_precursor` model, **minus** any *H. sapiens* or *A. thaliana* proteins (see ampir's analysis repository, [AMP_pub](https://github.com/Legana/AMP_pub), workflow 02_build_training_data for details). This was done to remove any potential biases when testing the trained models on the *H. sapiens* and *A. thaliana* proteomes. 
+
+```{r, eval = FALSE}
+ampir_prec_model_nobench <- readRDS("data/ampir_v1/tuned_precursor_imbal_nobench.rds")
+
+cress_pred_ampir_nobench <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_prec_model_nobench) %>% add_column(Organism = "Arabidopsis thaliana") %>% add_column(Model = "ampir_precursor_nobench")
+
+human_pred_ampir_nobench <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_prec_model_nobench) %>% add_column(Organism = "Homo sapiens") %>% add_column(Model = "ampir_precursor_nobench")
 ```
 
 ```{r, eval = FALSE, echo = FALSE}
-saveRDS(cress_pred_ampir_prec, "cache/cress_pred_ampir_prec.rds")
-saveRDS(cress_pred_ampir_mat, "cache/cress_pred_ampir_mat.rds")
-saveRDS(human_pred_ampir_prec, "cache/human_pred_ampir_prec.rds")
-saveRDS(human_pred_ampir_mat, "cache/human_pred_ampir_mat.rds")
+saveRDS(cress_pred_ampir_prec, "data/prediction_results/ampir/cress_pred_ampir_prec.rds")
+saveRDS(cress_pred_ampir_mat, "data/prediction_results/ampir/cress_pred_ampir_mat.rds")
+saveRDS(human_pred_ampir_prec, "data/prediction_results/ampir/human_pred_ampir_prec.rds")
+saveRDS(human_pred_ampir_mat, "data/prediction_results/ampir/human_pred_ampir_mat.rds")
+saveRDS(cress_pred_ampir_nobench, "data/prediction_results/ampir/cress_pred_ampir_nobench.rds")
+```
+
+```{r, echo = FALSE}
+cress_pred_ampir_prec <- readRDS("data/prediction_results/ampir/cress_pred_ampir_prec.rds")
+cress_pred_ampir_mat <- readRDS("data/prediction_results/ampir/cress_pred_ampir_mat.rds")
+human_pred_ampir_prec <- readRDS("data/prediction_results/ampir/human_pred_ampir_prec.rds")
+human_pred_ampir_mat <- readRDS("data/prediction_results/ampir/human_pred_ampir_mat.rds")
+cress_pred_ampir_nobench <- readRDS("data/prediction_results/ampir/cress_pred_ampir_nobench.rds")
 ```
 
 To use the human and *Arabidopsis* proteomes in other predictors, first the non-standard amino acids are removed. This is because the majority of AMP predictors only accept sequences that contain standard amino acids. ampir contains a function that removes everything which is not a standard amino acid, but other predictors, such as AMP scanner, require sequences to be preprocessed to have these sequences removed prior to analysing the sequences. Therefore, the `remove_nonstandard_aa.R` function from ampir is used to remove sequences that contain nonstandard amino acids, and ampir's `df_to_faa.R` function is used to write the files as FASTA files as input to other predictors. In addition, due to sequence amount restrictions using predictor web interfaces, the *Arabidopsis* proteome is split in half and the human proteome is split threefold.  
