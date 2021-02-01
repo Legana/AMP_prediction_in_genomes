@@ -106,8 +106,11 @@ ampep_genome_bench <- do.call(rbind,lapply(ampep_file_paths,read_csv)) %>%
 
 ### Calculating performance metrics - ROC curves
 
+A function, `get_genome_roc.R` was written to use `calc_cm_metrics.R` to calculate performance metrics over a range of predicted probability (0 - 0.99) values, which include metrics necessary to construct ROC curves (false positive rate and true positive rate) 
 
 ```{r}
+source("R/calc_cm_metrics.R")
+
 organisms = c("Homo sapiens (Human)","Arabidopsis thaliana (Mouse-ear cress)")
 
 get_genome_roc <- function(data, model_name){
@@ -117,18 +120,40 @@ get_genome_roc <- function(data, model_name){
   })) %>%   
   add_column(Model = model_name)
 }
+```
 
-ampir_genome_roc2 <- do.call(rbind,lapply(c("ampir_precursor","ampir_mature", "ampir_precursor_nobench"),function(meth){
+To use `get_genome_roc.R` on ampir data, an additional loop had to be implemented as in this case, ampir is subdivided into three different models and therefore metric calculations needed to be done three different times, one for each model.
+
+```{r}
+ampir_genome_roc <- do.call(rbind,lapply(c("ampir_precursor","ampir_mature", "ampir_precursor_nobench"),function(meth){
     get_genome_roc(ampir_proteome_predictions %>% filter(Model==meth),meth)}))
-
-
 ```
 
 ```{r}
-source("R/calculate_model_metrics.R")
+ampscanner_roc <- get_genome_roc(ampscan_genome_bench, "AMPscanner_v2")
 
-calculate_model_metrics(ampir_proteome_predictions)
+ampep_roc <- get_genome_roc(ampep_genome_bench, "amPEP")
+
 ```
+
+*combine ROC metric dataframes*
+```{r}
+proteome_rocs <- rbind(ampir_genome_roc, ampscanner_roc, ampep_roc)
+```
+
+
+## Plot
+
+```{r}
+ggplot(proteome_rocs) + 
+  geom_line(aes(x = FPR, y = Recall, colour = Model)) + 
+  facet_wrap(~Organism) +
+  labs(x= "False positive rate", y = "True positive rate", colour = "") +
+  theme(legend.position = "bottom") +
+  theme_classic()
+```
+
+
 
 ## AmpGram
 

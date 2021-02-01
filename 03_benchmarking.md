@@ -24,7 +24,7 @@ cress_pred_ampir_mat <- cress_proteome %>% select(`Entry name`, Sequence) %>% as
 
 human_pred_ampir_prec <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3) %>% add_column(Model = "ampir_precursor")
 
-human_pred_ampir_mat <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = "mature") %>% add_column(Organism = "Homo sapiens") %>% add_column(Model = "ampir_mature") %>% mutate(Label = human_proteome$Label)
+human_pred_ampir_mat <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = "mature")  %>% add_column(Model = "ampir_mature")
 ```
 
 In addition to ampir’s standard models (`ampir_precursor` and
@@ -102,6 +102,62 @@ ampep_genome_bench <- do.call(rbind,lapply(ampep_file_paths,read_csv)) %>%
   select(ID = `Entry name`, prob_AMP = score, Organism, Label) %>% 
   add_column(Model = "amPEP")
 ```
+
+### Calculating performance metrics - ROC curves
+
+A function, `get_genome_roc.R` was written to use `calc_cm_metrics.R` to
+calculate performance metrics over a range of predicted probability (0 -
+0.99) values, which include metrics necessary to construct ROC curves
+(false positive rate and true positive rate)
+
+``` r
+source("R/calc_cm_metrics.R")
+
+organisms = c("Homo sapiens (Human)","Arabidopsis thaliana (Mouse-ear cress)")
+
+get_genome_roc <- function(data, model_name){
+  do.call(rbind,lapply(organisms,function(org){ 
+    map_df(c(seq(0.01, 0.99, 0.01),seq(0.99, 0.990, 0.001)), calc_cm_metrics, data %>% filter(Organism==org)) %>%
+    add_column(Organism = org)
+  })) %>%   
+  add_column(Model = model_name)
+}
+```
+
+To use `get_genome_roc.R` on ampir data, an additional loop had to be
+implemented as in this case, ampir is subdivided into three different
+models and therefore metric calculations needed to be done three
+different times, one for each model.
+
+``` r
+ampir_genome_roc <- do.call(rbind,lapply(c("ampir_precursor","ampir_mature", "ampir_precursor_nobench"),function(meth){
+    get_genome_roc(ampir_proteome_predictions %>% filter(Model==meth),meth)}))
+```
+
+``` r
+ampscanner_roc <- get_genome_roc(ampscan_genome_bench, "AMPscanner_v2")
+
+ampep_roc <- get_genome_roc(ampep_genome_bench, "amPEP")
+```
+
+*combine ROC metric dataframes*
+
+``` r
+proteome_rocs <- rbind(ampir_genome_roc, ampscanner_roc, ampep_roc)
+```
+
+## Plot
+
+``` r
+ggplot(proteome_rocs) + 
+  geom_line(aes(x = FPR, y = Recall, colour = Model)) + 
+  facet_wrap(~Organism) +
+  labs(x= "False positive rate", y = "True positive rate", colour = "") +
+  theme(legend.position = "bottom") +
+  theme_classic()
+```
+
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ## AmpGram
 
