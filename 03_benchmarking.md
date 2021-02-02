@@ -161,11 +161,13 @@ including the true negatives, as the false positive rates in the ROC
 curves do. As the proportion of AMPs in a genome is extremely low, the
 AMP prediction models would have to perform on a highly imbalanced
 dataset and therefore the precision recall curves are additionally used
-in this study.
+in this study. ROC curves are evaluated on their shape, generally curves
+that arc closer to the top left corner (similar to a capital gamma Γ
+shape)
 
 ![](03_benchmarking_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
-**Figure 5.2:** Performance of various AMP predictors in classifying
+**Figure 5.1:** Performance of various AMP predictors in classifying
 whole proteome data for *Homo sapiens* and *Arabidopsis thaliana*.
 Performance is shown as ROC curves (top row) and precision-recall curves
 (second row).
@@ -195,40 +197,21 @@ ampscan_metrics <- get_metrics(ampscan_genome_bench, "AMPscanner_v2")
 ampep_metrics <- get_metrics(ampep_genome_bench, "amPEP")
 
 
-proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics)
+proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics) %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "H. sapiens", TRUE ~ "A. thaliana"))
 ```
 
 **Table 3.1:** Performance metrics of various predictors on the
 proteomes of *Homo sapiens* and *Arabidopsis thaliana*
 
-    ##      FPR Accuracy Specificity Recall Precision    F1    MCC AUROC AUPRC
-    ## 1  0.029    0.971       0.971  0.755     0.041 0.078  0.172 0.918 0.150
-    ## 2  0.014    0.986       0.986  0.986     0.346 0.512  0.580 0.996 0.727
-    ## 3  0.951    0.050       0.049  1.000     0.002 0.004  0.009 0.753 0.004
-    ## 4  0.993    0.015       0.007  1.000     0.008 0.016  0.008 0.971 0.154
-    ## 5  0.030    0.969       0.970  0.573     0.030 0.057  0.127 0.860 0.090
-    ## 6  0.012    0.985       0.988  0.554     0.258 0.352  0.371 0.927 0.312
-    ## 7  0.501    0.499       0.499  0.918     0.003 0.006  0.034 0.787 0.006
-    ## 8  0.532    0.472       0.468  0.997     0.014 0.028  0.080 0.917 0.087
-    ## 9  0.505    0.495       0.495  0.391     0.001 0.002 -0.009 0.425 0.001
-    ## 10 0.516    0.481       0.484  0.024     0.000 0.000 -0.085 0.158 0.004
-    ##                                  Organism                   Model
-    ## 1                    Homo sapiens (Human)         ampir_precursor
-    ## 2  Arabidopsis thaliana (Mouse-ear cress)         ampir_precursor
-    ## 3                    Homo sapiens (Human)            ampir_mature
-    ## 4  Arabidopsis thaliana (Mouse-ear cress)            ampir_mature
-    ## 5                    Homo sapiens (Human) ampir_precursor_nobench
-    ## 6  Arabidopsis thaliana (Mouse-ear cress) ampir_precursor_nobench
-    ## 7                    Homo sapiens (Human)           AMPscanner_v2
-    ## 8  Arabidopsis thaliana (Mouse-ear cress)           AMPscanner_v2
-    ## 9                    Homo sapiens (Human)                   amPEP
-    ## 10 Arabidopsis thaliana (Mouse-ear cress)                   amPEP
-
-## AmpGram
-
-``` r
-#do little data first, not working 
-#arab_ampgram <- read_txt("cache/arab_proteome_standardaa.fasta")
-  
-#arab_ampgram_pred <- predict(AmpGram_model, arab_ampgram)
-```
+| Specificity | Recall | Precision |    F1 |    MCC | AUROC | AUPRC | Organism    | Model                     |
+|------------:|-------:|----------:|------:|-------:|------:|------:|:------------|:--------------------------|
+|       0.971 |  0.755 |     0.041 | 0.078 |  0.172 | 0.918 | 0.150 | H. sapiens  | ampir\_precursor          |
+|       0.986 |  0.986 |     0.346 | 0.512 |  0.580 | 0.996 | 0.727 | A. thaliana | ampir\_precursor          |
+|       0.049 |  1.000 |     0.002 | 0.004 |  0.009 | 0.753 | 0.004 | H. sapiens  | ampir\_mature             |
+|       0.007 |  1.000 |     0.008 | 0.016 |  0.008 | 0.971 | 0.154 | A. thaliana | ampir\_mature             |
+|       0.970 |  0.573 |     0.030 | 0.057 |  0.127 | 0.860 | 0.090 | H. sapiens  | ampir\_precursor\_nobench |
+|       0.988 |  0.554 |     0.258 | 0.352 |  0.371 | 0.927 | 0.312 | A. thaliana | ampir\_precursor\_nobench |
+|       0.499 |  0.918 |     0.003 | 0.006 |  0.034 | 0.787 | 0.006 | H. sapiens  | AMPscanner\_v2            |
+|       0.468 |  0.997 |     0.014 | 0.028 |  0.080 | 0.917 | 0.087 | A. thaliana | AMPscanner\_v2            |
+|       0.495 |  0.391 |     0.001 | 0.002 | -0.009 | 0.425 | 0.001 | H. sapiens  | amPEP                     |
+|       0.484 |  0.024 |     0.000 | 0.000 | -0.085 | 0.158 | 0.004 | A. thaliana | amPEP                     |

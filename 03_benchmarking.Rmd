@@ -142,7 +142,7 @@ proteome_rocs <- rbind(ampir_genome_roc, ampscanner_roc, ampep_roc)
 
 ## Plots
 
-ROC curves, based on the false and true positive rates, and subsequent AUROCs are often used to evaluate model performance but these can be misleadingly confident when used on a dataset that is highly imbalanced, i.e. where one class heavily outweighs the other [Davis & Goadrich 2006](https://doi.org/10.1145/1143844.1143874). A more accurate alternative would be to use precision and recall curves as these focus on the proportion of actual true positives within the positive predictions [Saito & Rehmsmeier 2015](https://dx.doi.org/10.1371%2Fjournal.pone.0118432), rather than including the true negatives, as the false positive rates in the ROC curves do. As the proportion of AMPs in a genome is extremely low, the AMP prediction models would have to perform on a highly imbalanced dataset and therefore the precision recall curves are additionally used in this study. 
+ROC curves, based on the false and true positive rates, and subsequent AUROCs are often used to evaluate model performance but these can be misleadingly confident when used on a dataset that is highly imbalanced, i.e. where one class heavily outweighs the other [Davis & Goadrich 2006](https://doi.org/10.1145/1143844.1143874). A more accurate alternative would be to use precision and recall curves as these focus on the proportion of actual true positives within the positive predictions [Saito & Rehmsmeier 2015](https://dx.doi.org/10.1371%2Fjournal.pone.0118432), rather than including the true negatives, as the false positive rates in the ROC curves do. As the proportion of AMPs in a genome is extremely low, the AMP prediction models would have to perform on a highly imbalanced dataset and therefore the precision recall curves are additionally used in this study. ROC curves are evaluated on their shape, generally curves that arc closer to the top left corner (similar to a capital gamma Γ shape) 
 
 
 ```{r, echo = FALSE, fig.width=7, fig.height=6}
@@ -151,10 +151,14 @@ rocplot <- ggplot(proteome_rocs) +
   facet_wrap(~Organism) +
   labs(x= "False positive rate", y = "True positive rate", colour = "") +
   theme_classic() +
-  theme(legend.position = "none",
+  theme(legend.position = "bottom",
         strip.background = element_blank(),
         strip.text = element_text(face = "italic",
-                                  size = 10))
+                                  size = 10)) +
+ scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP"),
+                     labels = c("ampir_prec\nH .92 A .99", "ampir_prec_nb\nH .86 A .93", "ampir_mat\nH .75 A .97",
+                                "AMPscanner\nH .79 A .92", "amPEP\nH .43 A .16"),
+                     values = c("blueviolet", "goldenrod2", "blue4", "cyan", "green"))
 
 prplot <- ggplot(proteome_rocs) + 
   geom_line(aes(x = Recall, y = Precision, colour = Model)) + 
@@ -163,12 +167,16 @@ prplot <- ggplot(proteome_rocs) +
   theme_classic() +
   theme(legend.position = "bottom",
         strip.background = element_blank(),
-        strip.text = element_blank())
+        strip.text = element_blank()) +
+ scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP"),
+                     labels = c("ampir_prec\nH .15 A .73", "ampir_prec_nb\nH .09 A .31", "ampir_mat\nH .004 A .15",
+                                "AMPscanner\nH .006 A .09", "amPEP\nH .001 A .004"),
+                     values = c("blueviolet", "goldenrod2", "blue4", "cyan", "green"))
 
 rocplot / prplot 
 ```
 
-**Figure 5.2:** Performance of various AMP predictors in classifying whole proteome data for *Homo sapiens* and *Arabidopsis thaliana*. Performance is shown as ROC curves (top row) and precision-recall curves (second row). 
+**Figure 5.1:** Performance of various AMP predictors in classifying whole proteome data for *Homo sapiens* and *Arabidopsis thaliana*. Performance is shown as ROC curves (top row) and precision-recall curves (second row). 
 
 ```{r, echo = FALSE, eval = FALSE}
 rocandprplot <- rocplot / prplot 
@@ -225,26 +233,11 @@ ampscan_metrics <- get_metrics(ampscan_genome_bench, "AMPscanner_v2")
 ampep_metrics <- get_metrics(ampep_genome_bench, "amPEP")
 
 
-proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics)
+proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics) %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "H. sapiens", TRUE ~ "A. thaliana"))
 ```
 
 **Table 3.1:** Performance metrics of various predictors on the proteomes of *Homo sapiens* and *Arabidopsis thaliana*
 
 ```{r, echo = FALSE}
-proteome_metrics
+knitr::kable(proteome_metrics[,3:11])
 ```
-
-
-
-
-## AmpGram
-
-```{r}
-#do little data first, not working 
-#arab_ampgram <- read_txt("cache/arab_proteome_standardaa.fasta")
-  
-#arab_ampgram_pred <- predict(AmpGram_model, arab_ampgram)
-
-
-```
-
