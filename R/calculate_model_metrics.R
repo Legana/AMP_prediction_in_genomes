@@ -14,12 +14,11 @@ library(precrec)
 
 calculate_model_metrics <- function(df) {
   
-  df$Pos <- df$prob_AMP
   
-  TP <- df %>% filter((Label=="Pos")) %>% filter(Pos >= 0.5) %>% n_distinct() %>% as.numeric()
-  FP <- df %>% filter((Label=="Neg")) %>% filter(Pos >= 0.5) %>% n_distinct() %>% as.numeric()
-  TN <- df %>% filter((Label=="Neg")) %>% filter(Pos < 0.5) %>% n_distinct() %>% as.numeric()
-  FN <- df %>% filter((Label=="Pos")) %>% filter(Pos < 0.5) %>% n_distinct() %>% as.numeric()
+  TP <- df %>% filter((Label=="Pos")) %>% filter(prob_AMP >= 0.5) %>% n_distinct() %>% as.numeric()
+  FP <- df %>% filter((Label=="Neg")) %>% filter(prob_AMP >= 0.5) %>% n_distinct() %>% as.numeric()
+  TN <- df %>% filter((Label=="Neg")) %>% filter(prob_AMP < 0.5) %>% n_distinct() %>% as.numeric()
+  FN <- df %>% filter((Label=="Pos")) %>% filter(prob_AMP < 0.5) %>% n_distinct() %>% as.numeric()
   #as.numeric was necessary for the MCC calculation 
   #as otherwise it would result in a "NAs produced by integer overflow" error.
   
@@ -33,7 +32,7 @@ calculate_model_metrics <- function(df) {
   
   df1 <- data.frame(FPR, Accuracy, Specificity, Recall, Precision, F1, MCC)
   
-  df2 <- evalmod(scores = df$Pos, labels = df$Label, mode = "rocprc") %>% 
+  df2 <- evalmod(scores = df[["prob_AMP"]], labels = df[["Label"]], mode = "rocprc") %>% 
     precrec::auc() %>% 
     select(curvetypes, aucs) %>% 
     pivot_wider(names_from = curvetypes, values_from = aucs) %>% 
