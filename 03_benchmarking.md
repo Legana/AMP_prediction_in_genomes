@@ -146,18 +146,83 @@ ampep_roc <- get_genome_roc(ampep_genome_bench, "amPEP")
 proteome_rocs <- rbind(ampir_genome_roc, ampscanner_roc, ampep_roc)
 ```
 
-## Plot
+## Plots
 
-``` r
-ggplot(proteome_rocs) + 
-  geom_line(aes(x = FPR, y = Recall, colour = Model)) + 
-  facet_wrap(~Organism) +
-  labs(x= "False positive rate", y = "True positive rate", colour = "") +
-  theme(legend.position = "bottom") +
-  theme_classic()
-```
+ROC curves, based on the false and true positive rates, and subsequent
+AUROCs are often used to evaluate model performance but these can be
+misleadingly confident when used on a dataset that is highly imbalanced,
+i.e. where one class heavily outweighs the other [Davis & Goadrich
+2006](https://doi.org/10.1145/1143844.1143874). A more accurate
+alternative would be to use precision and recall curves as these focus
+on the proportion of actual true positives within the positive
+predictions [Saito & Rehmsmeier
+2015](https://dx.doi.org/10.1371%2Fjournal.pone.0118432), rather than
+including the true negatives, as the false positive rates in the ROC
+curves do. As the proportion of AMPs in a genome is extremely low, the
+AMP prediction models would have to perform on a highly imbalanced
+dataset and therefore the precision recall curves are additionally used
+in this study.
 
 ![](03_benchmarking_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
+**Figure 5.2:** Performance of various AMP predictors in classifying
+whole proteome data for *Homo sapiens* and *Arabidopsis thaliana*.
+Performance is shown as ROC curves (top row) and precision-recall curves
+(second row).
+
+Similar to how the ROC curves were calculated, a function,
+`get_metrics.R`, was written to calculate performance metrics, which
+include the area under the curve (AUC) for both the ROC and
+Precision-recall curves, of the various AMP models tested on the *H.
+sapiens* and *A. thaliana* proteomes.
+
+``` r
+source("R/calculate_model_metrics.R")
+
+get_metrics <- function(bench_data, model_name) {
+  do.call(rbind,lapply(c("Homo sapiens (Human)","Arabidopsis thaliana (Mouse-ear cress)"),function(org){
+    calculate_model_metrics(bench_data %>% filter(Organism==org)) %>%
+      add_column(Organism = org) %>% 
+      add_column(Model = model_name)
+    }))
+}
+
+ampir_metrics <- do.call(rbind, lapply(c("ampir_precursor","ampir_mature", "ampir_precursor_nobench"),function(meth) {
+  get_metrics(ampir_proteome_predictions %>% filter(Model==meth), model_name = meth)
+}))
+
+ampscan_metrics <- get_metrics(ampscan_genome_bench, "AMPscanner_v2")
+ampep_metrics <- get_metrics(ampep_genome_bench, "amPEP")
+
+
+proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics)
+```
+
+**Table 3.1:** Performance metrics of various predictors on the
+proteomes of *Homo sapiens* and *Arabidopsis thaliana*
+
+    ##      FPR Accuracy Specificity Recall Precision    F1    MCC AUROC AUPRC
+    ## 1  0.029    0.971       0.971  0.755     0.041 0.078  0.172 0.918 0.150
+    ## 2  0.014    0.986       0.986  0.986     0.346 0.512  0.580 0.996 0.727
+    ## 3  0.951    0.050       0.049  1.000     0.002 0.004  0.009 0.753 0.004
+    ## 4  0.993    0.015       0.007  1.000     0.008 0.016  0.008 0.971 0.154
+    ## 5  0.030    0.969       0.970  0.573     0.030 0.057  0.127 0.860 0.090
+    ## 6  0.012    0.985       0.988  0.554     0.258 0.352  0.371 0.927 0.312
+    ## 7  0.501    0.499       0.499  0.918     0.003 0.006  0.034 0.787 0.006
+    ## 8  0.532    0.472       0.468  0.997     0.014 0.028  0.080 0.917 0.087
+    ## 9  0.505    0.495       0.495  0.391     0.001 0.002 -0.009 0.425 0.001
+    ## 10 0.516    0.481       0.484  0.024     0.000 0.000 -0.085 0.158 0.004
+    ##                                  Organism                   Model
+    ## 1                    Homo sapiens (Human)         ampir_precursor
+    ## 2  Arabidopsis thaliana (Mouse-ear cress)         ampir_precursor
+    ## 3                    Homo sapiens (Human)            ampir_mature
+    ## 4  Arabidopsis thaliana (Mouse-ear cress)            ampir_mature
+    ## 5                    Homo sapiens (Human) ampir_precursor_nobench
+    ## 6  Arabidopsis thaliana (Mouse-ear cress) ampir_precursor_nobench
+    ## 7                    Homo sapiens (Human)           AMPscanner_v2
+    ## 8  Arabidopsis thaliana (Mouse-ear cress)           AMPscanner_v2
+    ## 9                    Homo sapiens (Human)                   amPEP
+    ## 10 Arabidopsis thaliana (Mouse-ear cress)                   amPEP
 
 ## AmpGram
 

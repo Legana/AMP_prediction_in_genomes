@@ -10,8 +10,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```{r, echo = FALSE}
 library(tidyverse)
 library(ampir)
-library(AmpGram)
-library(AmpGramModel)
+library(patchwork)
 ```
 
 The reference proteomes for the organisms *Homo sapiens* (human), proteome ID: up000005640, and *Arabidopsis thaliana* (mouse-ear cress), proteome ID: up000006548, were downloaded from UniProt proteomes (accessed 23 Jan 2021). *H. sapiens* contained 20,379 reviewed proteins and 55,398 unreviewed proteins. *A. thaliana* contained 15,956 reviewed and 23,390 unreviewed proteins. 
@@ -141,17 +140,100 @@ ampep_roc <- get_genome_roc(ampep_genome_bench, "amPEP")
 proteome_rocs <- rbind(ampir_genome_roc, ampscanner_roc, ampep_roc)
 ```
 
+## Plots
 
-## Plot
+ROC curves, based on the false and true positive rates, and subsequent AUROCs are often used to evaluate model performance but these can be misleadingly confident when used on a dataset that is highly imbalanced, i.e. where one class heavily outweighs the other [Davis & Goadrich 2006](https://doi.org/10.1145/1143844.1143874). A more accurate alternative would be to use precision and recall curves as these focus on the proportion of actual true positives within the positive predictions [Saito & Rehmsmeier 2015](https://dx.doi.org/10.1371%2Fjournal.pone.0118432), rather than including the true negatives, as the false positive rates in the ROC curves do. As the proportion of AMPs in a genome is extremely low, the AMP prediction models would have to perform on a highly imbalanced dataset and therefore the precision recall curves are additionally used in this study. 
 
-```{r}
-ggplot(proteome_rocs) + 
+
+```{r, echo = FALSE, fig.width=7, fig.height=6}
+rocplot <- ggplot(proteome_rocs) + 
   geom_line(aes(x = FPR, y = Recall, colour = Model)) + 
   facet_wrap(~Organism) +
   labs(x= "False positive rate", y = "True positive rate", colour = "") +
-  theme(legend.position = "bottom") +
-  theme_classic()
+  theme_classic() +
+  theme(legend.position = "none",
+        strip.background = element_blank(),
+        strip.text = element_text(face = "italic",
+                                  size = 10))
+
+prplot <- ggplot(proteome_rocs) + 
+  geom_line(aes(x = Recall, y = Precision, colour = Model)) + 
+  facet_wrap(~Organism, scales = "free") +
+  labs(x= "Recall", y = "Precision", colour = "") +
+  theme_classic() +
+  theme(legend.position = "bottom",
+        strip.background = element_blank(),
+        strip.text = element_blank())
+
+rocplot / prplot 
 ```
+
+**Figure 5.2:** Performance of various AMP predictors in classifying whole proteome data for *Homo sapiens* and *Arabidopsis thaliana*. Performance is shown as ROC curves (top row) and precision-recall curves (second row). 
+
+```{r, echo = FALSE, eval = FALSE}
+rocandprplot <- rocplot / prplot 
+ggsave(plot = rocandprplot, filename = "figures/proteomesrocandpr.png")
+```
+
+
+```{r, echo = FALSE, eval = FALSE}
+
+###  for presentation, black background and contrasting colours 
+
+proteome_rocs %>% mutate(Organism = ifelse(Organism=="Homo sapiens (Human)","Homo sapiens ","Arabidopsis thaliana")) %>% 
+  ggplot() + 
+  geom_line(aes(x = FP, y = TP, colour = Model),size=1.1) + 
+  xlim(0,500) +
+#  scale_fill_manual(values=c("#E69F00", "#56B4E9", "#D55E00",  "#CC79A7")) +
+  labs(x = "False Positives", y = "True Positives", colour = "") +
+  facet_wrap(~Organism, scales = "free_y", nrow = 1) + 
+  theme(legend.position = "bottom",
+        strip.background = element_blank(),
+        strip.text = element_text(colour = "white",
+                                  face = "italic",
+                                  size = 16),
+        legend.key = element_blank(),
+        legend.text = element_text(color = "grey", size = 12),
+        legend.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        plot.background=element_rect(fill = "black", colour = NA),
+        panel.background = element_rect(fill = "black"),
+        axis.line = element_line(colour = "grey"),
+        axis.text = element_text(colour="grey", size = 10),
+        axis.title = element_text(colour="white", size = 14)) +
+   scale_color_manual(values=c("#CC79A7", "#56B4E9", "#D55E00", "#F0E442", "springgreen4")) 
+```
+
+Similar to how the ROC curves were calculated, a function, `get_metrics.R`, was written to calculate performance metrics, which include the area under the curve (AUC) for both the ROC and Precision-recall curves, of the various AMP models tested on the *H. sapiens* and *A. thaliana* proteomes.
+```{r}
+source("R/calculate_model_metrics.R")
+
+get_metrics <- function(bench_data, model_name) {
+  do.call(rbind,lapply(c("Homo sapiens (Human)","Arabidopsis thaliana (Mouse-ear cress)"),function(org){
+    calculate_model_metrics(bench_data %>% filter(Organism==org)) %>%
+      add_column(Organism = org) %>% 
+      add_column(Model = model_name)
+    }))
+}
+
+ampir_metrics <- do.call(rbind, lapply(c("ampir_precursor","ampir_mature", "ampir_precursor_nobench"),function(meth) {
+  get_metrics(ampir_proteome_predictions %>% filter(Model==meth), model_name = meth)
+}))
+
+ampscan_metrics <- get_metrics(ampscan_genome_bench, "AMPscanner_v2")
+ampep_metrics <- get_metrics(ampep_genome_bench, "amPEP")
+
+
+proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics)
+```
+
+**Table 3.1:** Performance metrics of various predictors on the proteomes of *Homo sapiens* and *Arabidopsis thaliana*
+
+```{r, echo = FALSE}
+proteome_metrics
+```
+
 
 
 
