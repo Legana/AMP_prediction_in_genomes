@@ -153,8 +153,8 @@ AUROCs are often used to evaluate model performance but these can be
 misleadingly confident when used on a dataset that is highly imbalanced,
 i.e. where one class heavily outweighs the other [Davis & Goadrich
 2006](https://doi.org/10.1145/1143844.1143874). A more accurate
-alternative would be to use precision and recall curves as these focus
-on the proportion of actual true positives within the positive
+alternative would be to use precision and recall (PR) curves as these
+focus on the proportion of actual true positives within the positive
 predictions [Saito & Rehmsmeier
 2015](https://dx.doi.org/10.1371%2Fjournal.pone.0118432), rather than
 including the true negatives, as the false positive rates in the ROC
@@ -163,14 +163,47 @@ AMP prediction models would have to perform on a highly imbalanced
 dataset and therefore the precision recall curves are additionally used
 in this study. ROC curves are evaluated on their shape, generally curves
 that arc closer to the top left corner (similar to a capital gamma Γ
-shape)
+shape), as well as their AUC values. The AUC values range between 0.0
+and 1.0 where 0.0 the model cannot tell the classes apart at all and 1.0
+the model is able to distinguish between classes perfectly. Generally,
+an AUC of 0.5 already indicates that the model struggles to
+differentiate between classes. On the ROC curve plot, an AUC of 0.5
+makes a diagonal line from the bottom left to the top right corner. The
+perfect PR curve is like a mirror image of the perfect ROC curve; it
+bends at the top right corner, which refers to the model performing with
+100% recall and precision. Therefore, the more the PR curves bend toward
+the top right corner, the better the model is. When comparing multiple
+curves on the same plot, the curve that is above another curve, is
+generally assumed to perform better.
+
+Figure 3.1 shows both the ROC curves (top row) and the PR curves (bottom
+row) for the prediction results from various AMP predictors on the *H.
+sapiens* and *A. thaliana* proteomes. It is clear that the ROC curves
+overall show a better performance compared to the PR curves which
+corroborates the findings of David and Goadrich (2006) and Saito and
+Rehsmeier (2015). The AUC values for the ROC curves range between 0.16 -
+0.99 for *A. thaliana* and 0.43 - 0.92 for *H. sapiens*. The AUC values
+for the PR curves are between 0.004 - 0.73 for *A. thaliana* and 0.001 -
+0.15 for *H. sapiens*, which are overall much lower compared to the
+AUROC values. Interestingly, all models, with exception to amPEP, had
+higher AUC values for both ROC and PR curves for *A thaliana*. This may
+indicate the models were better at detecting AMPs in *A. thaliana*
+compared to *H. sapiens*. The ampir precursor model had the highest
+PRAUC value on the *A. thaliana* proteome (PRAUC: 0.73). However, the
+remaining PRAUC values (for both proteomes) are below 0.31. Therefore,
+according to the AUPRC metric, which has been stated to be more
+informative on imbalanced datasets, none of the models (save perhaps the
+ampir precursor model on *A. thaliana*) were skilled enough to detect
+AMPs in the *H. sapiens* and *A. thaliana* proteomes.
 
 ![](03_benchmarking_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
-**Figure 5.1:** Performance of various AMP predictors in classifying
+**Figure 3.1:** Performance of various AMP predictors in classifying
 whole proteome data for *Homo sapiens* and *Arabidopsis thaliana*.
 Performance is shown as ROC curves (top row) and precision-recall curves
-(second row).
+(second row). H refers to *Homo sapiens* and A refers to *Arabidopsis
+thaliana*. The numbers that follow are the respective AUC values for
+either the ROC or PR curve.
 
 Similar to how the ROC curves were calculated, a function,
 `get_metrics.R`, was written to calculate performance metrics, which
@@ -215,3 +248,25 @@ proteomes of *Homo sapiens* and *Arabidopsis thaliana*
 |       0.468 |  0.997 |     0.014 | 0.028 |  0.080 | 0.917 | 0.087 | A. thaliana | AMPscanner\_v2            |
 |       0.495 |  0.391 |     0.001 | 0.002 | -0.009 | 0.425 | 0.001 | H. sapiens  | amPEP                     |
 |       0.484 |  0.024 |     0.000 | 0.000 | -0.085 | 0.158 | 0.004 | A. thaliana | amPEP                     |
+
+The metrics overall are really low for the ability of models to predict
+AMPs in proteomes. However, these metrics may not be a very informative
+evaluation.
+
+It is important to remember the real life situation and applications of
+predictive models. The actual frequency of AMPs (true positives) in a
+proteome is approximately 1%. This is extremely low. To adequately
+express the real-world performance of predictors on proteomes, the
+numbers of true and false positives were used, with a focus on the low
+false positive regime, as this is what matters most in whole proteome
+scans (Figure 3.2)
+
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+
+**Figure 3.2:** The ability of various models to predict AMPs in the low
+false positive regime (&lt;500) in the proteomes of *Arabidopsis
+thaliana* and *Homo sapiens*. It is scaled so that the limits of the
+y-axis show the full complement of known AMPs in each genome (294 for
+*A. thaliana*, 112 for *H. sapiens*), and the limits of the x-axis are
+restricted to emphasise behaviour in the low false positive (FP) regime
+(FP &lt; 500).
