@@ -165,7 +165,7 @@ amplify_data <- read_faa("data/amp_predictors/AMPlify/AMP_train_20190414.fa") %>
   rbind(read_faa("data/amp_predictors/AMPlify/AMP_test_20190414.fa") %>%
   rbind(read_faa("data/amp_predictors/AMPlify/non_AMP_test_20190414.fa")) %>%
           add_column(dataset = "Test")) %>%
-  mutate(class = case_when(str_detect(seq_name, "^trAMP") ~ "AMP", TRUE ~ "non-AMP")) %>%
+  mutate(class = case_when(str_detect(seq_name, "^trAMP|^teAMP") ~ "AMP", TRUE ~ "non-AMP")) %>%
   mutate(length = nchar(seq_aa)) %>% add_column(predictor="AMPlify") %>% relocate(class, .before = dataset)
 ```
 
@@ -193,25 +193,13 @@ ampgram_test_data <- read_faa("data/amp_predictors/AmpGram/benchmark.fasta") %>%
 # 3 Plots
 
 ``` r
-ggplot(all_predictor_data, aes(x=length)) +
-  geom_density(aes(colour = class)) +
-  facet_wrap(~predictor, ncol = 2, scales = "free")
+all_predictor_data_wcounts <- all_predictor_data %>%
+                                group_by(class, dataset, length, predictor) %>%
+                                summarise(number = n())
 ```
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+*Training and testing set separated*
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
-``` r
-ggplot(filter(all_predictor_data,dataset == "Train"), aes(x=length)) +
-  geom_histogram(aes(colour = class)) +
-  facet_wrap(~predictor, ncol = 2, scales = "free")
-```
-
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
-
-``` r
-ggplot(filter(all_predictor_data,dataset == "Test"), aes(x=length)) +
-  geom_histogram(aes(colour = class)) +
-  facet_wrap(~predictor, ncol = 2, scales = "free")
-```
-
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-10-3.png)<!-- -->
+*Training and testing set combined*
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->

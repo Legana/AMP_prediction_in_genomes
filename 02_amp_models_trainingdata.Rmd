@@ -128,9 +128,8 @@ amplify_data <- read_faa("data/amp_predictors/AMPlify/AMP_train_20190414.fa") %>
   rbind(read_faa("data/amp_predictors/AMPlify/AMP_test_20190414.fa") %>%
   rbind(read_faa("data/amp_predictors/AMPlify/non_AMP_test_20190414.fa")) %>%
           add_column(dataset = "Test")) %>%
-  mutate(class = case_when(str_detect(seq_name, "^trAMP") ~ "AMP", TRUE ~ "non-AMP")) %>%
+  mutate(class = case_when(str_detect(seq_name, "^trAMP|^teAMP") ~ "AMP", TRUE ~ "non-AMP")) %>%
   mutate(length = nchar(seq_aa)) %>% add_column(predictor="AMPlify") %>% relocate(class, .before = dataset)
-
 ```
 
 AmpGram was created in 2020 and in addition to the standard AMPs, it also focuses on predicting longer proteins that contain antimicrobial activity, such as the milk protein, lactoferrin, and on non-AMP proteins which produce antimicrobial proteolysis products, such as human thrombin. AmpGram uses amino acid motifs and the random forest model to classify AMPs [Burdukiewicz et al. 2020](https://doi.org/10.3390/ijms21124310). AmpGram's analysis details and data can be obtained from [AmpGram's analysis repository](https://github.com/michbur/AmpGram-analysis). Their training data is not specified as a file but their benchmark data can be found in the `benchmark.fasta` file. This test set contains 247 AMP and non-AMP sequences. AmpGram also used the dataset from [Gabere and Noble 2017](https://doi.org/10.1093/bioinformatics/btx081) which used AMPs from the [DAMPD](https://dx.doi.org/10.1093%2Fnar%2Fgkr1063) and [APD3](https://doi.org/10.1093/nar/gkv1278) AMP databases and non-AMPs from UniProt.
@@ -147,17 +146,39 @@ all_predictor_data <- rbind(iAMP2L_data, ampep_data, deep_ampep_data, ampeppy_da
 # Plots
 
 ```{r}
-ggplot(all_predictor_data, aes(x=length)) +
-  geom_density(aes(colour = class)) +
-  facet_wrap(~predictor, ncol = 2, scales = "free")
-
-ggplot(filter(all_predictor_data,dataset == "Train"), aes(x=length)) +
-  geom_histogram(aes(colour = class)) +
-  facet_wrap(~predictor, ncol = 2, scales = "free")
-
-ggplot(filter(all_predictor_data,dataset == "Test"), aes(x=length)) +
-  geom_histogram(aes(colour = class)) +
-  facet_wrap(~predictor, ncol = 2, scales = "free")
+all_predictor_data_wcounts <- all_predictor_data %>%
+                                group_by(class, dataset, length, predictor) %>%
+                                summarise(number = n())
 ```
+
+*Training and testing set separated*
+```{r, echo = FALSE}
+ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
+  geom_col(aes(fill = class)) +
+  facet_grid(predictor ~ factor(dataset, levels = c("Train", "Test"), labels = c("Training set", "Testing set")), scales = "free_y") +
+  xlim(0,300) +
+  labs(x = "Sequence length", y = "Number of sequences", fill = "") +
+  theme(legend.position = "bottom",
+        strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank()) +
+scale_fill_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4"))
+```
+
+*Training and testing set combined*
+```{r, echo = FALSE}
+ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
+  geom_col(aes(fill = class)) +
+  facet_wrap(~predictor, scales = "free_y") +
+  labs(x = "Sequence length", y = "Number of sequences", fill = "") +
+  xlim(0,300) +
+  theme(legend.position = "bottom",
+        strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank())
+```
+
 
 
