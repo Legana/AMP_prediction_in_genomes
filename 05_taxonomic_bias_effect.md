@@ -227,9 +227,10 @@ ggplot(pca_deutprot_feat.x, aes(x = PC1)) +
 
 ![](05_taxonomic_bias_effect_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
-**Figure 5.3:** *A* A scatterplot of the first two principle components
-(PC) and *B* a density plot of first PC of the physicochemical
-properties of AMPs and non-AMPs in Deuterostomes and Protostomes.
+**Figure 5.3:** **A)** A scatterplot of the first two principle
+components (PC) and **B)** a density plot of first PC of the
+physicochemical properties of AMPs and non-AMPs in Deuterostomes and
+Protostomes.
 
 ## Creating the training and test sets
 
