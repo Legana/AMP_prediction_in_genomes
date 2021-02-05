@@ -136,8 +136,6 @@ deuterostome_neg <- filter(deuterostome_neg_prots, between(Length, 5, 500)) %>% 
 protostome_neg <- filter(protostome_neg_prots, between(Length, 5, 500)) %>% select(seq_name, seq_aa) %>% as.data.frame() %>% remove_nonstandard_aa() %>% slice_sample(n = 10*nrow(protostome_pos)) %>% calculate_features(min_len = 5) %>% mutate(Label = "Neg")
 ```
 
-## Creating the training and test sets
-
 First the positive and negative datasets containing the calculated
 features for deuterostomes and protostomes were combined in two
 respective dataframes (one for each taxonomic group)
@@ -147,6 +145,93 @@ deuterostome_feats <- rbind(deuterostome_pos, deuterostome_neg) %>% mutate(Label
 
 protostome_feats <- rbind(protostome_pos, protostome_neg) %>% mutate(Label = as.factor(Label))
 ```
+
+## PCA of protostome and deuterostome features
+
+Before making the model, a PCA was performed on the positive and
+negative datasets in deuterostomes and protostomes
+
+``` r
+deutprot_feat <- deuterostome_feats %>% mutate(group = "Deuterostome") %>% rbind(protostome_feats %>% mutate(group = "Protostome"))
+```
+
+A quick look at the number of missing values reveals these start from
+the lambda 5 values onwards, therefore the columns lambda5 until
+lambda19 were removed from the the PCA analysis (see
+04\_taxonomic\_composition for more details)
+
+``` r
+deutprot_feat %>% summarise(across(everything(), ~ sum(is.na(.))))
+```
+
+``` r
+pca_deutprot_feat <- deutprot_feat %>% 
+  column_to_rownames("seq_name") %>% 
+  select(Amphiphilicity:Xc2.lambda.4) %>% 
+  prcomp(scale. = TRUE)
+```
+
+The result of the PCA is a list which contains multiple results,
+including the PCA values and the standard deviations. The standard
+deviations were used to calculate the proportion of variance explained
+(in percentage) to display on the plots and the PCA values were
+extracted and combined with the original PCA input dataset to obtain
+annotations for plotting.
+
+``` r
+percentage <- round(pca_deutprot_feat$sdev / sum(pca_deutprot_feat$sdev) * 100, 2)
+percentage <- paste(colnames(pca_deutprot_feat$x),"(",paste(as.character(percentage), "%",")", sep = ""))
+
+pca_deutprot_feat.x <- pca_deutprot_feat$x %>% 
+   as.data.frame() %>% 
+   rownames_to_column("seq_name") %>% 
+   left_join(deutprot_feat %>% select(seq_name, Label, group), by = "seq_name") %>%
+   mutate(taxgroup = as.factor(group))
+```
+
+The PCA plots (Figure 5.3 A and B) do not appear to show much
+differentiation between deuterostome and protostome AMPs. There does
+seem to be a more concentrated AMP peak in protostome which may indicate
+a different group of AMPs to be more abundant in protostomes compared to
+deuterostomes. The non-AMPs in the taxonomic group similarly seem to
+overlap a lot but each group contains a peak which is largely not
+present in the other group (Figure 5.3 B). The support vector machine
+model used for AMP prediction is more equipped at separating data
+compared to a PCA analysis, so there might be additional variation
+between AMPs which is not obvious in the PCA.
+
+``` r
+ggplot(pca_deutprot_feat.x, aes(x = PC1, y = PC2)) +
+   geom_point(aes(colour = taxgroup, shape = taxgroup), size = 2, alpha = 0.9) +
+   facet_wrap(~factor(Label, levels = c("Pos", "Neg"), labels = c("AMPs", "non-AMPs"))) +
+   labs(x = percentage[1], y = percentage[2], colour = "", shape = "") +
+   scale_shape_manual(labels = c("Deuterostome" , "Protostome"), values=c(16, 5)) +
+   scale_colour_manual(labels = c("Deuterostome" , "Protostome"), values = c("blueviolet", "forestgreen")) +
+   theme_classic() +
+   theme(legend.position = "bottom",
+         strip.background = element_blank(),
+         strip.text = element_text(size = 10, face = "bold")) +
+  ggtitle("A") +
+
+ggplot(pca_deutprot_feat.x, aes(x = PC1)) +
+   stat_density(aes(colour = group), geom = "line", position = "identity") +
+   facet_wrap(~factor(Label, levels = c("Pos", "Neg"), labels = c("AMPs", "non-AMPs"))) +
+   labs(x = percentage[1], y = "Density", colour = "") +
+   scale_colour_manual(values = c("blueviolet", "forestgreen")) +
+   theme_classic() +
+   theme(legend.position = "bottom",
+         strip.background = element_blank(),
+         strip.text = element_text(size = 10, face = "bold")) +
+  ggtitle("B")
+```
+
+![](05_taxonomic_bias_effect_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+**Figure 5.3:** *A* A scatterplot of the first two principle components
+(PC) and *B* a density plot of first PC of the physicochemical
+properties of AMPs and non-AMPs in Deuterostomes and Protostomes.
+
+## Creating the training and test sets
 
 As the deuterostome data was used to train the model, to test on the
 protostome data, only the deuterostome data was used to create the
