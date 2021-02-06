@@ -151,43 +151,54 @@ pca_w_annotations <- pca_features_amps$x %>%
                                         TRUE ~ "Neither"))
 ```
 
-
 ```{r}
+pca_percentages <- round(pca_features_amps$sdev / sum(pca_features_amps$sdev) * 100, 2)
+pca_percentages <- paste(colnames(pca_features_amps$x),"(",paste(as.character(pca_percentages), "%",")", sep = ""))
+```
+
+```{r, echo = FALSE}
+my_col = c("pink1", "violet", "slateblue1", "purple",
+          "turquoise2", "steelblue", "navyblue",
+          "orange", "tomato", "violetred",
+          "yellowgreen", "palegreen4",
+          "wheat2", "tan3", "brown",
+          "grey30")
+
+library(pals)
+```
+
+```{r, fig.width=9, fig.height=6}
 ggplot(pca_w_annotations, aes(x = PC1, y = PC2)) +
-   geom_point(aes(colour = Taxonomic_lineage_grouped))
+   geom_point(aes(colour = Taxonomic_lineage_grouped)) +
+   xlim(-15, 5) +
+   theme_classic() +
+   theme(legend.position = "none") +
+   labs(x = pca_percentages[1], y = pca_percentages[2]) +
+   scale_colour_manual(values = watlington()) +
 
 ggplot(pca_w_annotations, aes(x = PC1)) +
-   geom_density(aes(colour = Taxonomic_lineage_grouped))
+   stat_density(aes(colour = Taxonomic_lineage_grouped), geom = "line", position = "identity") +
+   theme_classic() +
+   theme(legend.position = "right") +
+   labs(colour = "") +
+   scale_colour_manual(values = watlington())
 ```
 
 ```{r}
 unique(pca_w_annotations$Taxonomic_lineage_grouped)
 
-tst <- c("Bacteria", "Mammals")
+vertebrates <- c("Mammals", "Amphibians", "Reptiles", "Birds", "Fishes")
 
-ggplot(filter(pca_w_annotations, Taxonomic_lineage_grouped %in% tst), aes(x = PC1)) +
-   geom_density(aes(colour = Taxonomic_lineage_grouped)) +
-   xlim(-5, 5)
+bac_vs_verts <- c("Bacteria", vertebrates)
+
+ggplot(filter(pca_w_annotations, Taxonomic_lineage_grouped %in% bac_vs_verts), aes(x = PC1)) +
+   stat_density(aes(colour = Taxonomic_lineage_grouped), geom = "line", position = "identity") +
+   labs(x = "PC1", colour = "") +
+   theme(legend.position = "bottom") +
+   guides(colour = guide_legend(nrow = 1))
 
 
 ```
 
-Deuterostomes vs protostomes
-
-```{r}
-ggplot(filter(pca_w_annotations, Deut_or_prot == "Deuterostome" | Deut_or_prot == "Protostome"), aes(x = PC1, y = PC2)) +
-   geom_point(aes(colour = Deut_or_prot))
-
-
-ggplot(filter(pca_w_annotations, Deut_or_prot == "Deuterostome" | Deut_or_prot == "Protostome"), aes(x = PC1)) +
-   geom_density(aes(colour = Deut_or_prot)) +
-   xlim(-5, 5) + 
-   labs(colour = "")
-
-ggplot(filter(pca_w_annotations, Deut_or_prot == "Deuterostome" | Deut_or_prot == "Protostome"), aes(x = PC2)) +
-   geom_density(aes(colour = Deut_or_prot)) +
-   xlim(-5, 5) + 
-   labs(colour = "")
-```
 
 
