@@ -151,7 +151,7 @@ all_predictor_data_wcounts <- all_predictor_data %>%
                                 summarise(number = n())
 ```
 
-*Training and testing set separated*
+
 ```{r, echo = FALSE}
 ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
   geom_col(aes(fill = class)) +
@@ -166,7 +166,9 @@ ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
 scale_fill_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4"))
 ```
 
-*Training and testing set combined*
+**Figure 2.1:** The sequence length of AMP and non-AMP sequences in the training and testing set of various AMP prediction models. The training set for AmpGram and the testing sets for amPEP and amPEPpy are blank as these were not specified.
+
+
 ```{r, echo = FALSE}
 ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
   geom_col(aes(fill = class)) +
@@ -180,5 +182,6 @@ ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
         panel.grid.major = element_blank())
 ```
 
+**Figure 2.2:** The sequence length of all AMP and non-AMP sequences used in various AMP prediction models. 
 
 
