@@ -303,7 +303,7 @@ ggplot(tsne_values_annotated, aes(x = tSNE_1)) +
    ggtitle("B")
 ```
 
-**Figure 4.6:** tSNE plots of physicochemical properties in AMP sequences of taxonomic groups, **A)** Scatterplot of tSNE 1 and tSNE 2 **B)** Density plot of tSNE1
+**Figure 4.7:** tSNE plots of physicochemical properties in AMP sequences of taxonomic groups, **A)** Scatterplot of tSNE 1 and tSNE 2 **B)** Density plot of tSNE1
 
 ```{r, fig.width=9, fig.height=6,echo = FALSE}
 ggplot(filter(tsne_values_annotated, Taxonomic_lineage_grouped %in% top_five), aes(x = tSNE_1, y = tSNE_2)) +
@@ -323,7 +323,7 @@ ggplot(filter(tsne_values_annotated, Taxonomic_lineage_grouped %in% top_five), a
    ggtitle("B")
 ```
 
-**Figure 4.7:** PCA plots of physicochemical properties in AMP sequences of the five taxonomic groups with the most AMP sequences, **A)** Scatterplot of PCA1 and PCA2 **B)** Density plot of PCA1
+**Figure 4.8:** tSNE plots of physicochemical properties in AMP sequences of the five taxonomic groups with the most AMP sequences, **A)** Scatterplot of tSNE 1 and tSNE 2 **B)** Density plot of tSNE 1
 
 
 ```{r, echo = FALSE}
@@ -355,6 +355,6 @@ ggplot(filter(tsne_values_annotated, large_groups %in% broad_groups), aes(x = tS
    ggtitle("B")
 ```
 
-**Figure 4.8:** tSNE plots of physicochemical properties in AMP sequences in plants, bacteria and animals, **A)** Scatterplot of tSNE 1 and tSNE 2 **B)** Density plot of tSNE1
+**Figure 4.9:** tSNE plots of physicochemical properties in AMP sequences in plants, bacteria and animals, **A)** Scatterplot of tSNE 1 and tSNE 2 **B)** Density plot of tSNE1
 
 

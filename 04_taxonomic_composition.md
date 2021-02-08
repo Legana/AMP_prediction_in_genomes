@@ -263,18 +263,18 @@ tsne_values_annotated <- as.data.frame(sp_amps_features_tsne$Y) %>%
 
 ![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
-**Figure 4.6:** tSNE plots of physicochemical properties in AMP
+**Figure 4.7:** tSNE plots of physicochemical properties in AMP
 sequences of taxonomic groups, **A)** Scatterplot of tSNE 1 and tSNE 2
 **B)** Density plot of tSNE1
 
 ![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
-**Figure 4.7:** PCA plots of physicochemical properties in AMP sequences
-of the five taxonomic groups with the most AMP sequences, **A)**
-Scatterplot of PCA1 and PCA2 **B)** Density plot of PCA1
+**Figure 4.8:** tSNE plots of physicochemical properties in AMP
+sequences of the five taxonomic groups with the most AMP sequences,
+**A)** Scatterplot of tSNE 1 and tSNE 2 **B)** Density plot of tSNE 1
 
 ![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
-**Figure 4.8:** tSNE plots of physicochemical properties in AMP
+**Figure 4.9:** tSNE plots of physicochemical properties in AMP
 sequences in plants, bacteria and animals, **A)** Scatterplot of tSNE 1
 and tSNE 2 **B)** Density plot of tSNE1
