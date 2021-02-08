@@ -150,7 +150,7 @@ pca_deutprot_feat <- deutprot_feat %>%
 
 The result of the PCA is a list which contains multiple results, including the PCA values and the standard deviations. The standard deviations were used to calculate the proportion of variance explained (in percentage) to display on the plots and the PCA values were extracted and combined with the original PCA input dataset to obtain annotations for plotting. 
 ```{r}
-percentage <- round(pca_deutprot_feat$sdev / sum(pca_deutprot_feat$sdev) * 100, 2)
+percentage <- round(pca_deutprot_feat$sdev^2 / sum(pca_deutprot_feat$sdev^2) * 100, 1)
 percentage <- paste(colnames(pca_deutprot_feat$x),"(",paste(as.character(percentage), "%",")", sep = ""))
 
 pca_deutprot_feat.x <- pca_deutprot_feat$x %>% 
@@ -190,6 +190,67 @@ ggplot(pca_deutprot_feat.x, aes(x = PC1)) +
 
 **Figure 5.3:** **A)** A scatterplot of the first two principle components (PC) and **B)** a density plot of first PC of the physicochemical properties of AMPs and non-AMPs in Deuterostomes and Protostomes.
 
+
+## tSNE analysis 
+
+tSNE was used to see if it was similar to PCA results 
+
+```{r, eval = FALSE, echo = FALSE}
+set.seed(3)
+
+deutprot_feat_unique <- deutprot_feat %>%
+   column_to_rownames("seq_name") %>%
+   select(c(1:29)) %>%
+   unique()
+
+deutprot_feat_unique_tsne <- deutprot_feat_unique %>%
+   as.matrix() %>%
+   Rtsne(pca_scale = TRUE)
+
+deutprot_feat_unique_w_id <- deutprot_feat_unique %>%
+   rownames_to_column("seq_name")
+
+deutprot_tsne_annotated <- as.data.frame(deutprot_feat_unique_tsne$Y) %>%
+   add_column(seq_name = deutprot_feat_unique_w_id$seq_name) %>%
+   rename(tSNE_1 = V1, tSNE_2 = V2) %>%
+   left_join(deutprot_feat %>% select(seq_name, Label, group), by = "seq_name") %>%
+   mutate(group = as.factor(group))
+```
+
+```{r, echo = FALSE, eval = FALSE}
+saveRDS(deutprot_tsne_annotated, "cache/deutprottsne.rds")
+```
+
+```{r, echo = FALSE}
+deutprot_tsne_annotated <- readRDS("cache/deutprottsne.rds")
+```
+
+```{r, fig.width=8, fig.height=5, echo = FALSE}
+ggplot(deutprot_tsne_annotated, aes(x = tSNE_1, y = tSNE_2)) +
+   geom_point(aes(colour = group, shape = group)) +
+   facet_wrap(~factor(Label, levels = c("Pos", "Neg"), labels = c("AMPs", "non-AMPs"))) +
+   labs(colour = "", shape = "") +
+   scale_shape_manual(labels = c("Deuterostome" , "Protostome"), values=c(16, 5)) +
+   scale_colour_manual(labels = c("Deuterostome" , "Protostome"), values = c("blueviolet", "forestgreen")) +
+   theme_classic() +
+   theme(legend.position = "bottom",
+         strip.background = element_blank(),
+         strip.text = element_text(size = 10, face = "bold")) +
+  ggtitle("A") +
+
+ggplot(deutprot_tsne_annotated, aes(x = tSNE_1)) +
+   stat_density(aes(colour = group), geom = "line", position = "identity") +
+   facet_wrap(~factor(Label, levels = c("Pos", "Neg"), labels = c("AMPs", "non-AMPs"))) +
+   labs(y = "Density", colour = "") +
+   scale_colour_manual(values = c("blueviolet", "forestgreen")) +
+   theme_classic() +
+   theme(legend.position = "bottom",
+         strip.background = element_blank(),
+         strip.text = element_text(size = 10, face = "bold")) +
+  ggtitle("B")
+```
+
+**Figure 5.4:** **A)** A scatterplot of a tSNE analysis and **B)** a density plot of tSNE 1 of the physicochemical properties of AMPs and non-AMPs in Deuterostomes and Protostomes.
 
 ## Creating the training and test sets
 

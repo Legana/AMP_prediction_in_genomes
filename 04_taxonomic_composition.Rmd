@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 library(tidyverse, quietly = TRUE, warn.conflicts = FALSE)
 library(ampir)
 library(patchwork)
+library(pals)
 ```
 
 ## Antimicrobial peptides in Swiss-Prot
@@ -105,6 +106,8 @@ sp_amps_features <- swissprot_amps %>%
 
 The `prcomp` function was used to perform the PCA. As`prcomp` only allows numerical variables without missing values (`NA`s), the feature dataset was examined for possible missing values (see Figure 4.2 A). The only features containing missing values were the lambda values (between 5 and 19). These are values that relate to the sequence order effects corresponding to the pseudo amino acid calculation [Chou 2001](https://doi.org/10.1002/prot.1035). As these values are dependent on the sequence length, higher lambda values are likely to be associated to longer sequences. The majority of AMPs in the Swiss-Prot database are less than 500-800 amino acids long (see Figure 4.2 B) and there are only four sequences longer than 1000 amino acids long. Therefore, the increased number of missing values with increased lambda values is most likely due to the lack of large sequences. As the number of larger sequences that contain higher lambda values are relatively low, and missing values are not supported in PCA analysis, the columns that contain the lambda values between 5 and 19, were removed. 
 
+### Plot 
+
 ```{r, fig.height=7, fig.width=8}
 nasplot <- sp_amps_features %>% 
    select(c(2:45, Length)) %>%
@@ -130,8 +133,7 @@ amplengths <- sp_amps_features %>%
 nasplot | amplengths
 ```
 
-**Figure 4.2:** *A)* Missing values present within AMP features. *B)* Lengths of AMP sequences in Swiss-Prot
-
+**Figure 4.2:** **A)** Missing values present within AMP features. **B)** Lengths of AMP sequences in Swiss-Prot
 
 
 ```{r}
@@ -144,30 +146,30 @@ pca_w_annotations <- pca_features_amps$x %>%
    as.data.frame() %>% 
    rownames_to_column("seq_name") %>% 
    left_join(swissprot_amps_grouped, by = c("seq_name" = "Entry_name")) %>%
-   relocate(Taxonomic_lineage_grouped, .after = Length) %>%
-    mutate(Deut_or_prot = case_when(
-       str_detect(Taxonomic_lineage, "Deuterostomia") ~ "Deuterostome",
-       str_detect(Taxonomic_lineage, "Protostomia") ~ "Protostome",
-                                        TRUE ~ "Neither"))
+   relocate(Taxonomic_lineage_grouped, .after = Length) 
 ```
 
+Generally the first two principle components in a PCA explain the most variance, i.e. these indicate the patterns of the majority of the data and are therefore most informative. The amount of variance explained by each principle component can be visualised using a scree plot.
 ```{r}
-pca_percentages <- round(pca_features_amps$sdev / sum(pca_features_amps$sdev) * 100, 2)
+data.frame(PC = paste0(1:30),
+           variance_explained = (pca_features_amps$sdev)^2 / sum((pca_features_amps$sdev)^2)) %>%
+  ggplot(aes(x=reorder(PC, desc(variance_explained)),y=variance_explained))+
+  geom_col(fill = "grey50") +
+  theme_classic() + 
+  labs(x = "Principle components", y = "Variance explained")
+```
+
+**Figure 4.3:** Scree plot showing the proportion of variance explained for each principle component
+
+*get total variation explained for each PC in percentage to add to plot*
+```{r}
+pca_percentages <- round(pca_features_amps$sdev^2 / sum(pca_features_amps$sdev^2) * 100, 2)
 pca_percentages <- paste(colnames(pca_features_amps$x),"(",paste(as.character(pca_percentages), "%",")", sep = ""))
 ```
 
-```{r, echo = FALSE}
-my_col = c("pink1", "violet", "slateblue1", "purple",
-          "turquoise2", "steelblue", "navyblue",
-          "orange", "tomato", "violetred",
-          "yellowgreen", "palegreen4",
-          "wheat2", "tan3", "brown",
-          "grey30")
+### PCA Plots
 
-library(pals)
-```
-
-```{r, fig.width=9, fig.height=6}
+```{r, fig.width=9, fig.height=6, echo = FALSE}
 ggplot(pca_w_annotations, aes(x = PC1, y = PC2)) +
    geom_point(aes(colour = Taxonomic_lineage_grouped)) +
    xlim(-15, 5) +
@@ -175,30 +177,184 @@ ggplot(pca_w_annotations, aes(x = PC1, y = PC2)) +
    theme(legend.position = "none") +
    labs(x = pca_percentages[1], y = pca_percentages[2]) +
    scale_colour_manual(values = watlington()) +
+   ggtitle("A") +
 
 ggplot(pca_w_annotations, aes(x = PC1)) +
    stat_density(aes(colour = Taxonomic_lineage_grouped), geom = "line", position = "identity") +
    theme_classic() +
    theme(legend.position = "right") +
    labs(colour = "") +
-   scale_colour_manual(values = watlington())
+   scale_colour_manual(values = watlington()) +
+   ggtitle("B")
 ```
+
+**Figure 4.4:** PCA plots of physicochemical properties in AMP sequences of the taxonomic groups, **A)** Scatterplot of PCA1 and PCA2 **B)** Density plot of PCA1
+
+
 
 ```{r}
-unique(pca_w_annotations$Taxonomic_lineage_grouped)
-
-vertebrates <- c("Mammals", "Amphibians", "Reptiles", "Birds", "Fishes")
-
-bac_vs_verts <- c("Bacteria", vertebrates)
-
-ggplot(filter(pca_w_annotations, Taxonomic_lineage_grouped %in% bac_vs_verts), aes(x = PC1)) +
-   stat_density(aes(colour = Taxonomic_lineage_grouped), geom = "line", position = "identity") +
-   labs(x = "PC1", colour = "") +
-   theme(legend.position = "bottom") +
-   guides(colour = guide_legend(nrow = 1))
-
-
+top_five <- c("Amphibians", "Mammals", "Plants", "Insects", "Bacteria")
 ```
 
+
+```{r, fig.width=9, fig.height=6, echo = FALSE}
+ggplot(filter(pca_w_annotations, Taxonomic_lineage_grouped %in% top_five), aes(x = PC1, y = PC2)) +
+   geom_point(aes(colour = Taxonomic_lineage_grouped)) +
+   theme_classic() +
+   theme(legend.position = "none") +
+   labs(x = pca_percentages[1], y = pca_percentages[2]) +
+   scale_colour_manual(values = watlington(5)) +
+   ggtitle("A") +
+
+
+ggplot(filter(pca_w_annotations, Taxonomic_lineage_grouped %in% top_five), aes(x = PC1)) +
+   stat_density(aes(colour = Taxonomic_lineage_grouped), geom = "line", position = "identity") +
+   labs(x = "PC1", colour = "") +
+   theme_classic() +
+   theme(legend.position = "right") +
+   scale_colour_manual(values = watlington(5)) +
+   ggtitle("B")
+```
+
+**Figure 4.5:** PCA plots of physicochemical properties in AMP sequences of the five taxonomic groups with the most AMP sequences, **A)** Scatterplot of PCA1 and PCA2 **B)** Density plot of PCA1
+
+
+```{r}
+pca_w_annotations <- pca_w_annotations %>% 
+   mutate(large_groups = case_when(str_detect(Taxonomic_lineage, "Metazoa") ~ "Animals",
+                                   str_detect(Taxonomic_lineage, "Bacteria") ~ "Bacteria",
+                                   str_detect(Taxonomic_lineage, "Viridiplantae") ~ "Plants",
+                                   TRUE ~ Taxonomic_lineage_grouped)) %>%
+   mutate(large_groups = as.factor(large_groups))
+
+broad_groups <- as.factor(c("Plants", "Animals", "Bacteria"))
+```
+
+
+```{r, fig.width=9, fig.height=6, echo = FALSE}
+ggplot(filter(pca_w_annotations, large_groups %in% broad_groups), aes(x = PC1, y = PC2)) +
+   geom_point(aes(colour = large_groups), alpha = 0.7) +
+   theme_classic() +
+   theme(legend.position = "none") +
+   labs(x = pca_percentages[1], y = pca_percentages[2]) +
+   scale_colour_manual(breaks = c("Plants", "Animals", "Bacteria"),
+                       values = c("forestgreen","violetred", "grey1")) +
+   ggtitle("A") +
+
+
+ggplot(filter(pca_w_annotations, large_groups %in% broad_groups), aes(x = PC1)) +
+   stat_density(aes(colour = large_groups), geom = "line", position = "identity") +
+   labs(x = "PC1", colour = "") +
+   theme_classic() +
+   theme(legend.position = "right") +
+   scale_colour_manual(breaks = c("Plants", "Animals", "Bacteria"),
+                      values = c("forestgreen","violetred", "grey1")) +
+   xlim(-15, 10) +
+   ggtitle("B")
+```
+
+**Figure 4.6:** PCA plots of physicochemical properties in AMP sequences in plants, bacteria and animals, **A)** Scatterplot of PCA1 and PCA2 **B)** Density plot of PCA1
+
+
+## tSNE analysis
+
+Using [Rtsne](https://github.com/jkrijthe/Rtsne), an R wrapper for Van der Maaten’s Barnes-Hut implementation of t-Distributed Stochastic Neighbor Embedding
+
+```{r}
+library(Rtsne)
+
+set.seed(3)
+
+sp_amps_features_unique <- sp_amps_features %>%
+   column_to_rownames("seq_name") %>%
+   select(c(1:29, Length)) %>%
+   unique()
+
+sp_amps_features_tsne <- sp_amps_features_unique %>% 
+   as.matrix() %>% 
+   Rtsne(pca_scale = TRUE)
+
+sp_amps_features_unique_w_id <- sp_amps_features_unique %>% 
+   rownames_to_column("seq_name")
+
+tsne_values_annotated <- as.data.frame(sp_amps_features_tsne$Y) %>%
+   add_column(seq_name = sp_amps_features_unique_w_id$seq_name) %>%
+   rename(tSNE_1 = V1, tSNE_2 = V2) %>%
+   left_join(sp_amps_features, by = "seq_name")
+```
+
+### tSNE plots
+
+```{r, fig.width=9, fig.height=6, echo = FALSE}
+ggplot(tsne_values_annotated, aes(x = tSNE_1, y = tSNE_2)) +
+   geom_point(aes(colour = Taxonomic_lineage_grouped)) +
+   theme_classic() +
+   scale_colour_manual(values = watlington()) +
+   labs(colour = "") +
+   theme(legend.position = "none") +
+   ggtitle("A") +
+
+ggplot(tsne_values_annotated, aes(x = tSNE_1)) +
+   stat_density(aes(colour = Taxonomic_lineage_grouped), geom = "line", position = "identity") +
+   theme_classic() +
+   theme(legend.position = "right") +
+   labs(colour = "") +
+   scale_colour_manual(values = watlington()) +
+   ggtitle("B")
+```
+
+**Figure 4.6:** tSNE plots of physicochemical properties in AMP sequences of taxonomic groups, **A)** Scatterplot of tSNE 1 and tSNE 2 **B)** Density plot of tSNE1
+
+```{r, fig.width=9, fig.height=6,echo = FALSE}
+ggplot(filter(tsne_values_annotated, Taxonomic_lineage_grouped %in% top_five), aes(x = tSNE_1, y = tSNE_2)) +
+   geom_point(aes(colour = Taxonomic_lineage_grouped)) +
+   theme_classic() +
+   theme(legend.position = "none") +
+   scale_colour_manual(values = watlington(5)) +
+   ggtitle("A") +
+
+
+ggplot(filter(tsne_values_annotated, Taxonomic_lineage_grouped %in% top_five), aes(x = tSNE_1)) +
+   stat_density(aes(colour = Taxonomic_lineage_grouped), geom = "line", position = "identity") +
+   labs(colour = "") +
+   theme_classic() +
+   theme(legend.position = "right") +
+   scale_colour_manual(values = watlington(5)) +
+   ggtitle("B")
+```
+
+**Figure 4.7:** PCA plots of physicochemical properties in AMP sequences of the five taxonomic groups with the most AMP sequences, **A)** Scatterplot of PCA1 and PCA2 **B)** Density plot of PCA1
+
+
+```{r, echo = FALSE}
+tsne_values_annotated <- tsne_values_annotated %>% 
+   mutate(large_groups = case_when(str_detect(Taxonomic_lineage, "Metazoa") ~ "Animals",
+                                   str_detect(Taxonomic_lineage, "Bacteria") ~ "Bacteria",
+                                   str_detect(Taxonomic_lineage, "Viridiplantae") ~ "Plants",
+                                   TRUE ~ Taxonomic_lineage_grouped)) %>%
+   mutate(large_groups = as.factor(large_groups))
+```
+
+```{r,fig.width=9, fig.height=6, echo = FALSE}
+ggplot(filter(tsne_values_annotated, large_groups %in% broad_groups), aes(x = tSNE_1, y = tSNE_2)) +
+   geom_point(aes(colour = large_groups)) +
+   theme_classic() +
+   theme(legend.position = "none") +
+   scale_colour_manual(breaks = c("Plants", "Animals", "Bacteria"),
+                       values = c("forestgreen","violetred", "grey1")) +
+   ggtitle("A") +
+
+
+ggplot(filter(tsne_values_annotated, large_groups %in% broad_groups), aes(x = tSNE_1)) +
+   stat_density(aes(colour = large_groups), geom = "line", position = "identity") +
+   labs(colour = "") +
+   theme_classic() +
+   theme(legend.position = "right") +
+   scale_colour_manual(breaks = c("Plants", "Animals", "Bacteria"),
+                      values = c("forestgreen","violetred", "grey1")) +
+   ggtitle("B")
+```
+
+**Figure 4.8:** tSNE plots of physicochemical properties in AMP sequences in plants, bacteria and animals, **A)** Scatterplot of tSNE 1 and tSNE 2 **B)** Density plot of tSNE1
 
 

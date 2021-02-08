@@ -124,6 +124,8 @@ sequences that contain higher lambda values are relatively low, and
 missing values are not supported in PCA analysis, the columns that
 contain the lambda values between 5 and 19, were removed.
 
+### Plot
+
 ``` r
 nasplot <- sp_amps_features %>% 
    select(c(2:45, Length)) %>%
@@ -151,8 +153,8 @@ nasplot | amplengths
 
 ![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-**Figure 4.2:** *A)* Missing values present within AMP features. *B)*
-Lengths of AMP sequences in Swiss-Prot
+**Figure 4.2:** **A)** Missing values present within AMP features.
+**B)** Lengths of AMP sequences in Swiss-Prot
 
 ``` r
 pca_features_amps <- sp_amps_features %>% 
@@ -164,58 +166,115 @@ pca_w_annotations <- pca_features_amps$x %>%
    as.data.frame() %>% 
    rownames_to_column("seq_name") %>% 
    left_join(swissprot_amps_grouped, by = c("seq_name" = "Entry_name")) %>%
-   relocate(Taxonomic_lineage_grouped, .after = Length) %>%
-    mutate(Deut_or_prot = case_when(
-       str_detect(Taxonomic_lineage, "Deuterostomia") ~ "Deuterostome",
-       str_detect(Taxonomic_lineage, "Protostomia") ~ "Protostome",
-                                        TRUE ~ "Neither"))
+   relocate(Taxonomic_lineage_grouped, .after = Length) 
 ```
 
+Generally the first two principle components in a PCA explain the most
+variance, i.e. these indicate the patterns of the majority of the data
+and are therefore most informative. The amount of variance explained by
+each principle component can be visualised using a scree plot.
+
 ``` r
-pca_percentages <- round(pca_features_amps$sdev / sum(pca_features_amps$sdev) * 100, 2)
+data.frame(PC = paste0(1:30),
+           variance_explained = (pca_features_amps$sdev)^2 / sum((pca_features_amps$sdev)^2)) %>%
+  ggplot(aes(x=reorder(PC, desc(variance_explained)),y=variance_explained))+
+  geom_col(fill = "grey50") +
+  theme_classic() + 
+  labs(x = "Principle components", y = "Variance explained")
+```
+
+![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+**Figure 4.3:** Scree plot showing the proportion of variance explained
+for each principle component
+
+*get total variation explained for each PC in percentage to add to plot*
+
+``` r
+pca_percentages <- round(pca_features_amps$sdev^2 / sum(pca_features_amps$sdev^2) * 100, 2)
 pca_percentages <- paste(colnames(pca_features_amps$x),"(",paste(as.character(pca_percentages), "%",")", sep = ""))
 ```
 
-``` r
-ggplot(pca_w_annotations, aes(x = PC1, y = PC2)) +
-   geom_point(aes(colour = Taxonomic_lineage_grouped)) +
-   xlim(-15, 5) +
-   theme_classic() +
-   theme(legend.position = "none") +
-   labs(x = pca_percentages[1], y = pca_percentages[2]) +
-   scale_colour_manual(values = watlington()) +
-
-ggplot(pca_w_annotations, aes(x = PC1)) +
-   stat_density(aes(colour = Taxonomic_lineage_grouped), geom = "line", position = "identity") +
-   theme_classic() +
-   theme(legend.position = "right") +
-   labs(colour = "") +
-   scale_colour_manual(values = watlington())
-```
+### PCA Plots
 
 ![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
-``` r
-unique(pca_w_annotations$Taxonomic_lineage_grouped)
-```
-
-    ##  [1] "Mammals"              "Insects"              "Bacteria"            
-    ##  [4] "Fishes"               "Amphibians"           "Reptiles"            
-    ##  [7] "Plants"               "Marine invertebrates" "Arachnids"           
-    ## [10] "Birds"                "Worms"                "Bacteriophages"      
-    ## [13] "Centipedes"           "Amoebae"              "Fungi"               
-    ## [16] "Archaea"
+**Figure 4.4:** PCA plots of physicochemical properties in AMP sequences
+of the taxonomic groups, **A)** Scatterplot of PCA1 and PCA2 **B)**
+Density plot of PCA1
 
 ``` r
-vertebrates <- c("Mammals", "Amphibians", "Reptiles", "Birds", "Fishes")
-
-bac_vs_verts <- c("Bacteria", vertebrates)
-
-ggplot(filter(pca_w_annotations, Taxonomic_lineage_grouped %in% bac_vs_verts), aes(x = PC1)) +
-   stat_density(aes(colour = Taxonomic_lineage_grouped), geom = "line", position = "identity") +
-   labs(x = "PC1", colour = "") +
-   theme(legend.position = "bottom") +
-   guides(colour = guide_legend(nrow = 1))
+top_five <- c("Amphibians", "Mammals", "Plants", "Insects", "Bacteria")
 ```
 
-![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+**Figure 4.5:** PCA plots of physicochemical properties in AMP sequences
+of the five taxonomic groups with the most AMP sequences, **A)**
+Scatterplot of PCA1 and PCA2 **B)** Density plot of PCA1
+
+``` r
+pca_w_annotations <- pca_w_annotations %>% 
+   mutate(large_groups = case_when(str_detect(Taxonomic_lineage, "Metazoa") ~ "Animals",
+                                   str_detect(Taxonomic_lineage, "Bacteria") ~ "Bacteria",
+                                   str_detect(Taxonomic_lineage, "Viridiplantae") ~ "Plants",
+                                   TRUE ~ Taxonomic_lineage_grouped)) %>%
+   mutate(large_groups = as.factor(large_groups))
+
+broad_groups <- as.factor(c("Plants", "Animals", "Bacteria"))
+```
+
+![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+**Figure 4.6:** PCA plots of physicochemical properties in AMP sequences
+in plants, bacteria and animals, **A)** Scatterplot of PCA1 and PCA2
+**B)** Density plot of PCA1
+
+## tSNE analysis
+
+Using [Rtsne](https://github.com/jkrijthe/Rtsne), an R wrapper for Van
+der Maaten’s Barnes-Hut implementation of t-Distributed Stochastic
+Neighbor Embedding
+
+``` r
+library(Rtsne)
+
+set.seed(3)
+
+sp_amps_features_unique <- sp_amps_features %>%
+   column_to_rownames("seq_name") %>%
+   select(c(1:29, Length)) %>%
+   unique()
+
+sp_amps_features_tsne <- sp_amps_features_unique %>% 
+   as.matrix() %>% 
+   Rtsne(pca_scale = TRUE)
+
+sp_amps_features_unique_w_id <- sp_amps_features_unique %>% 
+   rownames_to_column("seq_name")
+
+tsne_values_annotated <- as.data.frame(sp_amps_features_tsne$Y) %>%
+   add_column(seq_name = sp_amps_features_unique_w_id$seq_name) %>%
+   rename(tSNE_1 = V1, tSNE_2 = V2) %>%
+   left_join(sp_amps_features, by = "seq_name")
+```
+
+### tSNE plots
+
+![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+**Figure 4.6:** tSNE plots of physicochemical properties in AMP
+sequences of taxonomic groups, **A)** Scatterplot of tSNE 1 and tSNE 2
+**B)** Density plot of tSNE1
+
+![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+
+**Figure 4.7:** PCA plots of physicochemical properties in AMP sequences
+of the five taxonomic groups with the most AMP sequences, **A)**
+Scatterplot of PCA1 and PCA2 **B)** Density plot of PCA1
+
+![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+
+**Figure 4.8:** tSNE plots of physicochemical properties in AMP
+sequences in plants, bacteria and animals, **A)** Scatterplot of tSNE 1
+and tSNE 2 **B)** Density plot of tSNE1

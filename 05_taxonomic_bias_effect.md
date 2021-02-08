@@ -179,7 +179,7 @@ extracted and combined with the original PCA input dataset to obtain
 annotations for plotting.
 
 ``` r
-percentage <- round(pca_deutprot_feat$sdev / sum(pca_deutprot_feat$sdev) * 100, 2)
+percentage <- round(pca_deutprot_feat$sdev^2 / sum(pca_deutprot_feat$sdev^2) * 100, 1)
 percentage <- paste(colnames(pca_deutprot_feat$x),"(",paste(as.character(percentage), "%",")", sep = ""))
 
 pca_deutprot_feat.x <- pca_deutprot_feat$x %>% 
@@ -231,6 +231,16 @@ ggplot(pca_deutprot_feat.x, aes(x = PC1)) +
 components (PC) and **B)** a density plot of first PC of the
 physicochemical properties of AMPs and non-AMPs in Deuterostomes and
 Protostomes.
+
+## tSNE analysis
+
+tSNE was used to see if it was similar to PCA results
+
+![](05_taxonomic_bias_effect_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+
+**Figure 5.4:** **A)** A scatterplot of a tSNE analysis and **B)** a
+density plot of tSNE 1 of the physicochemical properties of AMPs and
+non-AMPs in Deuterostomes and Protostomes.
 
 ## Creating the training and test sets
 
