@@ -111,7 +111,7 @@ calculate performance metrics over a range of predicted probability (0 -
 (false positive rate and true positive rate)
 
 ``` r
-source("R/calc_cm_metrics.R")
+source("scripts/calc_cm_metrics.R")
 
 organisms = c("Homo sapiens (Human)","Arabidopsis thaliana (Mouse-ear cress)")
 
@@ -212,7 +212,7 @@ Precision-recall curves, of the various AMP models tested on the *H.
 sapiens* and *A. thaliana* proteomes.
 
 ``` r
-source("R/calculate_model_metrics.R")
+source("scripts/calculate_model_metrics.R")
 
 get_metrics <- function(bench_data, model_name) {
   do.call(rbind,lapply(c("Homo sapiens (Human)","Arabidopsis thaliana (Mouse-ear cress)"),function(org){

@@ -18,7 +18,7 @@ library(caret)
 library(patchwork)
 library(viridis)
 
-source("R/calc_cm_metrics.R")
+source("scripts/calc_cm_metrics.R")
 set.seed(6)
 ```
 
@@ -33,7 +33,11 @@ We then use the ampir model to predict the proteins in the test set. We then add
 test_pred_prob <- predict(ampir_v0.1, features98Test, type = "prob")
 
 ampir_prob_data <- test_pred_prob %>%
-  add_column(actual = features98Test$Label)
+  add_column(Label = features98Test$Label) %>%
+  rename(Neg = Bg) %>%
+  rename(prob_AMP = Tg) %>%
+  mutate(Label = ifelse(Label == "Tg", "Pos", "Neg"))
+
 ```
 
 # Initial look at the precision and recall curves for a low AMP proportion
@@ -43,9 +47,9 @@ To create an idea what to set the probability threshold to for AMP prediction in
 First a random 10 true AMPs from the predicted proteins in the ampir v0.1 test set, plus all the true background proteins, were isolated.
 
 ```{r}
-ampir_prob_data_bg <- ampir_prob_data[grep("Bg", ampir_prob_data$actual),]
+ampir_prob_data_bg <- ampir_prob_data[grep("Neg", ampir_prob_data$Label),]
 
-ampir_prob_data_tg_10 <- ampir_prob_data[sample(grep("Tg", ampir_prob_data$actual), 10),]
+ampir_prob_data_tg_10 <- ampir_prob_data[sample(grep("Pos", ampir_prob_data$Label), 10),]
 
 ampir_prob_data_bg_tg10 <- rbind(ampir_prob_data_tg_10, ampir_prob_data_bg)
 ```
@@ -84,7 +88,7 @@ ggplot(pr_curve_sample_long, aes(x=p_threshold, y=value)) +
 
 First `replicate` and `slice_sample` were used to select 10 random AMPs 100 times which were bound together in a table with `rbind`. 
 ```{r}
-ampir_prob_data_tg <- filter(ampir_prob_data, actual == "Tg")
+ampir_prob_data_tg <- filter(ampir_prob_data, Label == "Pos")
 
 
 samples_list <- replicate(n = 100, ampir_prob_data_tg %>% 
@@ -105,7 +109,7 @@ Now I have a list with 100 dataframes in it that each contain metrics calculated
 I want to average the precision and recall columns over the 0.01 - 0.99 p_threshold range.
 To do this I bind all the dataframes in the list together into one big dataframe using`bind_rows`. Then I use the `group_by` function to group the samples by the p_threshold and then use `summarise` to create two new columns that contain the calculated average of precision and recall and finally convert it into long format again.
 
-```{r}
+```{r}        
 samples_metrics <- bind_rows(samples_list_metrics, .id = "sample")
 
 samples_metrics_averages <- samples_metrics %>% 

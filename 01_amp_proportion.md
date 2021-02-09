@@ -1,24 +1,24 @@
 Precision recall for AMP proportions in a genome
 ================
 
-  - [1 Initial look at the precision and recall curves for a low AMP
+-   [1 Initial look at the precision and recall curves for a low AMP
     proportion](#initial-look-at-the-precision-and-recall-curves-for-a-low-amp-proportion)
-      - [1.0.1 Plot](#plot)
-  - [2 Average precision and recall curves for a low AMP
+    -   [1.0.1 Plot](#plot)
+-   [2 Average precision and recall curves for a low AMP
     proportion](#average-precision-and-recall-curves-for-a-low-amp-proportion)
-      - [2.0.1 Plot](#plot-1)
-  - [3 Theoretical AMP proportion in a genome -
+    -   [2.0.1 Plot](#plot-1)
+-   [3 Theoretical AMP proportion in a genome -
     alpha](#theoretical-amp-proportion-in-a-genome---alpha)
-      - [3.1 alpha equation and
+    -   [3.1 alpha equation and
         implementation](#alpha-equation-and-implementation)
-          - [3.1.1 Plot](#plot-2)
-      - [3.2 Traditional precision-recall
+        -   [3.1.1 Plot](#plot-2)
+    -   [3.2 Traditional precision-recall
         curve](#traditional-precision-recall-curve)
-          - [3.2.1 Plot](#plot-3)
-      - [3.3 Comparing the theoretical 0.01 alpha value with the
+        -   [3.2.1 Plot](#plot-3)
+    -   [3.3 Comparing the theoretical 0.01 alpha value with the
         averaged 0.01 AMP proportion from a real test
         set](#comparing-the-theoretical-0.01-alpha-value-with-the-averaged-0.01-amp-proportion-from-a-real-test-set)
-          - [3.3.1 Plot](#plot-4)
+        -   [3.3.1 Plot](#plot-4)
 
 To start, we read in ampir’s v\_0.1 trained model as well as the test
 dataset
@@ -35,7 +35,10 @@ then add the actual cases to the prediction outcome.
 test_pred_prob <- predict(ampir_v0.1, features98Test, type = "prob")
 
 ampir_prob_data <- test_pred_prob %>%
-  add_column(actual = features98Test$Label)
+  add_column(Label = features98Test$Label) %>%
+  rename(Neg = Bg) %>%
+  rename(prob_AMP = Tg) %>%
+  mutate(Label = ifelse(Label == "Tg", "Pos", "Neg"))
 ```
 
 # 1 Initial look at the precision and recall curves for a low AMP proportion
@@ -49,9 +52,9 @@ First a random 10 true AMPs from the predicted proteins in the ampir
 v0.1 test set, plus all the true background proteins, were isolated.
 
 ``` r
-ampir_prob_data_bg <- ampir_prob_data[grep("Bg", ampir_prob_data$actual),]
+ampir_prob_data_bg <- ampir_prob_data[grep("Neg", ampir_prob_data$Label),]
 
-ampir_prob_data_tg_10 <- ampir_prob_data[sample(grep("Tg", ampir_prob_data$actual), 10),]
+ampir_prob_data_tg_10 <- ampir_prob_data[sample(grep("Pos", ampir_prob_data$Label), 10),]
 
 ampir_prob_data_bg_tg10 <- rbind(ampir_prob_data_tg_10, ampir_prob_data_bg)
 ```
@@ -88,7 +91,7 @@ First `replicate` and `slice_sample` were used to select 10 random AMPs
 100 times which were bound together in a table with `rbind`.
 
 ``` r
-ampir_prob_data_tg <- filter(ampir_prob_data, actual == "Tg")
+ampir_prob_data_tg <- filter(ampir_prob_data, Label == "Pos")
 
 
 samples_list <- replicate(n = 100, ampir_prob_data_tg %>% 
@@ -141,31 +144,24 @@ ampir v.0.1 test set
 
 # 3 Theoretical AMP proportion in a genome - alpha
 
-A new variable, ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha
-"\\alpha"), was introduced to represent the percentage of AMPs in the
-test set to more easily create precision-recall curves for various AMP
-proportions.
+A new variable,
+![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha"), was
+introduced to represent the percentage of AMPs in the test set to more
+easily create precision-recall curves for various AMP proportions.
 
 ## 3.1 alpha equation and implementation
 
 The calculation for the recall metric for
-![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha")
+![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha")
 remains the same but the precision metric has been slightly modified
 (see below):
 
-  
-![Precision\_{\\alpha} = \\frac{TP\\alpha}{TP\\alpha +
-FP(1-\\alpha)}](https://latex.codecogs.com/png.latex?Precision_%7B%5Calpha%7D%20%3D%20%5Cfrac%7BTP%5Calpha%7D%7BTP%5Calpha%20%2B%20FP%281-%5Calpha%29%7D
-"Precision_{\\alpha} = \\frac{TP\\alpha}{TP\\alpha + FP(1-\\alpha)}")  
+![Precision\_{\\alpha} = \\frac{TP\\alpha}{TP\\alpha + FP(1-\\alpha)}](https://latex.codecogs.com/png.latex?Precision_%7B%5Calpha%7D%20%3D%20%5Cfrac%7BTP%5Calpha%7D%7BTP%5Calpha%20%2B%20FP%281-%5Calpha%29%7D "Precision_{\alpha} = \frac{TP\alpha}{TP\alpha + FP(1-\alpha)}")
 
-  
-![Recall\_{\\alpha} = \\frac{TP}{TP +
-FN}](https://latex.codecogs.com/png.latex?Recall_%7B%5Calpha%7D%20%3D%20%5Cfrac%7BTP%7D%7BTP%20%2B%20FN%7D
-"Recall_{\\alpha} = \\frac{TP}{TP + FN}")  
+![Recall\_{\\alpha} = \\frac{TP}{TP + FN}](https://latex.codecogs.com/png.latex?Recall_%7B%5Calpha%7D%20%3D%20%5Cfrac%7BTP%7D%7BTP%20%2B%20FN%7D "Recall_{\alpha} = \frac{TP}{TP + FN}")
 
 Function that uses the recall-precision metric calculations for any
-![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha")
-value
+![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha") value
 
 ``` r
 calc_precision_recall <- function(df,alpha) {
@@ -183,7 +179,7 @@ ampir_roc_data <- map_df(seq(0.01, 0.99, 0.01), calc_cm_metrics, ampir_prob_data
 ```
 
 Use the function for a range of
-![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha")
+![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha")
 values and collapse to data frame
 
 ``` r
@@ -195,9 +191,9 @@ pr_data <- do.call(rbind,lapply(c(0.01,0.05,0.1,0.5),function(alpha) {
 ### 3.1.1 Plot
 
 Plot an explicit axis for `p_threshold` using four different
-![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha")
+![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha")
 values. This is useful for choosing the threshold value. It shows that
-as ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha")
+as ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha")
 gets smaller and smaller the Precision curve shifts so that high values
 of precision are only achieved for very high `p_threshold` values.
 
@@ -215,7 +211,7 @@ think of Precision is that it defines the “Purity” of our predicted set
 of AMPs whereas the Sensitivity or Recall defines the “Completeness” of
 the predicted AMP set. We want to choose the p\_threshold so that there
 is a balance or Purity and Completeness. When
-![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha") is
+![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha") is
 high this is easy to do, but when it is low it becomes a very difficult
 tradeoff.
 
@@ -237,10 +233,10 @@ pr_data_alpha1_long <- pr_data_long %>% filter(alpha == 0.01)
 ### 3.3.1 Plot
 
 The precision recall curves plot for
-![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha") =
+![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha") =
 0.01 is extremely similar to the average curve of 0.01 AMPs in the ampir
 v0.1 test set. This was as expected and shows the
-![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\\alpha")
+![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha")
 variable is a valid depiction as the proportion of AMPs in a test set.
 
 ![](01_amp_proportion_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->

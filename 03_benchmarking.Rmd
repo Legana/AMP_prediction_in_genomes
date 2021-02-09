@@ -108,7 +108,7 @@ ampep_genome_bench <- do.call(rbind,lapply(ampep_file_paths,read_csv)) %>%
 A function, `get_genome_roc.R` was written to use `calc_cm_metrics.R` to calculate performance metrics over a range of predicted probability (0 - 0.99) values, which include metrics necessary to construct ROC curves (false positive rate and true positive rate) 
 
 ```{r}
-source("R/calc_cm_metrics.R")
+source("scripts/calc_cm_metrics.R")
 
 organisms = c("Homo sapiens (Human)","Arabidopsis thaliana (Mouse-ear cress)")
 
@@ -189,7 +189,7 @@ ggsave(plot = rocandprplot, filename = "figures/proteomesrocandpr.png")
 
 Similar to how the ROC curves were calculated, a function, `get_metrics.R`, was written to calculate performance metrics, which include the area under the curve (AUC) for both the ROC and Precision-recall curves, of the various AMP models tested on the *H. sapiens* and *A. thaliana* proteomes.
 ```{r}
-source("R/calculate_model_metrics.R")
+source("scripts/calculate_model_metrics.R")
 
 get_metrics <- function(bench_data, model_name) {
   do.call(rbind,lapply(c("Homo sapiens (Human)","Arabidopsis thaliana (Mouse-ear cress)"),function(org){
