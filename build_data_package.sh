@@ -7,6 +7,11 @@ echo data/ampir_0.1.0_data/features98TrainNov19.rds >> data_list
 echo data/ampir_0.1.0_data/features98TestNov19.rds >> data_list
 echo data/ampir_0.1.0_data/ampir_prob_data.rds >> data_list
 
+# ampir v_1 related data
+
+echo data/ampir_v1/tuned_precursor_imbal_nobench.rds >> data_list
+
+
 # Data from AMP predictors 
 
 echo data/amp_predictors/amPEP/M_model_train_nonAMP_sequence.fasta >> data_list
@@ -41,9 +46,35 @@ echo data/uniprot-taxonomy Protostomia+[33317] +reviewed yes+NOT+keyword--.fasta
 echo cache/deuterostome_neg.rds >> data_list
 echo cache/protostome_neg.rds >> data_list
 echo cache/features_deutTrain.rds >> data_list
+echo cache/features_deutTrain2.rds >> data_list
 echo cache/features_deutTest.rds >> data_list
+echo cache/features_deutTest2.rds >> data_list
 echo cache/features_protostome.rds >> data_list
 echo cache/deut_svm.rds >> data_list
+echo cache/deut_svm2.rds >> data_list
+echo cache/deutprottsne.rds >> data_list
+
+# Arabidopsis thaliana and Homo sapiens proteomes without and with standard AA
+
+echo data/proteomes/arabidopsis-proteomeUP000006548.fasta >> data_list
+echo data/proteomes/human-proteomeUP000005640.fasta >> data_list
+echo data/proteomes/uniprot-proteome UP000005640.tab >> data_list
+echo data/proteomes/uniprot-proteome UP000006548.tab >> data_list
+echo cache/arab_proteome_standardaa.fasta >> data_list
+echo cache/homo_proteome_standardaa.fasta >> data_list
+
+# Benchmark prediction results
+
+echo data/prediction_results/ampir/ampir_refproteomes_predictions.rds >> data_list
+echo data/prediction_results/ampscanner_v2/arab1_1611719550167_Prediction_Summary.csv >> data_list
+echo data/prediction_results/ampscanner_v2/arab2_1611719690212_Prediction_Summary.csv >> data_list
+echo data/prediction_results/ampscanner_v2/homo1_1611718866504_Prediction_Summary.csv >> data_list
+echo data/prediction_results/ampscanner_v2/homo2_1611719132616_Prediction_Summary.csv >> data_list
+echo data/prediction_results/ampscanner_v2/homo3_1611719332326_Prediction_Summary.csv >> data_list
+echo data/prediction_results/ampep/arab_proteome_standardaa_ampep.txt >> data_list
+echo data/prediction_results/ampep/homo_proteome_standardaa_ampep.txt >> data_list
+
+
 
 tar -zcvf data_amp_pred.tgz -T data_list
 
