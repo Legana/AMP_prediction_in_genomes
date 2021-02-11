@@ -1,0 +1,42 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ampir)
+library(tidyverse)
+```
+
+```{r}
+missing_outputs <- c("ampin34.fasta", "ampin39.fasta", "ampin163.fasta", "ampin211.fasta", "ampin223.fasta", "ampin228.fasta", "ampin230.fasta", "ampin242.fasta", "ampin243.fasta", "ampin245.fasta", "ampin247.fasta", "ampin248.fasta", "ampin253.fasta", "ampin254.fasta", "ampin266.fasta", "ampin275.fasta", "ampin283.fasta", "ampin291.fasta", "ampin296.fasta", "ampin298.fasta", "ampin304.fasta", "ampin308.fasta", "ampin309.fasta", "ampin322.fasta", "ampin362.fasta", "ampin369.fasta", "ampin380.fasta", "ampin381.fasta", "ampin388.fasta", "ampin393.fasta", "ampin399.fasta", "ampin405.fasta", "ampin412.fasta", "ampin419.fasta", "ampin420.fasta", "ampin437.fasta", "ampin440.fasta", "ampin453.fasta", "ampin465.fasta", "ampin473.fasta", "ampin478.fasta", "ampin486.fasta", "ampin509.fasta", "ampin512.fasta", "ampin526.fasta", "ampin544.fasta", "ampin557.fasta", "ampin561.fasta", "ampin568.fasta", "ampin578.fasta", "ampin579.fasta", "ampin581.fasta", "ampin591.fasta", "ampin592.fasta", "ampin608.fasta", "ampin619.fasta", "ampin631.fasta", "ampin633.fasta", "ampin642.fasta", "ampin652.fasta", "ampin667.fasta", "ampin673.fasta" )
+
+missing_outputs_paths <- paste0("../cache/homo_file_spam/", missing_outputs)
+```
+
+```{r}
+missing_output_seqs <- do.call(rbind,lapply(missing_outputs_paths,read_faa)) %>% mutate(length = nchar(seq_aa))
+
+missing_output_seqs_long <- missing_output_seqs %>% filter(!length <10)
+
+df_to_faa(missing_output_seqs_long, "../cache/homo_file_spam/short_seqs_removed/spare_homo_seqs.fasta")
+```
+
+```{bash}
+cat ../cache/homo_file_spam/short_seqs_removed/spare_homo_seqs.fasta | \
+    bioawk -c 'fastx' \
+    'BEGIN{JOBN=0} \
+     { \
+        if( (NR-1)%100==0 )\
+        {JOBN=JOBN+1; \
+        file=sprintf("../cache/homo_file_spam/short_seqs_removed/""ampin%d.fasta",JOBN);} \
+        printf(">%s\t%s\n%s\n",$name,$comment,$seq) >> file \
+        }'
+
+```
+
+
