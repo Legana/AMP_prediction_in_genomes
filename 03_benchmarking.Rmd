@@ -103,6 +103,48 @@ ampep_genome_bench <- do.call(rbind,lapply(ampep_file_paths,read_csv)) %>%
 ```
 
 
+## amPEPpy
+
+amPEPpy was run according to the example provided on the [amPEPpy GitHub repository](https://github.com/tlawrence3/amPEPpy) in a Conda environment.
+
+```{python, eval = FALSE}
+ampep predict -m pretrained_models/amPEP.model -i ../cache/arab_proteome_standardaa.fasta -o arab_results.tsv --seed 2012
+ampep predict -m pretrained_models/amPEP.model -i ../cache/homo_proteome_standardaa.fasta -o homo_results.tsv --seed 2012
+```
+
+```{r}
+ampeppy_arab <- read_tsv("data/prediction_results/amPEPpy/arab_results.tsv")
+ampeppy_homo <- read_tsv("data/prediction_results/amPEPpy/homo_results.tsv")
+```
+
+## AMPlify
+
+AMPlify v1.0.0 was installed as the latest release from [AMPlify's repository](https://github.com/bcgsc/AMPlify). However, when using AMPlify to predict proteins an error arose, related to the software itself, and therefore unfortunately could not be included in the benchmark. An issue was raised with details about this error on the [AMPlify's issue page](https://github.com/bcgsc/AMPlify/issues/1) on 10/02/2021. 
+
+## AMPgram
+
+>sp|P0DKJ0|P160B_ARATH	Peptide encoded by miPEP160b OS=Arabidopsis thaliana OX=3702 GN=miPEP160b PE=4 SV=1
+MFSPQ in ampin33.fasta excluded
+
+```{r}
+ampgram_homo_filepaths <- c(list.files("data/prediction_results/ampgram/homo", pattern="*.rds",full.names = T))
+
+gimme <- function(filepath) {
+  
+  ampgram_homo_list <- readRDS(filepath)
+
+  amgram_probandnamelist <- lapply(ampgram_homo1, '[[', 3)
+
+  bind_rows(amgram_probandnamelist, .id = "ID")
+}
+
+tst <- map_df(ampgram_homo_filepaths, gimme)
+
+
+```
+
+
+
 ### Calculating performance metrics - ROC curves
 
 A function, `get_genome_roc.R` was written to use `calc_cm_metrics.R` to calculate performance metrics over a range of predicted probability (0 - 0.99) values, which include metrics necessary to construct ROC curves (false positive rate and true positive rate) 
