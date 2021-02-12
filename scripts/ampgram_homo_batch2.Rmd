@@ -12,6 +12,27 @@ library(ampir)
 library(tidyverse)
 ```
 
+Sub jobs Likely failed due to presence of sequences less than 10 amino acids long possibly not supported by the AmpGram software.
+These short sequences were removed.
+
+## *Arabidopsis thaliana* 
+
+3 subjobs / FASTA files failed for *A.thaliana* . 
+```{r, eval = FALSE}
+tst <- c(list.files("data/prediction_results/ampgram/arab", pattern="*.rds",full.names = F)) %>% as.data.frame()
+
+seq(1,394) %in% parse_number(tst$.) %>% as.data.frame() %>% subset(.==FALSE) 
+#subset was used instead of `filter` as it keeps the original rownumber
+
+read_faa("cache/arab_file_spam/ampin33.fasta") %>% mutate(length = nchar(seq_aa)) %>% filter(length <10)
+
+# P0DKJ0 in 33 A0A1P8AXK3 in 192 and A0A1P8B841 in 199 
+```
+
+
+## *Homo sapiens* 
+
+~60 subjobs failed
 ```{r}
 missing_outputs <- c("ampin34.fasta", "ampin39.fasta", "ampin163.fasta", "ampin211.fasta", "ampin223.fasta", "ampin228.fasta", "ampin230.fasta", "ampin242.fasta", "ampin243.fasta", "ampin245.fasta", "ampin247.fasta", "ampin248.fasta", "ampin253.fasta", "ampin254.fasta", "ampin266.fasta", "ampin275.fasta", "ampin283.fasta", "ampin291.fasta", "ampin296.fasta", "ampin298.fasta", "ampin304.fasta", "ampin308.fasta", "ampin309.fasta", "ampin322.fasta", "ampin362.fasta", "ampin369.fasta", "ampin380.fasta", "ampin381.fasta", "ampin388.fasta", "ampin393.fasta", "ampin399.fasta", "ampin405.fasta", "ampin412.fasta", "ampin419.fasta", "ampin420.fasta", "ampin437.fasta", "ampin440.fasta", "ampin453.fasta", "ampin465.fasta", "ampin473.fasta", "ampin478.fasta", "ampin486.fasta", "ampin509.fasta", "ampin512.fasta", "ampin526.fasta", "ampin544.fasta", "ampin557.fasta", "ampin561.fasta", "ampin568.fasta", "ampin578.fasta", "ampin579.fasta", "ampin581.fasta", "ampin591.fasta", "ampin592.fasta", "ampin608.fasta", "ampin619.fasta", "ampin631.fasta", "ampin633.fasta", "ampin642.fasta", "ampin652.fasta", "ampin667.fasta", "ampin673.fasta" )
 
