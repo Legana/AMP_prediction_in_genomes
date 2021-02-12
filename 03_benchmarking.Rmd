@@ -123,24 +123,42 @@ AMPlify v1.0.0 was installed as the latest release from [AMPlify's repository](h
 
 ## AMPgram
 
->sp|P0DKJ0|P160B_ARATH	Peptide encoded by miPEP160b OS=Arabidopsis thaliana OX=3702 GN=miPEP160b PE=4 SV=1
-MFSPQ in ampin33.fasta excluded
+
+In order to significantly speed up the progress of using AmpGram on the *A. thaliana* and *H. sapiens* proteomes, high performance computing (HPC) scheduler (PBS) with job arrays submissions were used. To accomplish this, first, both proteomes were split into FASTA files containing 100 protein sequences (394 FASTA files for *A. thaliana* and 675 for *H. sapiens*) using the scripts `scripts/subset_arab_file.zsh` and `subset_homo_proteome.zsh`. Per job, approximately 100 subjobs which referenced to 100 FASTA files were used. See `scripts/runampgram_h1.sh` and `scripts/runampgram_h1.R` as example scripts used for the first 100 subjobs/FASTA files from the *H. sapiens* proteome. 
+
+Initially when the jobs were submitted, various subjobs failed (three for *A. thaliana* and 62 for *H. sapiens*). After examining the [source code for AmpGram](https://github.com/michbur/AmpGram/blob/master/R/utils.R),  
 
 ```{r}
-ampgram_homo_filepaths <- c(list.files("data/prediction_results/ampgram/homo", pattern="*.rds",full.names = T))
+ampgram_arab_filepaths <- c(list.files("data/prediction_results/ampgram/arab", pattern="*.rds",full.names = T))
 
-gimme <- function(filepath) {
+
+gimme_ampgram_predictions <- function(filepath) {
   
-  ampgram_homo_list <- readRDS(filepath)
+  ampgram_list <- readRDS(filepath)
 
-  amgram_probandnamelist <- lapply(ampgram_homo1, '[[', 3)
+  amgram_probandnamelist <- lapply(ampgram_list, '[[', 3)
 
   bind_rows(amgram_probandnamelist, .id = "ID")
 }
 
-tst <- map_df(ampgram_homo_filepaths, gimme)
+ampgram_arab_preds <- map_df(ampgram_arab_filepaths, gimme_ampgram_predictions)
+
+ampgram_arab_preds %>%
+  separate(ID, into = c(NA, NA,"Entrynamewdescr"),sep = "\\|") %>%
+  separate(Entrynamewdescr, into = c("Entry_name", NA), sep = "\t", fill = "left")
+
+  
+```
 
 
+```{r}
+ampgram_homo_filepaths <- c(list.files("data/prediction_results/ampgram/homo", pattern="*.rds",full.names = T))
+
+
+
+
+
+tst <- map_df(ampgram_homo_filepaths, gimme_ampgram_predictions)
 ```
 
 
