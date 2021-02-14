@@ -176,6 +176,10 @@ gimme_ampgram_predictions <- function(filepath) {
 ```
 
 ``` r
+if (file.exists("cache/ampgram_genome_bench.rds")) {
+  ampgram_genome_bench <- readRDS("cache/ampgram_genome_bench.rds")
+} else {
+  
 ampgram_filepaths <- list.files(c("data/prediction_results/ampgram/homo", "data/prediction_results/ampgram/homo/leftovers", "data/prediction_results/ampgram/arab"), pattern="*.rds",full.names = T)
 
 ampgram_predictions <- map_df(ampgram_filepaths, gimme_ampgram_predictions)
@@ -186,6 +190,7 @@ ampgram_genome_bench <- ampgram_predictions %>%
   left_join(reference_proteomes, by = "Entry name") %>% 
   select(ID = `Entry name`, prob_AMP = "TRUE", Organism, Label) %>% 
   add_column(Model = "AmpGram")
+}
 ```
 
 ### Calculating performance metrics - ROC curves
@@ -285,7 +290,7 @@ informative on imbalanced datasets, none of the models (save perhaps the
 ampir precursor model on *A. thaliana*) were skilled enough to detect
 AMPs in the *H. sapiens* and *A. thaliana* proteomes.
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 **Figure 3.1:** Performance of various AMP predictors in classifying
 whole proteome data for *Homo sapiens* and *Arabidopsis thaliana*.
@@ -355,7 +360,7 @@ numbers of true and false positives were used, with a focus on the low
 false positive regime, as this is what matters most in whole proteome
 scans (Figure 3.2)
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 **Figure 3.2:** The ability of various models to predict AMPs in the low
 false positive regime (&lt;500) in the proteomes of *Arabidopsis
@@ -365,7 +370,7 @@ y-axis show the full complement of known AMPs in each genome (294 for
 restricted to emphasise behaviour in the low false positive (FP) regime
 (FP &lt; 500).
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 **Figure 3.3:** Same as Figure 3.2 but showing the entire false positive
 regime

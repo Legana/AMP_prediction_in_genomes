@@ -75,7 +75,7 @@ echo data/prediction_results/ampep/arab_proteome_standardaa_ampep.txt >> data_li
 echo data/prediction_results/ampep/homo_proteome_standardaa_ampep.txt >> data_list
 echo data/prediction_results/amPEPpy/arab_results.tsv >> data_list
 echo data/prediction_results/amPEPpy/homo_results.tsv >> data_list
-
+echo cache/ampgram_genome_bench.rds >> data_list
 ### AmpGram 
 
 echo data/prediction_results/ampgram/homo/ampin1.fasta.rds >> data_list

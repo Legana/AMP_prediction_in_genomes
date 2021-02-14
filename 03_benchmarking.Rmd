@@ -147,7 +147,11 @@ gimme_ampgram_predictions <- function(filepath) {
 ```
 
 
-```{r}
+```{r, eval = FALSE}
+if (file.exists("cache/ampgram_genome_bench.rds")) {
+  ampgram_genome_bench <- readRDS("cache/ampgram_genome_bench.rds")
+} else {
+  
 ampgram_filepaths <- list.files(c("data/prediction_results/ampgram/homo", "data/prediction_results/ampgram/homo/leftovers", "data/prediction_results/ampgram/arab"), pattern="*.rds",full.names = T)
 
 ampgram_predictions <- map_df(ampgram_filepaths, gimme_ampgram_predictions)
@@ -158,8 +162,16 @@ ampgram_genome_bench <- ampgram_predictions %>%
   left_join(reference_proteomes, by = "Entry name") %>% 
   select(ID = `Entry name`, prob_AMP = "TRUE", Organism, Label) %>% 
   add_column(Model = "AmpGram")
+}
 ```
 
+```{r, echo = FALSE, eval = FALSE}
+saveRDS(ampgram_genome_bench, "cache/ampgram_genome_bench.rds")
+```
+
+```{r, echo = FALSE}
+ampgram_genome_bench <- readRDS("cache/ampgram_genome_bench.rds")
+```
 
 
 ### Calculating performance metrics - ROC curves
