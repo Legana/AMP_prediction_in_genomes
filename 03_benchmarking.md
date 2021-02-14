@@ -103,6 +103,91 @@ ampep_genome_bench <- do.call(rbind,lapply(ampep_file_paths,read_csv)) %>%
   add_column(Model = "amPEP")
 ```
 
+## amPEPpy
+
+amPEPpy was run according to the example provided on the [amPEPpy GitHub
+repository](https://github.com/tlawrence3/amPEPpy) in a Conda
+environment. The prediction results consist of 67,484 predictions from
+the original
+
+``` python
+ampep predict -m pretrained_models/amPEP.model -i ../cache/arab_proteome_standardaa.fasta -o arab_results.tsv --seed 2012
+ampep predict -m pretrained_models/amPEP.model -i ../cache/homo_proteome_standardaa.fasta -o homo_results.tsv --seed 2012
+```
+
+``` r
+ampeppy_file_paths <- list.files("data/prediction_results/amPEPpy", pattern="*.tsv",full.names = T)
+
+ampeppy_genome_bench <- do.call(rbind,lapply(ampeppy_file_paths,read_tsv)) %>%
+  separate(seq_id, into = c(NA, NA,"Entry name"),sep = "\\|") %>%
+  left_join(reference_proteomes, by = "Entry name") %>% 
+  select(ID = `Entry name`, prob_AMP = probability_AMP, Organism, Label) %>% 
+  add_column(Model = "amPEPpy")
+```
+
+## AMPlify
+
+AMPlify v1.0.0 was installed as the latest release from [AMPlify’s
+repository](https://github.com/bcgsc/AMPlify). However, when using
+AMPlify to predict proteins an error arose, related to the software
+itself, and therefore unfortunately could not be included in the
+benchmark. An issue was raised with details about this error on the
+[AMPlify’s issue page](https://github.com/bcgsc/AMPlify/issues/1) on
+10/02/2021.
+
+## AMPgram
+
+In order to significantly speed up the progress of using AmpGram on the
+*A. thaliana* and *H. sapiens* proteomes, high performance computing
+(HPC) scheduler (PBS) with job arrays submissions were used. To
+accomplish this, first, both proteomes were split into FASTA files
+containing 100 protein sequences (394 FASTA files for *A. thaliana* and
+675 for *H. sapiens*) using the scripts `scripts/subset_arab_file.zsh`
+and `subset_homo_proteome.zsh`. Per job, approximately 100 subjobs which
+referenced to 100 FASTA files were used. See `scripts/runampgram_h1.sh`
+and `scripts/runampgram_h1.R` as example scripts used for the first 100
+subjobs/FASTA files from the *H. sapiens* proteome.
+
+Initially when the jobs were submitted, various subjobs failed (three
+for *A. thaliana* and 62 for *H. sapiens*). After examining the [source
+code for
+AmpGram](https://github.com/michbur/AmpGram/blob/master/R/utils.R), it
+appears that AmpGram does not support sequences less than 10 amino acids
+long. In the *A. thaliana* proteome (with non standard amino acids
+removed) there were three proteins less than 10 amino acids long and in
+*H. sapiens* there were 268. Therefore these sequences were not included
+in the prediction analysis from AmpGram.
+
+\*AmpGram’s prediction results is a list for each protein prediction
+that is subdivided into three sublists. For this benchmark analysis,
+only the third sublist is relevant as this contains the probability
+score for that protein. A function was written to easily extract this
+probability score and associated protein name from each output file.
+
+``` r
+gimme_ampgram_predictions <- function(filepath) {
+  
+  ampgram_list <- readRDS(filepath)
+
+  amgram_probandnamelist <- lapply(ampgram_list, '[[', 3)
+
+  bind_rows(amgram_probandnamelist, .id = "ID")
+}
+```
+
+``` r
+ampgram_filepaths <- list.files(c("data/prediction_results/ampgram/homo", "data/prediction_results/ampgram/homo/leftovers", "data/prediction_results/ampgram/arab"), pattern="*.rds",full.names = T)
+
+ampgram_predictions <- map_df(ampgram_filepaths, gimme_ampgram_predictions)
+  
+ampgram_genome_bench <- ampgram_predictions %>%
+  separate(ID, into = c(NA, NA,"Entrynamewdescr"),sep = "\\|") %>%
+  separate(Entrynamewdescr, into = c("Entry name", NA), sep = "\t", fill = "left") %>%
+  left_join(reference_proteomes, by = "Entry name") %>% 
+  select(ID = `Entry name`, prob_AMP = "TRUE", Organism, Label) %>% 
+  add_column(Model = "AmpGram")
+```
+
 ### Calculating performance metrics - ROC curves
 
 A function, `get_genome_roc.R` was written to use `calc_cm_metrics.R` to
@@ -138,12 +223,16 @@ ampir_genome_roc <- do.call(rbind,lapply(c("ampir_precursor","ampir_mature", "am
 ampscanner_roc <- get_genome_roc(ampscan_genome_bench, "AMPscanner_v2")
 
 ampep_roc <- get_genome_roc(ampep_genome_bench, "amPEP")
+
+ampgram_roc <- get_genome_roc(ampgram_genome_bench, "AmpGram")
+
+ampeppy_roc <- get_genome_roc(ampeppy_genome_bench, "amPEPpy")
 ```
 
 *combine ROC metric dataframes*
 
 ``` r
-proteome_rocs <- rbind(ampir_genome_roc, ampscanner_roc, ampep_roc)
+proteome_rocs <- rbind(ampir_genome_roc, ampscanner_roc, ampep_roc, ampgram_roc, ampeppy_roc)
 ```
 
 ## Plots
@@ -196,7 +285,7 @@ informative on imbalanced datasets, none of the models (save perhaps the
 ampir precursor model on *A. thaliana*) were skilled enough to detect
 AMPs in the *H. sapiens* and *A. thaliana* proteomes.
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 **Figure 3.1:** Performance of various AMP predictors in classifying
 whole proteome data for *Homo sapiens* and *Arabidopsis thaliana*.
@@ -228,9 +317,10 @@ ampir_metrics <- do.call(rbind, lapply(c("ampir_precursor","ampir_mature", "ampi
 
 ampscan_metrics <- get_metrics(ampscan_genome_bench, "AMPscanner_v2")
 ampep_metrics <- get_metrics(ampep_genome_bench, "amPEP")
+ampgram_metrics <- get_metrics(ampgram_genome_bench, "AmpGram")
+ampeppy_metrics <- get_metrics(ampeppy_genome_bench, "amPEPpy")
 
-
-proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics) %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "H. sapiens", TRUE ~ "A. thaliana"))
+proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics, ampgram_metrics, ampeppy_metrics) %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "H. sapiens", TRUE ~ "A. thaliana"))
 ```
 
 **Table 3.1:** Performance metrics of various predictors on the
@@ -248,6 +338,10 @@ proteomes of *Homo sapiens* and *Arabidopsis thaliana*
 |       0.468 |  0.997 |     0.014 | 0.028 |  0.080 | 0.917 | 0.087 | A. thaliana | AMPscanner\_v2            |
 |       0.495 |  0.391 |     0.001 | 0.002 | -0.009 | 0.425 | 0.001 | H. sapiens  | amPEP                     |
 |       0.484 |  0.024 |     0.000 | 0.000 | -0.085 | 0.158 | 0.004 | A. thaliana | amPEP                     |
+|       0.619 |  0.800 |     0.003 | 0.006 |  0.035 | 0.806 | 0.013 | H. sapiens  | AmpGram                   |
+|       0.591 |  0.864 |     0.016 | 0.031 |  0.080 | 0.859 | 0.138 | A. thaliana | AmpGram                   |
+|       0.522 |  0.273 |     0.001 | 0.002 | -0.017 | 0.487 | 0.001 | H. sapiens  | amPEPpy                   |
+|       0.316 |  0.031 |     0.000 | 0.000 | -0.121 | 0.240 | 0.005 | A. thaliana | amPEPpy                   |
 
 The metrics overall are really low for the ability of models to predict
 AMPs in proteomes. However, these metrics may not be a very informative
@@ -261,7 +355,7 @@ numbers of true and false positives were used, with a focus on the low
 false positive regime, as this is what matters most in whole proteome
 scans (Figure 3.2)
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 **Figure 3.2:** The ability of various models to predict AMPs in the low
 false positive regime (&lt;500) in the proteomes of *Arabidopsis
@@ -270,3 +364,8 @@ y-axis show the full complement of known AMPs in each genome (294 for
 *A. thaliana*, 112 for *H. sapiens*), and the limits of the x-axis are
 restricted to emphasise behaviour in the low false positive (FP) regime
 (FP &lt; 500).
+
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+
+**Figure 3.3:** Same as Figure 3.2 but showing the entire false positive
+regime

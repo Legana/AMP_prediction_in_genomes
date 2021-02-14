@@ -105,7 +105,7 @@ ampep_genome_bench <- do.call(rbind,lapply(ampep_file_paths,read_csv)) %>%
 
 ## amPEPpy
 
-amPEPpy was run according to the example provided on the [amPEPpy GitHub repository](https://github.com/tlawrence3/amPEPpy) in a Conda environment.
+amPEPpy was run according to the example provided on the [amPEPpy GitHub repository](https://github.com/tlawrence3/amPEPpy) in a Conda environment. The prediction results consist of 67,484 predictions from the original 
 
 ```{python, eval = FALSE}
 ampep predict -m pretrained_models/amPEP.model -i ../cache/arab_proteome_standardaa.fasta -o arab_results.tsv --seed 2012
@@ -113,8 +113,13 @@ ampep predict -m pretrained_models/amPEP.model -i ../cache/homo_proteome_standar
 ```
 
 ```{r}
-ampeppy_arab <- read_tsv("data/prediction_results/amPEPpy/arab_results.tsv")
-ampeppy_homo <- read_tsv("data/prediction_results/amPEPpy/homo_results.tsv")
+ampeppy_file_paths <- list.files("data/prediction_results/amPEPpy", pattern="*.tsv",full.names = T)
+
+ampeppy_genome_bench <- do.call(rbind,lapply(ampeppy_file_paths,read_tsv)) %>%
+  separate(seq_id, into = c(NA, NA,"Entry name"),sep = "\\|") %>%
+  left_join(reference_proteomes, by = "Entry name") %>% 
+  select(ID = `Entry name`, prob_AMP = probability_AMP, Organism, Label) %>% 
+  add_column(Model = "amPEPpy")
 ```
 
 ## AMPlify
@@ -128,10 +133,9 @@ In order to significantly speed up the progress of using AmpGram on the *A. thal
 
 Initially when the jobs were submitted, various subjobs failed (three for *A. thaliana* and 62 for *H. sapiens*). After examining the [source code for AmpGram](https://github.com/michbur/AmpGram/blob/master/R/utils.R), it appears that AmpGram does not support sequences less than 10 amino acids long. In the *A. thaliana* proteome (with non standard amino acids removed) there were three proteins less than 10 amino acids long and in *H. sapiens* there were 268. Therefore these sequences were not included in the prediction analysis from AmpGram.
 
+*AmpGram's prediction results is a list for each protein prediction that is subdivided into three sublists. For this benchmark analysis, only the third sublist is relevant as this contains the probability score for that protein. A function was written to easily extract this probability score and associated protein name from each output file. 
+
 ```{r}
-ampgram_arab_filepaths <- c(list.files("data/prediction_results/ampgram/arab", pattern="*.rds",full.names = T))
-
-
 gimme_ampgram_predictions <- function(filepath) {
   
   ampgram_list <- readRDS(filepath)
@@ -140,27 +144,20 @@ gimme_ampgram_predictions <- function(filepath) {
 
   bind_rows(amgram_probandnamelist, .id = "ID")
 }
+```
 
-ampgram_arab_preds <- map_df(ampgram_arab_filepaths, gimme_ampgram_predictions)
 
-ampgram_arab_preds_clean <- ampgram_arab_preds %>%
+```{r}
+ampgram_filepaths <- list.files(c("data/prediction_results/ampgram/homo", "data/prediction_results/ampgram/homo/leftovers", "data/prediction_results/ampgram/arab"), pattern="*.rds",full.names = T)
+
+ampgram_predictions <- map_df(ampgram_filepaths, gimme_ampgram_predictions)
+  
+ampgram_genome_bench <- ampgram_predictions %>%
   separate(ID, into = c(NA, NA,"Entrynamewdescr"),sep = "\\|") %>%
   separate(Entrynamewdescr, into = c("Entry name", NA), sep = "\t", fill = "left") %>%
   left_join(reference_proteomes, by = "Entry name") %>% 
   select(ID = `Entry name`, prob_AMP = "TRUE", Organism, Label) %>% 
   add_column(Model = "AmpGram")
-
-
-# how to add rows for missing predictions  ? eg arab missing 3 predictions, add NA value? or just leave it and hope its ok? check other prediction outcomes if its compatible
-```
-
-
-```{r}
-ampgram_homo_filepaths <- c(list.files("data/prediction_results/ampgram/homo", pattern="*.rds",full.names = T))
-
-ampgram_homo_filepaths <- list.files(c("data/prediction_results/ampgram/homo", "data/prediction_results/ampgram/homo/leftovers"), pattern="*.rds",full.names = T)
-
-ampgram_homo_preds <- map_df(ampgram_homo_filepaths, gimme_ampgram_predictions)
 ```
 
 
@@ -195,11 +192,14 @@ ampscanner_roc <- get_genome_roc(ampscan_genome_bench, "AMPscanner_v2")
 
 ampep_roc <- get_genome_roc(ampep_genome_bench, "amPEP")
 
+ampgram_roc <- get_genome_roc(ampgram_genome_bench, "AmpGram")
+
+ampeppy_roc <- get_genome_roc(ampeppy_genome_bench, "amPEPpy")
 ```
 
 *combine ROC metric dataframes*
 ```{r}
-proteome_rocs <- rbind(ampir_genome_roc, ampscanner_roc, ampep_roc)
+proteome_rocs <- rbind(ampir_genome_roc, ampscanner_roc, ampep_roc, ampgram_roc, ampeppy_roc)
 ```
 
 ## Plots
@@ -209,7 +209,7 @@ ROC curves, based on the false and true positive rates, and subsequent AUROCs ar
 Figure 3.1 shows both the ROC curves (top row) and the PR curves (bottom row) for the prediction results from various AMP predictors on the *H. sapiens* and *A. thaliana* proteomes. It is clear that the ROC curves overall show a better performance compared to the PR curves which corroborates the findings of David and Goadrich (2006) and Saito and Rehsmeier (2015). The AUC values for the ROC curves range between 0.16 - 0.99 for *A. thaliana* and 0.43 - 0.92 for *H. sapiens*. The AUC values for the PR curves are between 0.004 - 0.73 for *A. thaliana* and 0.001 - 0.15 for *H. sapiens*, which are overall much lower compared to the AUROC values. Interestingly, all models, with exception to amPEP, had higher AUC values for both ROC and PR curves for *A thaliana*. This may indicate the models were better at detecting AMPs in *A. thaliana* compared to *H. sapiens*. The ampir precursor model had the highest PRAUC value on the *A. thaliana* proteome (PRAUC: 0.73). However, the remaining PRAUC values (for both proteomes) are below 0.31. Therefore, according to the AUPRC metric, which has been stated to be more informative on imbalanced datasets, none of the models (save perhaps the ampir precursor model on *A. thaliana*) were skilled enough to detect AMPs in the *H. sapiens* and *A. thaliana* proteomes.
 
 
-```{r, echo = FALSE, fig.width=7, fig.height=6}
+```{r, echo = FALSE, fig.width=8.5, fig.height=7}
 rocplot <- ggplot(proteome_rocs) + 
   geom_line(aes(x = FPR, y = Recall, colour = Model)) + 
   facet_wrap(~Organism) +
@@ -219,10 +219,11 @@ rocplot <- ggplot(proteome_rocs) +
         strip.background = element_blank(),
         strip.text = element_text(face = "italic",
                                   size = 10)) +
- scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP"),
+ scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy"),
                      labels = c("ampir_prec\nH .92 A .99", "ampir_prec_nb\nH .86 A .93", "ampir_mat\nH .75 A .97",
-                                "AMPscanner\nH .79 A .92", "amPEP\nH .43 A .16"),
-                     values = c("blueviolet", "goldenrod2", "blue4", "cyan", "green"))
+                                "AMPscanner\nH .79 A .92", "amPEP\nH .43 A .16", "AmpGram\nH .81 A .86", "amPEPpy\nH .49 A .24"),
+                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50")) +
+ guides(colour = guide_legend(nrow = 1))
 
 prplot <- ggplot(proteome_rocs) + 
   geom_line(aes(x = Recall, y = Precision, colour = Model)) + 
@@ -232,10 +233,11 @@ prplot <- ggplot(proteome_rocs) +
   theme(legend.position = "bottom",
         strip.background = element_blank(),
         strip.text = element_blank()) +
- scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP"),
+ scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy"),
                      labels = c("ampir_prec\nH .15 A .73", "ampir_prec_nb\nH .09 A .31", "ampir_mat\nH .004 A .15",
-                                "AMPscanner\nH .006 A .09", "amPEP\nH .001 A .004"),
-                     values = c("blueviolet", "goldenrod2", "blue4", "cyan", "green"))
+                                "AMPscanner\nH .006 A .09", "amPEP\nH .001 A .004", "AmpGram\nH .01 A .1", "amPEPpy\nH .001 A .005"),
+                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50")) +
+   guides(colour = guide_legend(nrow = 1))
 
 rocplot / prplot 
 ```
@@ -267,9 +269,10 @@ ampir_metrics <- do.call(rbind, lapply(c("ampir_precursor","ampir_mature", "ampi
 
 ampscan_metrics <- get_metrics(ampscan_genome_bench, "AMPscanner_v2")
 ampep_metrics <- get_metrics(ampep_genome_bench, "amPEP")
+ampgram_metrics <- get_metrics(ampgram_genome_bench, "AmpGram")
+ampeppy_metrics <- get_metrics(ampeppy_genome_bench, "amPEPpy")
 
-
-proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics) %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "H. sapiens", TRUE ~ "A. thaliana"))
+proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics, ampgram_metrics, ampeppy_metrics) %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "H. sapiens", TRUE ~ "A. thaliana"))
 ```
 
 **Table 3.1:** Performance metrics of various predictors on the proteomes of *Homo sapiens* and *Arabidopsis thaliana*
@@ -308,10 +311,10 @@ proteome_rocs %>% mutate(Organism = ifelse(Organism=="Homo sapiens (Human)","Hom
         axis.line = element_line(colour = "grey"),
         axis.text = element_text(colour="grey", size = 10),
         axis.title = element_text(colour="white", size = 14)) +
-   scale_color_manual(values=c("#CC79A7", "#56B4E9", "#D55E00", "#F0E442", "springgreen4")) 
+   scale_color_manual(values=c("#CC79A7", "#56B4E9", "#D55E00", "#F0E442", "springgreen4", "hotpink", "lightgrey")) 
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.width=8, fig.height=5}
 ggplot(proteome_rocs) + 
   geom_line(aes(x = FP, y = TP, colour = Model),size = 1.1) + 
   xlim(0,500) +
@@ -319,7 +322,29 @@ ggplot(proteome_rocs) +
   labs(x= "False positives", y = "True positives", colour = "") +
   theme_classic() +
   theme(legend.position = "bottom",
-        strip.background = element_blank())
+        strip.background = element_blank()) +
+  scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy"),
+                     labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy"),
+                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50")) +
+   guides(colour = guide_legend(nrow = 1))
 ```
 
 **Figure 3.2:** The ability of various models to predict AMPs in the low false positive regime (<500) in the proteomes of *Arabidopsis thaliana* and *Homo sapiens*. It is scaled so that the limits of the y-axis show the full complement of known AMPs in each genome (294 for *A. thaliana*, 112 for *H. sapiens*), and the limits of the x-axis are restricted to emphasise behaviour in the low false positive (FP) regime (FP < 500). 
+
+
+```{r, echo=FALSE, fig.width=8, fig.height=5}
+ggplot(proteome_rocs) + 
+  geom_line(aes(x = FP, y = TP, colour = Model),size = 1.1) + 
+  facet_wrap(~Organism, scales = "free", nrow = 1) +
+  labs(x= "False positives", y = "True positives", colour = "") +
+  theme_classic() +
+  theme(legend.position = "bottom",
+        strip.background = element_blank()) +
+  scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy"),
+                     labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy"),
+                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50")) +
+   guides(colour = guide_legend(nrow = 1))
+```
+
+**Figure 3.3:** Same as Figure 3.2 but showing the entire false positive regime 
+
