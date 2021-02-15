@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```{r, echo = FALSE}
 library(ampir)
 library(tidyverse)
+library(patchwork)
 ```
 
 # Introduction
@@ -143,7 +144,7 @@ ampgram_test_data <- read_faa("data/amp_predictors/AmpGram/benchmark.fasta") %>%
 all_predictor_data <- rbind(iAMP2L_data, ampep_data, deep_ampep_data, ampeppy_data, ampscan_data, amplify_data, ampgram_test_data)
 ```
 
-# Plots
+### Plots
 
 ```{r}
 all_predictor_data_wcounts <- all_predictor_data %>%
@@ -152,7 +153,7 @@ all_predictor_data_wcounts <- all_predictor_data %>%
 ```
 
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, fig.width=9, fig.height=6}
 ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
   geom_col(aes(fill = class)) +
   facet_grid(predictor ~ factor(dataset, levels = c("Train", "Test"), labels = c("Training set", "Testing set")), scales = "free_y") +
@@ -168,6 +169,9 @@ scale_fill_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4"))
 
 **Figure 2.1:** The sequence length of AMP and non-AMP sequences in the training and testing set of various AMP prediction models. The training set for AmpGram and the testing sets for amPEP and amPEPpy are blank as these were not specified.
 
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/model_lengths.png", width = 14, height = 13 ,units = "cm")
+```
 
 ```{r, echo = FALSE}
 ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
@@ -179,9 +183,81 @@ ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
         strip.text.y.right = element_text(angle = 0, hjust = 0),
         strip.background = element_blank(),
         panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank())
+        panel.grid.major = element_blank()) +
+  scale_fill_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4"))
 ```
 
 **Figure 2.2:** The sequence length of all AMP and non-AMP sequences used in various AMP prediction models. 
+
+## PCA of AMP and non-AMP features
+
+*Calculating features with ampir*
+```{r, eval = FALSE}
+all_predictor_data <- all_predictor_data %>% filter(length >5)
+  
+all_predictor_data_feats <- all_predictor_data %>% calculate_features(min_len = 5)
+```
+
+```{r, echo=FALSE, eval = FALSE}
+saveRDS(all_predictor_data_feats, "cache/all_predictor_data_feats.rds")
+```
+
+```{r, echo=FALSE}
+all_predictor_data_feats <- readRDS("cache/all_predictor_data_feats.rds")
+```
+
+*PCA on features*
+```{r}
+pca_features <- all_predictor_data_feats %>% 
+   select(c(Amphiphilicity:Xc2.lambda.2)) %>%
+   prcomp(scale. = TRUE)
+
+pca_values <- pca_features$x %>% 
+   as.data.frame() %>% 
+   mutate(seq_name = all_predictor_data_feats$seq_name) %>% 
+   left_join(all_predictor_data, by = "seq_name")
+```
+
+### PCA plots
+
+```{r, echo = FALSE, fig.width=9, fig.height=6}
+pca_percentages <- round(pca_features$sdev^2 / sum(pca_features$sdev^2) * 100, 2)
+pca_percentages <- paste(colnames(pca_features$x),"(",paste(as.character(pca_percentages), "%",")", sep = ""))
+
+ggplot(pca_values, aes(x = PC1, y = PC2)) +
+   geom_point(aes(shape = class, colour = class)) +
+   facet_grid(predictor ~ factor(dataset, levels = c("Train", "Test"), labels = c("Training set", "Testing set")), scales = "free_y") +
+   labs(x = pca_percentages[1], y = pca_percentages[2], shape = "", colour = "") +
+   theme(legend.position = "bottom",
+        #strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.text.y.right = element_blank(),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank()) +
+        scale_colour_manual(labels = c("AMP", "non-AMP"),
+                            values = c("darkblue", "brown4")) +
+        scale_shape_manual(values = c(16, 5)) +
+        xlim(-7, 7) +
+ 
+
+ggplot(pca_values, aes(x = PC1)) +
+   stat_density(aes(colour = class), geom = "line", position = "identity") +
+   facet_grid(predictor ~ factor(dataset, levels = c("Train", "Test"), labels = c("Training set", "Testing set")), scales = "free_y") +
+   labs(x = pca_percentages[1], y = "Density", colour = "") +
+   theme(legend.position = "bottom",
+        strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank()) +
+scale_colour_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) +
+       xlim(-7, 7)
+```
+
+**Figure 2.3:** PCA of features of AMP and non-AMP sequences used in various AMP prediction models. 
+
+
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/model_feats.png", width = 16, height = 14 ,units = "cm")
+```
 
 

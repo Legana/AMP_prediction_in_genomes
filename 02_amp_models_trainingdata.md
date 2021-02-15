@@ -3,7 +3,10 @@ Training datasets in other AMP predictors
 
 -   [1 Introduction](#introduction)
 -   [2 AMP predictor data](#amp-predictor-data)
--   [3 Plots](#plots)
+    -   [2.0.1 Plots](#plots)
+    -   [2.1 PCA of AMP and non-AMP
+        features](#pca-of-amp-and-non-amp-features)
+        -   [2.1.1 PCA plots](#pca-plots)
 
 # 1 Introduction
 
@@ -190,7 +193,7 @@ from UniProt.
 ampgram_test_data <- read_faa("data/amp_predictors/AmpGram/benchmark.fasta") %>% mutate(class = case_when(str_detect(seq_name, "^dbAMP") ~ "AMP", TRUE ~ "non-AMP")) %>% add_column(dataset = "Test") %>% mutate(length = nchar(seq_aa)) %>% add_column(predictor = "AmpGram")
 ```
 
-# 3 Plots
+### 2.0.1 Plots
 
 ``` r
 all_predictor_data_wcounts <- all_predictor_data %>%
@@ -205,7 +208,37 @@ training and testing set of various AMP prediction models. The training
 set for AmpGram and the testing sets for amPEP and amPEPpy are blank as
 these were not specified.
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 **Figure 2.2:** The sequence length of all AMP and non-AMP sequences
 used in various AMP prediction models.
+
+## 2.1 PCA of AMP and non-AMP features
+
+*Calculating features with ampir*
+
+``` r
+all_predictor_data <- all_predictor_data %>% filter(length >5)
+  
+all_predictor_data_feats <- all_predictor_data %>% calculate_features(min_len = 5)
+```
+
+*PCA on features*
+
+``` r
+pca_features <- all_predictor_data_feats %>% 
+   select(c(Amphiphilicity:Xc2.lambda.2)) %>%
+   prcomp(scale. = TRUE)
+
+pca_values <- pca_features$x %>% 
+   as.data.frame() %>% 
+   mutate(seq_name = all_predictor_data_feats$seq_name) %>% 
+   left_join(all_predictor_data, by = "seq_name")
+```
+
+### 2.1.1 PCA plots
+
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+**Figure 2.3:** PCA of features of AMP and non-AMP sequences used in
+various AMP prediction models.
