@@ -280,4 +280,78 @@ scale_colour_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4"))
 ggsave("figures/model_feats.png", width = 18, height = 16 ,units = "cm")
 ```
 
+## PCA on reference proteomes
+
+Read in *Homo sapiens* and *Arabidopsis thaliana* proteomes and keep only sequences longer than 10 amino acids and with standard amino acids to match predictor data used for the previous PCA.
+
+```{r}
+reference_proteomes <- read_tsv("data/proteomes/uniprot-proteome UP000005640.tab") %>%
+  rbind(read_tsv("data/proteomes/uniprot-proteome UP000006548.tab")) %>%
+  mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg")) %>%
+  filter(Length >10) %>%
+  filter(Length <3000) %>%
+  filter(grepl(Sequence ,pattern='^[ARNDCEQGHILKMFPSTWYV]+$'))
+```
+
+
+```{r, eval = FALSE}
+reference_proteomes_seqnames <- reference_proteomes %>%
+  select(`Entry name`, Sequence) %>%
+  as.data.frame()
+
+reference_proteomes_feats <- reference_proteomes_seqnames %>% calculate_features()
+
+pca_proteomes <- reference_proteomes_feats %>% 
+   select(c(Amphiphilicity:Xc2.lambda.2)) %>%
+   prcomp(scale. = TRUE)
+
+
+pca_proteomes_x <- pca_proteomes$x %>% as.data.frame() %>% mutate(`Entry name` = reference_proteomes$`Entry name`)
+```
+
+```{r, echo=FALSE, eval=FALSE}
+saveRDS(pca_proteomes_x, "cache/pca_proteomes_values.rds")
+```
+
+```{r, echo = FALSE}
+pca_proteomes_x <- readRDS("cache/pca_proteomes_values.rds")
+```
+
+
+```{r}
+pca_proteomes_w_annotations <- pca_proteomes_x %>%
+   left_join(reference_proteomes, by = "Entry name") %>%
+   mutate(class = ifelse(Label == "Pos", "AMP","non-AMP"))
+
+pca_prot_percentages <- round(pca_proteomes$sdev^2 / sum(pca_proteomes$sdev^2) * 100, 2)
+pca_prot_percentages <- paste(colnames(pca_proteomes$x),"(",paste(as.character(pca_prot_percentages), "%",")", sep = ""))
+
+ggplot(pca_proteomes_w_annotations, aes(x = PC1, y = PC2)) +
+   geom_point(aes(colour = class, shape = class)) +
+   facet_grid(~Organism, scales = "free_y") +
+   labs(x = pca_prot_percentages[1], y = pca_prot_percentages[2], colour = "") +
+   theme(legend.position = "bottom",
+        #strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.text.y.right = element_blank(),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank()) +
+    scale_colour_manual(labels = c("AMP", "non-AMP"),
+                        values = c("darkblue", "brown4")) +
+    scale_shape_manual(values = c(16, 5))
+
+#increase size for AMPs?
+
+ggplot(pca_proteomes_w_annotations, aes(x = PC1)) +
+   stat_density(aes(colour = class), geom = "line", position = "identity") +
+   facet_grid(~Organism, scales = "free_y") +
+   labs(x = pca_prot_percentages[1], y = pca_prot_percentages[2], colour = "") +
+   theme(legend.position = "bottom",
+        strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank()) +
+scale_colour_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) 
+```
+
 
