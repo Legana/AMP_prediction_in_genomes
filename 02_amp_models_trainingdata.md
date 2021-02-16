@@ -7,6 +7,7 @@ Training datasets in other AMP predictors
     -   [2.1 PCA of AMP and non-AMP
         features](#pca-of-amp-and-non-amp-features)
         -   [2.1.1 PCA plots](#pca-plots)
+    -   [2.2 PCA on reference proteomes](#pca-on-reference-proteomes)
 
 # 1 Introduction
 
@@ -253,7 +254,8 @@ pca_features <- all_predictor_data_feats %>%
 pca_values <- pca_features$x %>% 
    as.data.frame() %>% 
    mutate(seq_name = all_predictor_data_feats$seq_name) %>% 
-   left_join(all_predictor_data, by = "seq_name")
+   left_join(all_predictor_data, by = "seq_name") %>%
+   mutate(class = factor(class, levels = c("non-AMP", "AMP"), labels = c("non-AMP", "AMP")))
 ```
 
 ### 2.1.1 PCA plots
@@ -262,3 +264,53 @@ pca_values <- pca_features$x %>%
 
 **Figure 2.3:** PCA of features of AMP and non-AMP sequences used in
 various AMP prediction models.
+
+## 2.2 PCA on reference proteomes
+
+Read in *Homo sapiens* and *Arabidopsis thaliana* proteomes and keep
+only sequences longer than 10 amino acids and with standard amino acids
+to match predictor data used for the previous PCA.
+
+``` r
+reference_proteomes <- read_tsv("data/proteomes/uniprot-proteome UP000005640.tab") %>%
+  rbind(read_tsv("data/proteomes/uniprot-proteome UP000006548.tab")) %>%
+  mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg")) %>%
+  filter(Length >10) %>%
+  filter(Length <3000) %>%
+  filter(grepl(Sequence ,pattern='^[ARNDCEQGHILKMFPSTWYV]+$'))
+```
+
+``` r
+reference_proteomes_seqnames <- reference_proteomes %>%
+  select(`Entry name`, Sequence) %>%
+  as.data.frame()
+
+reference_proteomes_feats <- reference_proteomes_seqnames %>% calculate_features()
+
+pca_proteomes <- reference_proteomes_feats %>% 
+   select(c(Amphiphilicity:Xc2.lambda.2)) %>%
+   prcomp(scale. = TRUE)
+```
+
+``` r
+pca_proteomes_x <- pca_proteomes$x %>% as.data.frame() %>% mutate(`Entry name` = reference_proteomes$`Entry name`)
+
+pca_proteomes_w_annotations <- pca_proteomes_x %>%
+   left_join(reference_proteomes, by = "Entry name") %>%
+   mutate(class = ifelse(Label == "Pos", "AMP","non-AMP"))
+
+pca_prot_percentages <- round(pca_proteomes$sdev^2 / sum(pca_proteomes$sdev^2) * 100, 2)
+pca_prot_percentages <- paste(colnames(pca_proteomes$x),"(",paste(as.character(pca_prot_percentages), "%",")", sep = ""))
+```
+
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+
+**Figure 2.4:** PCA of features of all AMP and non-AMP sequences
+(between 10-3000 amino acids long) in the proteomes *Homo sapiens* and
+*Arabidopsis thaliana*
+
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+
+**Figure 2.5:** PCA of features of reviewed AMP and non-AMP sequences
+(between 10-3000 amino acids long) in the proteomes *Homo sapiens* and
+*Arabidopsis thaliana*

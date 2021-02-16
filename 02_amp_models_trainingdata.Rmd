@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 library(ampir)
 library(tidyverse)
 library(patchwork)
+set.seed(3)
 ```
 
 # Introduction
@@ -173,7 +174,7 @@ all_predictor_data_wcounts <- all_predictor_data %>%
 
 ```{r, echo = FALSE, fig.width=9, fig.height=6}
 ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
-  geom_col(aes(fill = class)) +
+  geom_col(aes(fill = factor(class, levels = c("non-AMP", "AMP")))) +
   facet_grid(predictor ~ factor(dataset, levels = c("Train", "Test"), labels = c("Training set", "Testing set")), scales = "free_y") +
   xlim(0,300) +
   labs(x = "Sequence length", y = "Number of sequences", fill = "") +
@@ -193,7 +194,7 @@ ggsave("figures/model_lengths.png", width = 14, height = 13 ,units = "cm")
 
 ```{r, echo = FALSE}
 ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
-  geom_col(aes(fill = class)) +
+  geom_col(aes(fill = factor(class, levels = c("non-AMP", "AMP")))) +
   facet_wrap(~predictor, scales = "free_y") +
   labs(x = "Sequence length", y = "Number of sequences", fill = "") +
   xlim(0,300) +
@@ -237,7 +238,8 @@ pca_features <- all_predictor_data_feats %>%
 pca_values <- pca_features$x %>% 
    as.data.frame() %>% 
    mutate(seq_name = all_predictor_data_feats$seq_name) %>% 
-   left_join(all_predictor_data, by = "seq_name")
+   left_join(all_predictor_data, by = "seq_name") %>%
+   mutate(class = factor(class, levels = c("non-AMP", "AMP"), labels = c("non-AMP", "AMP")))
 ```
 
 ### PCA plots
@@ -246,8 +248,12 @@ pca_values <- pca_features$x %>%
 pca_percentages <- round(pca_features$sdev^2 / sum(pca_features$sdev^2) * 100, 2)
 pca_percentages <- paste(colnames(pca_features$x),"(",paste(as.character(pca_percentages), "%",")", sep = ""))
 
+pca_values_amps <- filter(pca_values, class == "AMP")
+pca_values_nonamps <- filter(pca_values, class == "non-AMP")
+
 ggplot(pca_values, aes(x = PC1, y = PC2)) +
-   geom_point(aes(shape = class, colour = class)) +
+   geom_point(data = pca_values_nonamps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
+   geom_point(data = pca_values_amps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
    facet_grid(predictor ~ factor(dataset, levels = c("Train", "Test"), labels = c("Training set", "Testing set")), scales = "free_y") +
    labs(x = pca_percentages[1], y = pca_percentages[2], shape = "", colour = "") +
    theme(legend.position = "bottom",
@@ -256,10 +262,8 @@ ggplot(pca_values, aes(x = PC1, y = PC2)) +
         strip.background = element_blank(),
         panel.grid.minor = element_blank(),
         panel.grid.major = element_blank()) +
-        scale_colour_manual(labels = c("AMP", "non-AMP"),
-                            values = c("darkblue", "brown4")) +
-        scale_shape_manual(values = c(16, 5)) +
- 
+        scale_colour_manual(values = c("darkblue", "brown4")) +
+        scale_shape_manual(values = c(1, 3))  +
 
 ggplot(pca_values, aes(x = PC1)) +
    stat_density(aes(colour = class), geom = "line", position = "identity") +
@@ -270,7 +274,7 @@ ggplot(pca_values, aes(x = PC1)) +
         strip.background = element_blank(),
         panel.grid.minor = element_blank(),
         panel.grid.major = element_blank()) +
-scale_colour_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) 
+scale_colour_manual(values = c("brown4", "darkblue")) 
 ```
 
 **Figure 2.3:** PCA of features of AMP and non-AMP sequences used in various AMP prediction models. 
@@ -304,21 +308,20 @@ reference_proteomes_feats <- reference_proteomes_seqnames %>% calculate_features
 pca_proteomes <- reference_proteomes_feats %>% 
    select(c(Amphiphilicity:Xc2.lambda.2)) %>%
    prcomp(scale. = TRUE)
-
-
-pca_proteomes_x <- pca_proteomes$x %>% as.data.frame() %>% mutate(`Entry name` = reference_proteomes$`Entry name`)
 ```
 
 ```{r, echo=FALSE, eval=FALSE}
-saveRDS(pca_proteomes_x, "cache/pca_proteomes_values.rds")
+saveRDS(pca_proteomes, "cache/pca_proteomes.rds")
 ```
 
-```{r, echo = FALSE}
-pca_proteomes_x <- readRDS("cache/pca_proteomes_values.rds")
+```{r, echo=FALSE}
+pca_proteomes <- readRDS("cache/pca_proteomes.rds")
 ```
 
 
 ```{r}
+pca_proteomes_x <- pca_proteomes$x %>% as.data.frame() %>% mutate(`Entry name` = reference_proteomes$`Entry name`)
+
 pca_proteomes_w_annotations <- pca_proteomes_x %>%
    left_join(reference_proteomes, by = "Entry name") %>%
    mutate(class = ifelse(Label == "Pos", "AMP","non-AMP"))
@@ -326,32 +329,86 @@ pca_proteomes_w_annotations <- pca_proteomes_x %>%
 pca_prot_percentages <- round(pca_proteomes$sdev^2 / sum(pca_proteomes$sdev^2) * 100, 2)
 pca_prot_percentages <- paste(colnames(pca_proteomes$x),"(",paste(as.character(pca_prot_percentages), "%",")", sep = ""))
 
-ggplot(pca_proteomes_w_annotations, aes(x = PC1, y = PC2)) +
-   geom_point(aes(colour = class, shape = class)) +
-   facet_grid(~Organism, scales = "free_y") +
-   labs(x = pca_prot_percentages[1], y = pca_prot_percentages[2], colour = "") +
+```
+
+
+```{r, echo = FALSE,  fig.width=8, fig.height=5}
+pca_proteomes_w_annotations$class <- factor(pca_proteomes_w_annotations$class, levels = c("AMP", "non-AMP"))
+pca_proteomes_amps <- filter(pca_proteomes_w_annotations, class == "AMP")
+pca_proteomes_nonamps <- filter(pca_proteomes_w_annotations, class == "non-AMP")
+
+ggplot() +
+   geom_point(data = pca_proteomes_nonamps, aes(x = PC1, y = PC2, colour = class, shape = class)) +
+   geom_point(data = pca_proteomes_amps, aes(x = PC1, y = PC2, colour = class, shape = class)) +
+   facet_wrap(~factor(Organism, levels = c("Homo sapiens (Human)", "Arabidopsis thaliana (Mouse-ear cress)"), labels = c("H. sapiens", "A. thaliana")),
+   scales = "free_y") +
+   labs(x = pca_prot_percentages[1], y = pca_prot_percentages[2], colour = "", shape = "") +
+   theme_classic() +
    theme(legend.position = "bottom",
-        #strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.text.y.right = element_blank(),
         strip.background = element_blank(),
         panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank()) +
-    scale_colour_manual(labels = c("AMP", "non-AMP"),
-                        values = c("darkblue", "brown4")) +
-    scale_shape_manual(values = c(16, 5))
-
-#increase size for AMPs?
+        panel.grid.major = element_blank(),
+        strip.text = element_text(face = "italic")) +
+    scale_colour_manual(values = c("darkblue", "brown4")) +
+    scale_shape_manual(values = c(1, 3)) +
 
 ggplot(pca_proteomes_w_annotations, aes(x = PC1)) +
    stat_density(aes(colour = class), geom = "line", position = "identity") +
-   facet_grid(~Organism, scales = "free_y") +
-   labs(x = pca_prot_percentages[1], y = pca_prot_percentages[2], colour = "") +
+   facet_wrap(~factor(Organism, levels = c("Homo sapiens (Human)", "Arabidopsis thaliana (Mouse-ear cress)"), labels = c("H. sapiens", "A. thaliana")),       scales = "free_y") +
+   labs(x = pca_prot_percentages[1], y = "Density", colour = "") +
+   theme_classic() +
    theme(legend.position = "bottom",
-        strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.text = element_text(face = "italic"),
         strip.background = element_blank(),
         panel.grid.minor = element_blank(),
         panel.grid.major = element_blank()) +
 scale_colour_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) 
 ```
 
+**Figure 2.4:** PCA of features of all AMP and non-AMP sequences (between 10-3000 amino acids long) in the proteomes *Homo sapiens* and *Arabidopsis thaliana* 
+
+
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/pca_proteome_feats.png", width = 13, height = 9 ,units = "cm")
+```
+
+
+```{r, echo = FALSE,  fig.width=8, fig.height=5}
+pca_proteomes_w_annotations$class <- factor(pca_proteomes_w_annotations$class, levels = c("AMP", "non-AMP"))
+pca_proteomes_amps <- filter(pca_proteomes_w_annotations, class == "AMP")
+pca_proteomes_nonamps <- filter(pca_proteomes_w_annotations, class == "non-AMP")
+
+ggplot() +
+   geom_point(data = filter(pca_proteomes_nonamps, Status == "reviewed"), aes(x = PC1, y = PC2, colour = class, shape = class)) +
+   geom_point(data = filter(pca_proteomes_amps, Status == "reviewed"), aes(x = PC1, y = PC2, colour = class, shape = class)) +
+   facet_wrap(~factor(Organism, levels = c("Homo sapiens (Human)", "Arabidopsis thaliana (Mouse-ear cress)"), labels = c("H. sapiens", "A. thaliana")),
+   scales = "free_y") +
+   labs(x = pca_prot_percentages[1], y = pca_prot_percentages[2], colour = "", shape = "") +
+   theme_classic() +
+   theme(legend.position = "bottom",
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        strip.text = element_text(face = "italic")) +
+    scale_colour_manual(values = c("darkblue", "brown4")) +
+    scale_shape_manual(values = c(1, 3)) +
+
+ggplot(filter(pca_proteomes_w_annotations, Status == "reviewed"), aes(x = PC1)) +
+   stat_density(aes(colour = class), geom = "line", position = "identity") +
+   facet_wrap(~factor(Organism, levels = c("Homo sapiens (Human)", "Arabidopsis thaliana (Mouse-ear cress)"), labels = c("H. sapiens", "A. thaliana")),       scales = "free_y") +
+   labs(x = pca_prot_percentages[1], y = "Density", colour = "") +
+   theme_classic() +
+   theme(legend.position = "bottom",
+        strip.text = element_text(face = "italic"),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank()) +
+scale_colour_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) 
+```
+
+**Figure 2.5:** PCA of features of reviewed AMP and non-AMP sequences (between 10-3000 amino acids long) in the proteomes *Homo sapiens* and *Arabidopsis thaliana* 
+
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/pca_proteome_feats_reviewed.png", width = 13, height = 9 ,units = "cm")
+```
 
