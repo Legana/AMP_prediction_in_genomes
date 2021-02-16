@@ -193,6 +193,26 @@ from UniProt.
 ampgram_test_data <- read_faa("data/amp_predictors/AmpGram/benchmark.fasta") %>% mutate(class = case_when(str_detect(seq_name, "^dbAMP") ~ "AMP", TRUE ~ "non-AMP")) %>% add_column(dataset = "Test") %>% mutate(length = nchar(seq_aa)) %>% add_column(predictor = "AmpGram")
 ```
 
+**ampir**
+
+ampir was divided in two different models, precursor, which focuses on
+longer sequences (between 60-300) and mature, which only contains short
+sequences (between 10-50)
+
+``` r
+ampir_prec_feats_train <- readRDS("data/ampir_v1/featuresTrain_precursor_imbal.rds") %>% mutate(dataset = "Train")
+ampir_prec_feats_test <- readRDS("data/ampir_v1/featuresTest_precursor_imbal.rds") %>% mutate(dataset = "Test")
+ampir_prec_feats <- rbind(ampir_prec_feats_train, ampir_prec_feats_test) %>% mutate(predictor = "ampir_precursor")
+
+ampir_mat_feats_train <- readRDS("data/ampir_v1/featuresTrain_mature.rds") %>% mutate(dataset = "Train")
+ampir_mat_feats_test <- readRDS("data/ampir_v1/featuresTest_mature.rds") %>% mutate(dataset = "Test")
+ampir_mat_feats <- rbind(ampir_mat_feats_train, ampir_mat_feats_test) %>% mutate(predictor = "ampir_mature")
+
+ampir_feats <- rbind(ampir_prec_feats, ampir_mat_feats) %>% mutate(class = ifelse(Label == "Tg", "AMP","non-AMP"))
+
+ampir_data <- ampir_feats %>% select(seq_name, seq_aa, class, dataset, length, predictor)
+```
+
 ### 2.0.1 Plots
 
 ``` r
@@ -201,14 +221,14 @@ all_predictor_data_wcounts <- all_predictor_data %>%
                                 summarise(number = n())
 ```
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 **Figure 2.1:** The sequence length of AMP and non-AMP sequences in the
 training and testing set of various AMP prediction models. The training
 set for AmpGram and the testing sets for amPEP and amPEPpy are blank as
 these were not specified.
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 **Figure 2.2:** The sequence length of all AMP and non-AMP sequences
 used in various AMP prediction models.
@@ -218,9 +238,9 @@ used in various AMP prediction models.
 *Calculating features with ampir*
 
 ``` r
-all_predictor_data <- all_predictor_data %>% filter(length >5)
+all_predictor_data <- all_predictor_data %>% filter(length >10)
   
-all_predictor_data_feats <- all_predictor_data %>% calculate_features(min_len = 5)
+all_predictor_data_feats <- all_predictor_data %>% calculate_features(min_len = 10)
 ```
 
 *PCA on features*
@@ -238,7 +258,7 @@ pca_values <- pca_features$x %>%
 
 ### 2.1.1 PCA plots
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 **Figure 2.3:** PCA of features of AMP and non-AMP sequences used in
 various AMP prediction models.

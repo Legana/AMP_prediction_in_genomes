@@ -139,9 +139,27 @@ AmpGram was created in 2020 and in addition to the standard AMPs, it also focuse
 ampgram_test_data <- read_faa("data/amp_predictors/AmpGram/benchmark.fasta") %>% mutate(class = case_when(str_detect(seq_name, "^dbAMP") ~ "AMP", TRUE ~ "non-AMP")) %>% add_column(dataset = "Test") %>% mutate(length = nchar(seq_aa)) %>% add_column(predictor = "AmpGram")
 ```
 
+**ampir**
+
+ampir was divided in two different models, precursor, which focuses on longer sequences (between 60-300) and mature, which only contains short sequences (between 10-50) 
+
+```{r}
+ampir_prec_feats_train <- readRDS("data/ampir_v1/featuresTrain_precursor_imbal.rds") %>% mutate(dataset = "Train")
+ampir_prec_feats_test <- readRDS("data/ampir_v1/featuresTest_precursor_imbal.rds") %>% mutate(dataset = "Test")
+ampir_prec_feats <- rbind(ampir_prec_feats_train, ampir_prec_feats_test) %>% mutate(predictor = "ampir_precursor")
+
+ampir_mat_feats_train <- readRDS("data/ampir_v1/featuresTrain_mature.rds") %>% mutate(dataset = "Train")
+ampir_mat_feats_test <- readRDS("data/ampir_v1/featuresTest_mature.rds") %>% mutate(dataset = "Test")
+ampir_mat_feats <- rbind(ampir_mat_feats_train, ampir_mat_feats_test) %>% mutate(predictor = "ampir_mature")
+
+ampir_feats <- rbind(ampir_prec_feats, ampir_mat_feats) %>% mutate(class = ifelse(Label == "Tg", "AMP","non-AMP"))
+
+ampir_data <- ampir_feats %>% select(seq_name, seq_aa, class, dataset, length, predictor)
+
+```
 
 ```{r, echo = FALSE}
-all_predictor_data <- rbind(iAMP2L_data, ampep_data, deep_ampep_data, ampeppy_data, ampscan_data, amplify_data, ampgram_test_data)
+all_predictor_data <- rbind(iAMP2L_data, ampep_data, deep_ampep_data, ampeppy_data, ampscan_data, amplify_data, ampgram_test_data, ampir_data)
 ```
 
 ### Plots
@@ -189,13 +207,17 @@ ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
 
 **Figure 2.2:** The sequence length of all AMP and non-AMP sequences used in various AMP prediction models. 
 
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/model_lengths_combined.png", width = 12, height = 10 ,units = "cm")
+```
+
 ## PCA of AMP and non-AMP features
 
 *Calculating features with ampir*
 ```{r, eval = FALSE}
-all_predictor_data <- all_predictor_data %>% filter(length >5)
+all_predictor_data <- all_predictor_data %>% filter(length >10)
   
-all_predictor_data_feats <- all_predictor_data %>% calculate_features(min_len = 5)
+all_predictor_data_feats <- all_predictor_data %>% calculate_features(min_len = 10)
 ```
 
 ```{r, echo=FALSE, eval = FALSE}
@@ -220,7 +242,7 @@ pca_values <- pca_features$x %>%
 
 ### PCA plots
 
-```{r, echo = FALSE, fig.width=9, fig.height=6}
+```{r, echo = FALSE, fig.width=9, fig.height=7}
 pca_percentages <- round(pca_features$sdev^2 / sum(pca_features$sdev^2) * 100, 2)
 pca_percentages <- paste(colnames(pca_features$x),"(",paste(as.character(pca_percentages), "%",")", sep = ""))
 
@@ -237,7 +259,6 @@ ggplot(pca_values, aes(x = PC1, y = PC2)) +
         scale_colour_manual(labels = c("AMP", "non-AMP"),
                             values = c("darkblue", "brown4")) +
         scale_shape_manual(values = c(16, 5)) +
-        xlim(-7, 7) +
  
 
 ggplot(pca_values, aes(x = PC1)) +
@@ -249,15 +270,14 @@ ggplot(pca_values, aes(x = PC1)) +
         strip.background = element_blank(),
         panel.grid.minor = element_blank(),
         panel.grid.major = element_blank()) +
-scale_colour_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) +
-       xlim(-7, 7)
+scale_colour_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) 
 ```
 
 **Figure 2.3:** PCA of features of AMP and non-AMP sequences used in various AMP prediction models. 
 
 
 ```{r, eval=FALSE, echo=FALSE}
-ggsave("figures/model_feats.png", width = 16, height = 14 ,units = "cm")
+ggsave("figures/model_feats.png", width = 18, height = 16 ,units = "cm")
 ```
 
 
