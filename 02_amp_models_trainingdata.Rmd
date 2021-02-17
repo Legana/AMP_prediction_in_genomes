@@ -36,6 +36,10 @@ The training and test sets of six recent AMP predictors were examined to assess 
 | AMP Scanner v2 | 1,066 | 1,066 | 712 | 712
 | AMPlify | 3,338 | 3,338 | 835 | 835
 | AmpGram | 2,216 | 2,216 | 247 | 247
+| ampir_precursor v1 | 1,187 | 11,864 | 296 | 2,966
+| ampir_mature v1 | 2,586 | 2,657 | 646 | 664
+
+
 
 *NS: not specified
 

@@ -30,15 +30,17 @@ assess their effectiveness in genome-wide AMP prediction.
 **Table 2.1:** Summary table of the number of positive and negative
 sequences present in the training and test set in six AMP predictors
 
-| AMP predictor  | Train - AMPs | Train - non-AMPs | Test - AMPs | Test - non-AMPs |
-|:---------------|:------------:|:----------------:|:-----------:|:---------------:|
-| iAMP-2L        |     897      |      2,405       |     920     |       920       |
-| amPEP          |    3,268     |     166,791      |    *NS*     |      *NS*       |
-| Deep-ampEP30   |    1,529     |      1,529       |     94      |       94        |
-| amPEPpy        |    3,268     |      3,268       |    *NS*     |      *NS*       |
-| AMP Scanner v2 |    1,066     |      1,066       |     712     |       712       |
-| AMPlify        |    3,338     |      3,338       |     835     |       835       |
-| AmpGram        |    2,216     |      2,216       |     247     |       247       |
+| AMP predictor       | Train - AMPs | Train - non-AMPs | Test - AMPs | Test - non-AMPs |
+|:--------------------|:------------:|:----------------:|:-----------:|:---------------:|
+| iAMP-2L             |     897      |      2,405       |     920     |       920       |
+| amPEP               |    3,268     |     166,791      |    *NS*     |      *NS*       |
+| Deep-ampEP30        |    1,529     |      1,529       |     94      |       94        |
+| amPEPpy             |    3,268     |      3,268       |    *NS*     |      *NS*       |
+| AMP Scanner v2      |    1,066     |      1,066       |     712     |       712       |
+| AMPlify             |    3,338     |      3,338       |     835     |       835       |
+| AmpGram             |    2,216     |      2,216       |     247     |       247       |
+| ampir\_precursor v1 |    1,187     |      11,864      |     296     |      2,966      |
+| ampir\_mature v1    |    2,586     |      2,657       |     646     |       664       |
 
 \*NS: not specified
 
