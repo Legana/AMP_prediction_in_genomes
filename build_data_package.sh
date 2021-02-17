@@ -1,8 +1,6 @@
 # ampir v_0.1.0 model related data
 
 echo data/ampir_0.1.0_data/svm_Radial98_final.rds >> data_list
-echo data/ampir_0.1.0_data/bg_tg98.rds >> data_list
-echo data/ampir_0.1.0_data/features98.rds >> data_list
 echo data/ampir_0.1.0_data/features98TrainNov19.rds >> data_list
 echo data/ampir_0.1.0_data/features98TestNov19.rds >> data_list
 echo data/ampir_0.1.0_data/ampir_prob_data.rds >> data_list
@@ -10,7 +8,14 @@ echo data/ampir_0.1.0_data/ampir_prob_data.rds >> data_list
 # ampir v_1 related data
 
 echo data/ampir_v1/tuned_precursor_imbal_nobench.rds >> data_list
+echo data/ampir_v1/featuresTrain_precursor_imbal.rds >> data_list
+echo data/ampir_v1/featuresTest_precursor_imbal.rds >> data_list
+echo data/ampir_v1/featuresTrain_mature.rds >> data_list
+echo data/ampir_v1/featuresTest_mature.rds >> data_list
 
+# PCA analysis of predictors and proteomes
+echo cache/all_predictor_data_feats.rds >> data_list
+echo cache/pca_proteomes.rds >> data_list
 
 # Data from AMP predictors 
 
