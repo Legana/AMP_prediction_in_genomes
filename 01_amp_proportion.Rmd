@@ -82,6 +82,11 @@ ggplot(pr_curve_sample_long, aes(x=p_threshold, y=value)) +
 
 **Figure 1.1:** The precision and recall curves over a range of probability thresholds for an AMP proportion of 0.01 within the ampir v.0.1 test set
 
+
+```{r}
+ggsave("figures/tenAMPsinlargebg.png", width = 5, height = 3)
+```
+
 0.01 is a very small proportion and the curves are creating "big steps". To smoothen out the curves, 100 random selection of 1% (10 AMPs) were used to average the curves.
 
 # Average precision and recall curves for a low AMP proportion
