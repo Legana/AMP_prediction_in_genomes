@@ -135,6 +135,9 @@ nasplot | amplengths
 
 **Figure 4.2:** **A)** Missing values present within AMP features. **B)** Lengths of AMP sequences in Swiss-Prot
 
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/NAsplot.png", width = 17, height = 15 ,units = "cm")
+```
 
 ```{r}
 pca_features_amps <- sp_amps_features %>% 
@@ -160,6 +163,11 @@ data.frame(PC = paste0(1:30),
 ```
 
 **Figure 4.3:** Scree plot showing the proportion of variance explained for each principle component
+
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/screeplot.png", width = 15, height = 12 ,units = "cm")
+```
+
 
 *get total variation explained for each PC in percentage to add to plot*
 ```{r}
@@ -190,6 +198,9 @@ ggplot(pca_w_annotations, aes(x = PC1)) +
 
 **Figure 4.4:** PCA plots of physicochemical properties in AMP sequences of the taxonomic groups, **A)** Scatterplot of PCA1 and PCA2 **B)** Density plot of PCA1
 
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/PCA_AMPs_allgroups.png", width = 18, height = 12 ,units = "cm")
+```
 
 
 ```{r}
@@ -218,6 +229,9 @@ ggplot(filter(pca_w_annotations, Taxonomic_lineage_grouped %in% top_five), aes(x
 
 **Figure 4.5:** PCA plots of physicochemical properties in AMP sequences of the five taxonomic groups with the most AMP sequences, **A)** Scatterplot of PCA1 and PCA2 **B)** Density plot of PCA1
 
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/PCA_AMPs_top5.png", width = 18, height = 12 ,units = "cm")
+```
 
 ```{r}
 pca_w_annotations <- pca_w_annotations %>% 
@@ -254,6 +268,10 @@ ggplot(filter(pca_w_annotations, large_groups %in% broad_groups), aes(x = PC1)) 
 ```
 
 **Figure 4.6:** PCA plots of physicochemical properties in AMP sequences in plants, bacteria and animals, **A)** Scatterplot of PCA1 and PCA2 **B)** Density plot of PCA1
+
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/PCA_AMPs_3groups.png", width = 18, height = 12 ,units = "cm")
+```
 
 
 ## tSNE analysis
@@ -305,6 +323,10 @@ ggplot(tsne_values_annotated, aes(x = tSNE_1)) +
 
 **Figure 4.7:** tSNE plots of physicochemical properties in AMP sequences of taxonomic groups, **A)** Scatterplot of tSNE 1 and tSNE 2 **B)** Density plot of tSNE1
 
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/tsne_AMPs_allgroups.png", width = 18, height = 12 ,units = "cm")
+```
+
 ```{r, fig.width=9, fig.height=6,echo = FALSE}
 ggplot(filter(tsne_values_annotated, Taxonomic_lineage_grouped %in% top_five), aes(x = tSNE_1, y = tSNE_2)) +
    geom_point(aes(colour = Taxonomic_lineage_grouped)) +
@@ -325,6 +347,9 @@ ggplot(filter(tsne_values_annotated, Taxonomic_lineage_grouped %in% top_five), a
 
 **Figure 4.8:** tSNE plots of physicochemical properties in AMP sequences of the five taxonomic groups with the most AMP sequences, **A)** Scatterplot of tSNE 1 and tSNE 2 **B)** Density plot of tSNE 1
 
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/tsne_AMPs_top5.png", width = 18, height = 12 ,units = "cm")
+```
 
 ```{r, echo = FALSE}
 tsne_values_annotated <- tsne_values_annotated %>% 
@@ -358,3 +383,6 @@ ggplot(filter(tsne_values_annotated, large_groups %in% broad_groups), aes(x = tS
 **Figure 4.9:** tSNE plots of physicochemical properties in AMP sequences in plants, bacteria and animals, **A)** Scatterplot of tSNE 1 and tSNE 2 **B)** Density plot of tSNE1
 
 
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/tsne_AMPs_3groups.png", width = 18, height = 12 ,units = "cm")
+```
