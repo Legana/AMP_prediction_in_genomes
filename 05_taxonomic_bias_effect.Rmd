@@ -63,6 +63,10 @@ deut_pos_lengths + prot_pos_lengths
 
 **Figure 5.1:** A histogram of the sequence length distribution for Deuterostome and Protostome antimicrobial peptides
 
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/deutprotAMPslengths.png", width = 16, height = 9 ,units = "cm")
+```
+
 The positive datasets for deuterostomes and protostomes included AMPs that were less than 500 amino acids long which only contained the 20 standard amino acids. Features (physico-chemical properties) were then calculated from these sequences using `ampir`.
 
 ```{r}
@@ -100,6 +104,11 @@ deut_neg_lengths /  prot_neg_lengths
 ```
 
 **Figure 5.2:** A density plot of the sequence length distribution for Deuterostome and Protostome proteins
+
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/deutprotlengths.png", width = 14, height = 9 ,units = "cm")
+```
+
 
 The negative datasets for both deuterostomes and protostomes included general background proteins. Like the positive datasets, these sequences were less than 500 amino acids long which only contained the 20 standard amino acids. In addition, sequences less than 5 amino acids long were also removed. Finally, a random sample of background proteins were selected so the AMP:non-AMP ratio is 1:10. Features (physico-chemical properties) were then calculated from these sequences using `ampir`. The final deuterostome negative dataset contained 16,600 sequences and the negative protostome dataset contained 7,710 sequences.
 
