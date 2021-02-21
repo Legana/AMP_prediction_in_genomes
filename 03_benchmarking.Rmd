@@ -327,6 +327,8 @@ proteome_rocs %>% mutate(Organism = ifelse(Organism=="Homo sapiens (Human)","Hom
 ```
 
 ```{r, echo=FALSE, fig.width=8, fig.height=5}
+proteome_rocs <- proteome_rocs %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "Homo sapiens", TRUE ~ "Arabidopsis thaliana"))
+
 ggplot(proteome_rocs) + 
   geom_line(aes(x = FP, y = TP, colour = Model),size = 1.1) + 
   xlim(0,500) +
@@ -334,6 +336,7 @@ ggplot(proteome_rocs) +
   labs(x= "False positives", y = "True positives", colour = "") +
   theme_classic() +
   theme(legend.position = "bottom",
+        strip.text = element_text(face = "italic"),
         strip.background = element_blank()) +
   scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy"),
                      labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy"),
@@ -343,6 +346,10 @@ ggplot(proteome_rocs) +
 
 **Figure 3.2:** The ability of various models to predict AMPs in the low false positive regime (<500) in the proteomes of *Arabidopsis thaliana* and *Homo sapiens*. It is scaled so that the limits of the y-axis show the full complement of known AMPs in each genome (294 for *A. thaliana*, 112 for *H. sapiens*), and the limits of the x-axis are restricted to emphasise behaviour in the low false positive (FP) regime (FP < 500). 
 
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/TPFPcountproteomesXLIM.png", width = 19, height = 9 ,units = "cm")
+```
+
 
 ```{r, echo=FALSE, fig.width=8, fig.height=5}
 ggplot(proteome_rocs) + 
@@ -351,6 +358,7 @@ ggplot(proteome_rocs) +
   labs(x= "False positives", y = "True positives", colour = "") +
   theme_classic() +
   theme(legend.position = "bottom",
+        strip.text = element_text(face = "italic"),
         strip.background = element_blank()) +
   scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy"),
                      labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy"),
@@ -360,3 +368,6 @@ ggplot(proteome_rocs) +
 
 **Figure 3.3:** Same as Figure 3.2 but showing the entire false positive regime 
 
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/TPFPcountproteomes.png", width = 19, height = 9 ,units = "cm")
+```

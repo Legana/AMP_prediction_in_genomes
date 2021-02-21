@@ -370,7 +370,7 @@ y-axis show the full complement of known AMPs in each genome (294 for
 restricted to emphasise behaviour in the low false positive (FP) regime
 (FP &lt; 500).
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 **Figure 3.3:** Same as Figure 3.2 but showing the entire false positive
 regime
