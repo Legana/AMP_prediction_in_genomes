@@ -228,10 +228,10 @@ all_predictor_data_wcounts <- all_predictor_data %>%
 
 **Figure 2.1:** The sequence length of AMP and non-AMP sequences in the
 training and testing set of various AMP prediction models. The training
-set for AmpGram and the testing sets for amPEP and amPEPpy are blank as
-these were not specified.
+set for AmpGram and the testing sets for amPEP and amPEPpy are missing
+as these were not specified.
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 **Figure 2.2:** The sequence length of all AMP and non-AMP sequences
 used in various AMP prediction models.
@@ -262,7 +262,7 @@ pca_values <- pca_features$x %>%
 
 ### 2.1.1 PCA plots
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 **Figure 2.3:** PCA of features of AMP and non-AMP sequences used in
 various AMP prediction models.
@@ -305,13 +305,13 @@ pca_prot_percentages <- round(pca_proteomes$sdev^2 / sum(pca_proteomes$sdev^2) *
 pca_prot_percentages <- paste(colnames(pca_proteomes$x),"(",paste(as.character(pca_prot_percentages), "%",")", sep = ""))
 ```
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 **Figure 2.4:** PCA of features of all AMP and non-AMP sequences
 (between 10-3000 amino acids long) in the proteomes *Homo sapiens* and
 *Arabidopsis thaliana*
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 **Figure 2.5:** PCA of features of reviewed AMP and non-AMP sequences
 (between 10-3000 amino acids long) in the proteomes *Homo sapiens* and

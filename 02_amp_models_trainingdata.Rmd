@@ -176,10 +176,22 @@ all_predictor_data_wcounts <- all_predictor_data %>%
 ```
 
 
-```{r, echo = FALSE, fig.width=9, fig.height=6}
-ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
+```{r, echo = FALSE, fig.width=7, fig.height=10}
+trainplot <- ggplot(filter(all_predictor_data_wcounts, dataset == "Train"), aes(x = length, y = number)) +
   geom_col(aes(fill = factor(class, levels = c("non-AMP", "AMP")))) +
-  facet_grid(predictor ~ factor(dataset, levels = c("Train", "Test"), labels = c("Training set", "Testing set")), scales = "free_y") +
+  facet_grid(factor(predictor, levels = c("AMP Scanner v2", "AMPlify", "iAMP-2L", "deep_AmPEP", "ampir_mature", "ampir_precursor", "AmPEP", "AmPEPpy")) ~ factor(dataset, levels = c("Train"), labels = c("Training set")), scales = "free", drop = FALSE) +
+  xlim(0,300) +
+  labs(x = "", y = "Number of sequences", fill = "") +
+  theme(legend.position = "none",
+        strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank()) +
+scale_fill_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) 
+
+testplot <-  ggplot(filter(all_predictor_data_wcounts, dataset == "Test"), aes(x = length, y = number)) +
+  geom_col(aes(fill = factor(class, levels = c("non-AMP", "AMP")))) +
+  facet_grid(factor(predictor, levels = c("AMP Scanner v2", "AMPlify", "iAMP-2L", "deep_AmPEP", "ampir_mature", "ampir_precursor", "AmpGram")) ~ factor(dataset, levels = c("Test"), labels = c("Testing set")), scales = "free", drop = FALSE) +
   xlim(0,300) +
   labs(x = "Sequence length", y = "Number of sequences", fill = "") +
   theme(legend.position = "bottom",
@@ -188,18 +200,16 @@ ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
         panel.grid.minor = element_blank(),
         panel.grid.major = element_blank()) +
 scale_fill_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4"))
+
+trainplot / testplot
 ```
 
-**Figure 2.1:** The sequence length of AMP and non-AMP sequences in the training and testing set of various AMP prediction models. The training set for AmpGram and the testing sets for amPEP and amPEPpy are blank as these were not specified.
-
-```{r, eval=FALSE, echo=FALSE}
-ggsave("figures/model_lengths.png", width = 14, height = 13 ,units = "cm")
-```
+**Figure 2.1:** The sequence length of AMP and non-AMP sequences in the training and testing set of various AMP prediction models. The training set for AmpGram and the testing sets for amPEP and amPEPpy are missing as these were not specified.
 
 ```{r, echo = FALSE}
 ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
   geom_col(aes(fill = factor(class, levels = c("non-AMP", "AMP")))) +
-  facet_wrap(~predictor, scales = "free_y") +
+  facet_grid(predictor ~ . , scales = "free_y") +
   labs(x = "Sequence length", y = "Number of sequences", fill = "") +
   xlim(0,300) +
   theme(legend.position = "bottom",
@@ -207,13 +217,14 @@ ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
         strip.background = element_blank(),
         panel.grid.minor = element_blank(),
         panel.grid.major = element_blank()) +
-  scale_fill_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4"))
+  scale_fill_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) +
+  scale_x_continuous(breaks = c(0, 50, 100, 200, 300, 400, 500))
 ```
 
 **Figure 2.2:** The sequence length of all AMP and non-AMP sequences used in various AMP prediction models. 
 
 ```{r, eval=FALSE, echo=FALSE}
-ggsave("figures/model_lengths_combined.png", width = 12, height = 10 ,units = "cm")
+ggsave("figures/model_lengths_combined.png", width = 16, height = 14, units = "cm", dpi = 500)
 ```
 
 ## PCA of AMP and non-AMP features
