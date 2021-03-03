@@ -37,8 +37,6 @@ deut_long <- filter(swissprot_amps, Taxonomic_lineage == "Deuterostome" & Length
 prot_long <- filter(swissprot_amps, Taxonomic_lineage == "Protostome" & Length >= 500)
 ```
 
-### Plot
-
 The majority of deuterostome AMPs appear to be less than 250 amino acids
 long (see Figure 5.1 A). There is a small spike in the number of AMPs
 around 500 amino acids long, however, these mostly consist of proteins
@@ -68,11 +66,6 @@ different mode of action to smaller antimicrobial peptides, and their
 limited number in the datasets, a length criteria was implemented to
 remove proteins equal or larger than 500 amino acids long in the
 positive dataset.
-
-![](05_taxonomic_bias_effect_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
-
-**Figure 5.1:** A histogram of the sequence length distribution for
-Deuterostome and Protostome antimicrobial peptides
 
 The positive datasets for deuterostomes and protostomes included AMPs
 that were less than 500 amino acids long which only contained the 20
@@ -108,17 +101,23 @@ protostome_neg_prots <- read_faa("data/uniprot-taxonomy Protostomia+[33317] +rev
 ### Plot
 
 Overall, the deuterstome proteins consisted of a longer sequence length
-compared to the protostome proteins (see Figure 5.2). However, the
-majority of proteins, for both deuterostomes and protostomes, are less
-than 1500 amino acids long. As the positive dataset has a length
+compared to the protostome proteins (see Figure 5.1 C and D). However,
+the majority of proteins, for both deuterostomes and protostomes, are
+less than 1500 amino acids long. As the positive dataset has a length
 restriction of 500 amino acids, the same length restriction will be
 applied to the negative dataset. This is to avoid a potential length
 bias when training the model with these datasets.
 
-![](05_taxonomic_bias_effect_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+In the non-AMP protein dataset for the deuterostomes, there were three
+proteins larger than 10,000 amino acids of which the maximum length was
+\~35k long. In the protostome non-AMP dataset, there were similarly
+three proteins larger than 10,000 amino acids long, however the maximum
+length was \~18k amino acids long.
+![](05_taxonomic_bias_effect_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-**Figure 5.2:** A density plot of the sequence length distribution for
-Deuterostome and Protostome proteins
+**Figure 5.1:** A histogram of the sequence length distribution for
+Deuterostome and Protostome antimicrobial peptides and non-antimicrobial
+peptides
 
 The negative datasets for both deuterostomes and protostomes included
 general background proteins. Like the positive datasets, these sequences
@@ -165,6 +164,8 @@ deutprot_feat %>% summarise(across(everything(), ~ sum(is.na(.))))
 ```
 
 ``` r
+set.seed(3)
+
 pca_deutprot_feat <- deutprot_feat %>% 
   column_to_rownames("seq_name") %>% 
   select(Amphiphilicity:Xc2.lambda.4) %>% 
@@ -264,6 +265,46 @@ trainIndex2 <-createDataPartition(y = deuterostome_feats$Label, p=.4319, list = 
 features_deutTrain2 <- deuterostome_feats[trainIndex2,]
 features_deutTest2 <- deuterostome_feats[-trainIndex2,]
 ```
+
+``` r
+pca_deutprot_plot <- ggplot(pca_deutprot_feat.x, aes(x = PC1, y = PC2)) +
+   geom_point(aes(colour = taxgroup, shape = taxgroup), size = 1) +
+   facet_wrap(~factor(Label, levels = c("Pos", "Neg"), labels = c("AMPs", "non-AMPs"))) +
+   labs(x = percentage[1], y = percentage[2], colour = "", shape = "") +
+   scale_shape_manual(labels = c("Deuterostome" , "Protostome"), values=c(16, 1)) +
+   scale_colour_manual(labels = c("Deuterostome" , "Protostome"), values = c("blueviolet", "forestgreen")) +
+   theme_classic() +
+   theme(legend.position = "none",
+         strip.background = element_blank(),
+         strip.text = element_text(size = 10, face = "bold"))
+
+pca1_deutprot_plot <- ggplot(pca_deutprot_feat.x, aes(x = PC1)) +
+   stat_density(aes(colour = group), geom = "line", position = "identity") +
+   facet_wrap(~factor(Label, levels = c("Pos", "Neg"), labels = c("AMPs", "non-AMPs"))) +
+   labs(x = percentage[1], y = "Density", colour = "") +
+   scale_colour_manual(values = c("blueviolet", "forestgreen")) +
+   theme_classic() +
+   theme(legend.position = "none",
+         strip.background = element_blank(),
+         strip.text = element_text(size = 10, face = "bold")) 
+
+tsne_deutprot_plot <- ggplot(deutprot_tsne_annotated, aes(x = tSNE_1, y = tSNE_2)) +
+   geom_point(aes(colour = group, shape = group), size = 1) +
+   facet_wrap(~factor(Label, levels = c("Pos", "Neg"), labels = c("AMPs", "non-AMPs"))) +
+   labs(colour = "", shape = "") +
+   scale_shape_manual(labels = c("Deuterostome" , "Protostome"), values=c(16, 1)) +
+   scale_colour_manual(labels = c("Deuterostome" , "Protostome"), values = c("blueviolet", "forestgreen")) +
+   theme_classic() +
+   theme(legend.position = "bottom",
+         strip.background = element_blank(),
+         strip.text = element_text(size = 10, face = "bold"),
+         legend.text = element_text(size = 10)) +
+  guides(colour = guide_legend(override.aes = list(size=3)))
+
+(pca_deutprot_plot | pca1_deutprot_plot) / tsne_deutprot_plot + plot_annotation(tag_levels = 'A')
+```
+
+![](05_taxonomic_bias_effect_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 ## Model training
 
