@@ -292,6 +292,29 @@ ggplot(pca_values, aes(x = PC1)) +
 scale_colour_manual(values = c("brown4", "darkblue")) 
 ```
 
+*ampir only* 
+```{r}
+yay <- c("ampir_precursor","ampir_mature")
+
+pca_values_amps <- filter(pca_values, predictor %in% yay & class == "AMP")
+pca_values_nonamps <- filter(pca_values, predictor %in% yay & class == "non-AMP")
+
+ggplot(filter(pca_values, predictor %in% yay), aes(x = PC1, y = PC2)) +
+   geom_point(data = pca_values_nonamps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
+   geom_point(data = pca_values_amps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
+   facet_grid(predictor ~ factor(dataset, levels = c("Train", "Test"), labels = c("Training set", "Testing set")), scales = "free_y") +
+   labs(x = pca_percentages[1], y = pca_percentages[2], shape = "", colour = "") +
+   theme(legend.position = "bottom",
+        strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank()) +
+        scale_colour_manual(values = c("darkblue", "brown4")) +
+        scale_shape_manual(values = c(1, 3)) 
+```
+
+
+
 **Figure 2.3:** PCA of features of AMP and non-AMP sequences used in various AMP prediction models. 
 
 
