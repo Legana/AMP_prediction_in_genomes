@@ -243,28 +243,7 @@ tSNE was used to see if it was similar to PCA results
 density plot of tSNE 1 of the physicochemical properties of AMPs and
 non-AMPs in Deuterostomes and Protostomes.
 
-## Creating the training and test sets
-
-As the deuterostome data was used to train the model, to test on the
-protostome data, only the deuterostome data was used to create the
-training set. Some deuterostome data was left out of the training data
-to serve as a second test set. This way the deuterostome model
-effectiveness could be compared between the deuterostome and protostome
-data. The R package`caret` [(Kuhn
-2008)](https://www.jstatsoft.org/v028/i05) was used to separate the
-deuterostome data into a training (80%) and test (20%) set and to train
-the model.
-
-``` r
-trainIndex <-createDataPartition(y = deuterostome_feats$Label, p=.8, list = FALSE)
-features_deutTrain <- deuterostome_feats[trainIndex,]
-features_deutTest <- deuterostome_feats[-trainIndex,]
-
-
-trainIndex2 <-createDataPartition(y = deuterostome_feats$Label, p=.4319, list = FALSE)
-features_deutTrain2 <- deuterostome_feats[trainIndex2,]
-features_deutTest2 <- deuterostome_feats[-trainIndex2,]
-```
+### combining plots to limit redundancy
 
 ``` r
 pca_deutprot_plot <- ggplot(pca_deutprot_feat.x, aes(x = PC1, y = PC2)) +
@@ -304,7 +283,30 @@ tsne_deutprot_plot <- ggplot(deutprot_tsne_annotated, aes(x = tSNE_1, y = tSNE_2
 (pca_deutprot_plot | pca1_deutprot_plot) / tsne_deutprot_plot + plot_annotation(tag_levels = 'A')
 ```
 
-![](05_taxonomic_bias_effect_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](05_taxonomic_bias_effect_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+
+## Creating the training and test sets
+
+As the deuterostome data was used to train the model, to test on the
+protostome data, only the deuterostome data was used to create the
+training set. Some deuterostome data was left out of the training data
+to serve as a second test set. This way the deuterostome model
+effectiveness could be compared between the deuterostome and protostome
+data. The R package`caret` [(Kuhn
+2008)](https://www.jstatsoft.org/v028/i05) was used to separate the
+deuterostome data into a training (80%) and test (20%) set and to train
+the model.
+
+``` r
+trainIndex <-createDataPartition(y = deuterostome_feats$Label, p=.8, list = FALSE)
+features_deutTrain <- deuterostome_feats[trainIndex,]
+features_deutTest <- deuterostome_feats[-trainIndex,]
+
+
+trainIndex2 <-createDataPartition(y = deuterostome_feats$Label, p=.4319, list = FALSE)
+features_deutTrain2 <- deuterostome_feats[trainIndex2,]
+features_deutTest2 <- deuterostome_feats[-trainIndex2,]
+```
 
 ## Model training
 

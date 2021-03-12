@@ -260,38 +260,7 @@ ggplot(deutprot_tsne_annotated, aes(x = tSNE_1)) +
 ggsave("figures/tsna_deutprot.png", width = 14, height = 9 ,units = "cm")
 ```
 
-
-## Creating the training and test sets
-
-As the deuterostome data was used to train the model, to test on the protostome data, only the deuterostome data was used to create the training set. Some deuterostome data was left out of the training data to serve as a second test set. This way the deuterostome model effectiveness could be compared between the deuterostome and protostome data. The R package`caret` [(Kuhn 2008)](https://www.jstatsoft.org/v028/i05) was used to separate the deuterostome data into a training (80%) and test (20%) set and to train the model.
-
-```{r, eval = FALSE}
-trainIndex <-createDataPartition(y = deuterostome_feats$Label, p=.8, list = FALSE)
-features_deutTrain <- deuterostome_feats[trainIndex,]
-features_deutTest <- deuterostome_feats[-trainIndex,]
-
-
-trainIndex2 <-createDataPartition(y = deuterostome_feats$Label, p=.4319, list = FALSE)
-features_deutTrain2 <- deuterostome_feats[trainIndex2,]
-features_deutTest2 <- deuterostome_feats[-trainIndex2,]
-```
-
-```{r, eval = FALSE, echo = FALSE}
-saveRDS(features_deutTrain, "cache/features_deutTrain.rds")
-saveRDS(features_deutTest, "cache/features_deutTest.rds")
-saveRDS(protostome_feats, "cache/features_protostome.rds")
-```
-
-```{r, echo = FALSE}
-features_deutTrain <- readRDS("cache/features_deutTrain.rds")
-features_deutTest <- readRDS("cache/features_deutTest.rds")
-protostome_feats <- readRDS("cache/features_protostome.rds")
-```
-
-```{r, eval=FALSE, echo=FALSE}
-ggsave("figures/pca_deutprot.png", width = 14, height = 9 ,units = "cm")
-```
-
+### combining plots to limit redundancy
 
 ```{r, fig.width=8, fig.height=5}
 pca_deutprot_plot <- ggplot(pca_deutprot_feat.x, aes(x = PC1, y = PC2)) +
@@ -334,6 +303,33 @@ tsne_deutprot_plot <- ggplot(deutprot_tsne_annotated, aes(x = tSNE_1, y = tSNE_2
 
 ```{r, eval=FALSE, echo=FALSE}
 ggsave("figures/pcatsne_deutprot.png", width = 17, height = 12 ,units = "cm")
+```
+
+## Creating the training and test sets
+
+As the deuterostome data was used to train the model, to test on the protostome data, only the deuterostome data was used to create the training set. Some deuterostome data was left out of the training data to serve as a second test set. This way the deuterostome model effectiveness could be compared between the deuterostome and protostome data. The R package`caret` [(Kuhn 2008)](https://www.jstatsoft.org/v028/i05) was used to separate the deuterostome data into a training (80%) and test (20%) set and to train the model.
+
+```{r, eval = FALSE}
+trainIndex <-createDataPartition(y = deuterostome_feats$Label, p=.8, list = FALSE)
+features_deutTrain <- deuterostome_feats[trainIndex,]
+features_deutTest <- deuterostome_feats[-trainIndex,]
+
+
+trainIndex2 <-createDataPartition(y = deuterostome_feats$Label, p=.4319, list = FALSE)
+features_deutTrain2 <- deuterostome_feats[trainIndex2,]
+features_deutTest2 <- deuterostome_feats[-trainIndex2,]
+```
+
+```{r, eval = FALSE, echo = FALSE}
+saveRDS(features_deutTrain, "cache/features_deutTrain.rds")
+saveRDS(features_deutTest, "cache/features_deutTest.rds")
+saveRDS(protostome_feats, "cache/features_protostome.rds")
+```
+
+```{r, echo = FALSE}
+features_deutTrain <- readRDS("cache/features_deutTrain.rds")
+features_deutTest <- readRDS("cache/features_deutTest.rds")
+protostome_feats <- readRDS("cache/features_protostome.rds")
 ```
 
 
@@ -536,6 +532,10 @@ roc.test(p1_roc, d1_roc, method = "delong")
 roc.test(p2_roc, d2_roc, method = "delong")
 
 roc.test(d2_roc, d3_roc, method = "delong")
+
+roc.test(d1_roc, d2_roc, method = "delong") #Deut1 on deuterostome1 data vs. Deut2 on deuterostome2 data
+
+
 ```
 
 **Table 5.5:** Statistical significance of models performance on different data based on AUCs using DeLong tests
