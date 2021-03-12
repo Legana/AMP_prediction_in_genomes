@@ -183,7 +183,7 @@ data.frame(PC = paste0(1:30),
   labs(x = "Principle components", y = "Variance explained")
 ```
 
-![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 **Figure 4.3:** Scree plot showing the proportion of variance explained
 for each principle component
@@ -195,41 +195,6 @@ pca_percentages <- round(pca_features_amps$sdev^2 / sum(pca_features_amps$sdev^2
 pca_percentages <- paste(colnames(pca_features_amps$x),"(",paste(as.character(pca_percentages), "%",")", sep = ""))
 ```
 
-### PCA Plots
-
-![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
-
-**Figure 4.4:** PCA plots of physicochemical properties in AMP sequences
-of the taxonomic groups, **A)** Scatterplot of PCA1 and PCA2 **B)**
-Density plot of PCA1
-
-``` r
-top_five <- c("Amphibians", "Mammals", "Plants", "Insects", "Bacteria")
-```
-
-![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
-
-**Figure 4.5:** PCA plots of physicochemical properties in AMP sequences
-of the five taxonomic groups with the most AMP sequences, **A)**
-Scatterplot of PCA1 and PCA2 **B)** Density plot of PCA1
-
-``` r
-pca_w_annotations <- pca_w_annotations %>% 
-   mutate(large_groups = case_when(str_detect(Taxonomic_lineage, "Metazoa") ~ "Animals",
-                                   str_detect(Taxonomic_lineage, "Bacteria") ~ "Bacteria",
-                                   str_detect(Taxonomic_lineage, "Viridiplantae") ~ "Plants",
-                                   TRUE ~ Taxonomic_lineage_grouped)) %>%
-   mutate(large_groups = as.factor(large_groups))
-
-broad_groups <- as.factor(c("Plants", "Animals", "Bacteria"))
-```
-
-![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
-
-**Figure 4.6:** PCA plots of physicochemical properties in AMP sequences
-in plants, bacteria and animals, **A)** Scatterplot of PCA1 and PCA2
-**B)** Density plot of PCA1
-
 ## tSNE analysis
 
 Using [Rtsne](https://github.com/jkrijthe/Rtsne), an R wrapper for Van
@@ -237,10 +202,6 @@ der Maaten’s Barnes-Hut implementation of t-Distributed Stochastic
 Neighbor Embedding
 
 ``` r
-library(Rtsne)
-
-set.seed(3)
-
 sp_amps_features_unique <- sp_amps_features %>%
    column_to_rownames("seq_name") %>%
    select(c(1:29, Length)) %>%
@@ -259,22 +220,48 @@ tsne_values_annotated <- as.data.frame(sp_amps_features_tsne$Y) %>%
    left_join(sp_amps_features, by = "seq_name")
 ```
 
-### tSNE plots
+### Plots
+
+*All groups*
+
+![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
+**Figure 4.4:** Physicochemical properties in AMP sequences of the
+taxonomic groups, **A)** Scatterplot of PCA1 and PCA2 **B)** Density
+plot of PCA1 and **C)** tSNE plot
+
+*Top five groups that contain most AMPs*
+
+``` r
+top_five <- c("Amphibians", "Mammals", "Plants", "Insects", "Bacteria")
+```
 
 ![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
-**Figure 4.7:** tSNE plots of physicochemical properties in AMP
-sequences of taxonomic groups, **A)** Scatterplot of tSNE 1 and tSNE 2
-**B)** Density plot of tSNE1
+**Figure 4.5:** Physicochemical properties in AMP sequences of the five
+taxonomic groups with the most AMP sequences, **A)** Scatterplot of PCA1
+and PCA2 **B)** Density plot of PCA1 **C)** tSNE plot
 
-![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+``` r
+pca_w_annotations <- pca_w_annotations %>% 
+   mutate(large_groups = case_when(str_detect(Taxonomic_lineage, "Metazoa") ~ "Animals",
+                                   str_detect(Taxonomic_lineage, "Bacteria") ~ "Bacteria",
+                                   str_detect(Taxonomic_lineage, "Viridiplantae") ~ "Plants",
+                                   TRUE ~ Taxonomic_lineage_grouped)) %>%
+   mutate(large_groups = as.factor(large_groups))
 
-**Figure 4.8:** tSNE plots of physicochemical properties in AMP
-sequences of the five taxonomic groups with the most AMP sequences,
-**A)** Scatterplot of tSNE 1 and tSNE 2 **B)** Density plot of tSNE 1
+broad_groups <- as.factor(c("Plants", "Animals", "Bacteria"))
+
+tsne_values_annotated <- tsne_values_annotated %>% 
+   mutate(large_groups = case_when(str_detect(Taxonomic_lineage, "Metazoa") ~ "Animals",
+                                   str_detect(Taxonomic_lineage, "Bacteria") ~ "Bacteria",
+                                   str_detect(Taxonomic_lineage, "Viridiplantae") ~ "Plants",
+                                   TRUE ~ Taxonomic_lineage_grouped)) %>%
+   mutate(large_groups = as.factor(large_groups))
+```
 
 ![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
-**Figure 4.9:** tSNE plots of physicochemical properties in AMP
-sequences in plants, bacteria and animals, **A)** Scatterplot of tSNE 1
-and tSNE 2 **B)** Density plot of tSNE1
+**Figure 4.6:** PCA plots of physicochemical properties in AMP sequences
+in plants, bacteria and animals, **A)** Scatterplot of PCA1 and PCA2
+**B)** Density plot of PCA1
