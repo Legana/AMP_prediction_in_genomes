@@ -557,7 +557,111 @@ roc.test(d1_roc, d2_roc, method = "delong") #Deut1 on deuterostome1 data vs. Deu
 | Deut2 | Deut2 | protostome1 | deuterostome2 subset | < 2.2 x 10<sup>-16</sup> |
 | Deut2 | Deut2 | deuterostome2 | deuterostome2 subset | 0.039 |
 
+# Metazoa vs Viridiplantae
 
+```{r}
+swissprot_amps_2 <- read_tsv("data/uniprot-keyword Antimicrobial+[KW-0929] -filtered-reviewed yes.tab") %>%
+    rename(Taxonomic_lineage = `Taxonomic lineage (all)`) %>%
+    rename(Entry_name = `Entry name`) %>%
+    mutate(Taxonomic_lineage = case_when(
+       str_detect(Taxonomic_lineage, "Metazoa") ~ "Animals",
+       str_detect(Taxonomic_lineage, "Viridiplantae") ~ "Plants",
+                                        TRUE ~ Taxonomic_lineage))
+```
+
+
+
+```{r}
+metazoa_pos <- filter(swissprot_amps_2, Taxonomic_lineage == "Animals" & Length < 500) %>%
+  select(Entry_name, Sequence) %>%
+  as.data.frame() %>%
+  remove_nonstandard_aa() %>%
+  calculate_features(min_len = 5) %>%
+  mutate(Label = "Pos")
+
+plants_pos <- filter(swissprot_amps_2, Taxonomic_lineage == "Plants" & Length < 500) %>% 
+   select(Entry_name, Sequence) %>% 
+   as.data.frame() %>% 
+   remove_nonstandard_aa() %>% 
+   calculate_features(min_len = 5) %>% 
+   mutate(Label = "Pos")
+```
+
+```{r, eval = FALSE}
+set.seed(9)
+metazoa_neg <- read_faa("data/uniprot-NOT+keyword Antimicrobial+[KW-0929] +taxonomy Metazoa+%5--.fasta.gz") %>%
+   mutate(Length = nchar(seq_aa)) %>%
+   filter(Length < 500) %>% 
+   as.data.frame() %>%
+   remove_nonstandard_aa() %>%
+   slice_sample(n = 10*nrow(metazoa_pos)) %>%
+   calculate_features(min_len = 5) %>%
+   mutate(Label = "Neg")
+
+plants_neg <- read_faa("data/uniprot-NOT+keyword Antimicrobial+[KW-0929] +taxonomy Viridiplan--.fasta.gz") %>%
+  mutate(Length = nchar(seq_aa)) %>%
+  filter(Length < 500) %>% 
+  as.data.frame() %>%
+  remove_nonstandard_aa() %>%
+  slice_sample(n = 10*nrow(plants_pos)) %>%
+  calculate_features(min_len = 5) %>%
+  mutate(Label = "Neg")
+```
+
+
+```{r, echo = FALSE, eval = FALSE}
+saveRDS(metazoa_neg, "cache/metazoa_neg.rds")
+saveRDS(plants_neg, "cache/plants_neg.rds")
+```
+
+```{r, echo = FALSE}
+metazoa_neg <- readRDS("cache/metazoa_neg.rds")
+plants_neg <- readRDS("cache/plants_neg.rds")
+```
+
+```{r}
+metazoa_feat <- rbind(metazoa_pos, metazoa_neg) %>% mutate(Label = as.factor(Label))
+plants_feat <- rbind(plants_pos, plants_neg) %>% mutate(Label = as.factor(Label))
+```
+
+
+```{r, eval = FALSE}
+trainIndex <-createDataPartition(y = metazoa_feat$Label, p=.8, list = FALSE)
+features_metazoaTrain <- metazoa_feat[trainIndex,]
+features_metazoaTest <- metazoa_feat[-trainIndex,]
+```
+
+```{r, eval = FALSE, echo = FALSE}
+saveRDS(features_metazoaTrain, "cache/features_metazoaTrain.rds")
+saveRDS(features_metazoaTest, "cache/features_metazoaTest.rds")
+```
+
+```{r, echo = FALSE}
+features_metazoaTrain <- readRDS("cache/features_metazoaTrain.rds")
+features_metazoaTest <- readRDS("cache/features_metazoaTest.rds")
+```
+
+
+```{r, eval = FALSE}
+model_weights <- ifelse(features_metazoaTrain$Label == "Pos",
+                        (1/table(features_metazoaTrain$Label)[1]) * 0.5,
+                        (1/table(features_metazoaTrain$Label)[2]) * 0.5)
+
+trctrl_prob <- trainControl(method = "repeatedcv", number = 10, repeats = 3, classProbs = TRUE)
+
+metazoa_svm <- train(Label~.,
+                       data = features_metazoaTrain[,c(2:28,46)],
+                       method="svmRadial",
+                       trControl = trctrl_prob,
+                       preProcess = c("center", "scale"),
+                       weights = model_weights,
+                       metric = "Kappa",
+                       tuneLength = 6)
+```
+
+```{r, echo = FALSE, eval = FALSE}
+saveRDS(metazoa_svm, "cache/metazoa_svm.rds")
+```
 
 
 
