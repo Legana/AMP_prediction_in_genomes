@@ -136,19 +136,17 @@ nasplot <- sp_amps_features %>%
    geom_col(fill = "darkblue") +
    coord_flip() +
    labs(y = "Number of missing values", x = "Calculated features of AMP sequences") +
-   theme_classic() +
-   ggtitle("A")
+   theme_classic() 
 
 amplengths <- sp_amps_features %>%
    select(Length) %>%
    ggplot(aes(x = Length)) +
    geom_histogram(binwidth = 10, fill = "darkolivegreen") +
    labs(x = "Sequence length", y = "Number of AMP sequences in Swiss-Prot") +
-   theme_classic() +
-   ggtitle("B")
+   theme_classic()
 
 
-nasplot | amplengths
+(nasplot | amplengths) + plot_annotation(tag_levels = 'A')
 ```
 
 ![](04_taxonomic_composition_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
