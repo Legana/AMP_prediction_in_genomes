@@ -13,9 +13,11 @@ echo data/ampir_v1/featuresTest_precursor_imbal.rds >> data_list
 echo data/ampir_v1/featuresTrain_mature.rds >> data_list
 echo data/ampir_v1/featuresTest_mature.rds >> data_list
 
-# PCA analysis of predictors and proteomes
+# PCA and tsne analysis of predictors and proteomes
 echo cache/all_predictor_data_feats.rds >> data_list
 echo cache/pca_proteomes.rds >> data_list
+echo cache/tsne_AMPmodelsfeatures.rds >> data_list
+echo cache/tsne_proteomes.rds >> data_list
 
 # Data from AMP predictors 
 
@@ -58,6 +60,19 @@ echo cache/features_protostome.rds >> data_list
 echo cache/deut_svm.rds >> data_list
 echo cache/deut_svm2.rds >> data_list
 echo cache/deutprottsne.rds >> data_list
+
+# Metazoa and plant model data 
+
+echo cache/features_metazoaTest.rds >> data_list
+echo cache/features_metazoaTrain.rds >> data_list
+echo cache/features_metazoaTest2.rds >> data_list
+echo cache/features_metazoaTrain2.rds >> data_list
+echo cache/metaplanttsne.rds >> data_list
+echo cache/metazoa_neg.rds >> data_list
+echo cache/metazoa_svm.rds >> data_list
+echo cache/metazoa_svm2.rds >> data_list
+echo cache/plants_neg.rds >> data_list
+
 
 # Arabidopsis thaliana and Homo sapiens proteomes without and with standard AA
 
