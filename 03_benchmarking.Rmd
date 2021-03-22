@@ -293,6 +293,35 @@ proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics, ampgram
 knitr::kable(proteome_metrics[,3:11])
 ```
 
+```{r}
+proteome_metrics_long <- pivot_longer(proteome_metrics[,3:11], cols = c(-Organism, -Model))
+
+library(pals)
+ggplot(proteome_metrics_long, aes(x = name, y = value)) +
+  geom_bar(stat = "identity", aes(fill = Model), position = "dodge") +
+  facet_wrap(~Organism) +
+  theme_classic() +
+  theme(legend.position = "bottom") +
+  scale_fill_manual(values = watlington(7)) +
+  labs(x = "", fill = "")
+
+ggsave("figures/proteome_metrics_groupedbar.png", width = 20, height = 16, units = "cm")
+
+ggplot(proteome_metrics_long, aes(x = Model, y = value)) +
+  geom_point(aes(colour = Model, shape = Model)) +
+  facet_grid(Organism ~ name ) +
+  scale_shape_manual(values=c(0, 1, 3, 5, 8, 16, 17)) + 
+  labs(colour = "", shape = "") +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+ggsave("figures/proteome_metrics_points.png", width = 20, height = 16, units = "cm")
+```
+
+
 The metrics overall are really low for the ability of models to predict AMPs in proteomes. However, these metrics may not be a very informative evaluation.
 
 It is important to remember the real life situation and applications of predictive models. The actual frequency of AMPs (true positives) in a proteome is approximately 1%. This is extremely low. To adequately express the real-world performance of predictors on proteomes, the numbers of true and false positives were used, with a focus on the low false positive regime, as this is what matters most in whole proteome scans (Figure 3.2)

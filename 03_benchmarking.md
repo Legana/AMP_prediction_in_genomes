@@ -348,6 +348,42 @@ proteomes of *Homo sapiens* and *Arabidopsis thaliana*
 |       0.522 |  0.273 |     0.001 | 0.002 | -0.017 | 0.487 | 0.001 | H. sapiens  | amPEPpy                   |
 |       0.316 |  0.031 |     0.000 | 0.000 | -0.121 | 0.240 | 0.005 | A. thaliana | amPEPpy                   |
 
+``` r
+proteome_metrics_long <- pivot_longer(proteome_metrics[,3:11], cols = c(-Organism, -Model))
+
+library(pals)
+ggplot(proteome_metrics_long, aes(x = name, y = value)) +
+  geom_bar(stat = "identity", aes(fill = Model), position = "dodge") +
+  facet_wrap(~Organism) +
+  theme_classic() +
+  theme(legend.position = "bottom") +
+  scale_fill_manual(values = watlington(7)) +
+  labs(x = "", fill = "")
+```
+
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+
+``` r
+ggsave("figures/proteome_metrics_groupedbar.png", width = 20, height = 16, units = "cm")
+
+ggplot(proteome_metrics_long, aes(x = Model, y = value)) +
+  geom_point(aes(colour = Model, shape = Model)) +
+  facet_grid(Organism ~ name ) +
+  scale_shape_manual(values=c(0, 1, 3, 5, 8, 16, 17)) + 
+  labs(colour = "", shape = "") +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+```
+
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-25-2.png)<!-- -->
+
+``` r
+ggsave("figures/proteome_metrics_points.png", width = 20, height = 16, units = "cm")
+```
+
 The metrics overall are really low for the ability of models to predict
 AMPs in proteomes. However, these metrics may not be a very informative
 evaluation.
@@ -360,7 +396,7 @@ numbers of true and false positives were used, with a focus on the low
 false positive regime, as this is what matters most in whole proteome
 scans (Figure 3.2)
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 **Figure 3.2:** The ability of various models to predict AMPs in the low
 false positive regime (&lt;500) in the proteomes of *Arabidopsis
@@ -370,7 +406,7 @@ y-axis show the full complement of known AMPs in each genome (294 for
 restricted to emphasise behaviour in the low false positive (FP) regime
 (FP &lt; 500).
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 **Figure 3.3:** Same as Figure 3.2 but showing the entire false positive
 regime
