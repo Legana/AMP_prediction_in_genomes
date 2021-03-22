@@ -335,6 +335,63 @@ scale_colour_manual(values = c("brown4", "darkblue")) +
 **Figure 2.3:** PCA of features of AMP and non-AMP sequences used in
 various AMP prediction models.
 
+Combining model sequence length and PCA plots
+
+``` r
+model_seqlengths <- ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
+  geom_col(aes(fill = factor(class, levels = c("non-AMP", "AMP")))) +
+  facet_grid(predictor ~ . , scales = "free_y") +
+  labs(x = "Sequence length", y = "Number of sequences", fill = "") +
+  xlim(0,300) +
+  theme(legend.position = "none",
+        strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank()) +
+  scale_fill_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) +
+  scale_x_continuous(breaks = c(0, 50, 100, 200, 300, 400, 500))
+
+
+
+pca_percentages <- round(pca_features$sdev^2 / sum(pca_features$sdev^2) * 100, 2)
+pca_percentages <- paste(colnames(pca_features$x),"(",paste(as.character(pca_percentages), "%",")", sep = ""))
+
+pca_values_amps <- filter(pca_values, class == "AMP")
+pca_values_nonamps <- filter(pca_values, class == "non-AMP")
+
+
+pca_models <-  ggplot(pca_values) +
+   geom_point(data = pca_values_nonamps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
+   geom_point(data = pca_values_amps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
+   facet_grid(predictor ~., scales = "free_y") +
+   labs(x = pca_percentages[1], y = pca_percentages[2], shape = "", colour = "") +
+   theme(legend.position = "bottom",
+        #strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.text.y.right = element_blank(),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank()) +
+        scale_colour_manual(values = c("darkblue", "brown4")) +
+        scale_shape_manual(values = c(1, 3)) +
+   guides(colour = guide_legend(override.aes = list(size=1)))
+
+pca1_models <- ggplot(pca_values, aes(x = PC1)) +
+   stat_density(aes(colour = class), geom = "line", position = "identity") +
+   facet_grid(predictor ~., scales = "free_y") +
+   labs(x = pca_percentages[1], y = "Density", colour = "") +
+   theme(legend.position = "bottom",
+        strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank()) +
+scale_colour_manual(values = c("brown4", "darkblue")) +
+   guides(colour = guide_legend(override.aes = list(size=1)))
+
+model_seqlengths / (pca_models | pca1_models) + plot_annotation(tag_levels = 'A')
+```
+
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+
 *some issues here. in order to use tSNE, you have to use “unique()”
 which removes stuff. in this case it removed quite a bit, including all
 the non-AMPs for deep\_ampep…*
@@ -354,7 +411,7 @@ ggplot(tsne_values_AMPmodels_annotated, aes(x = tSNE_1, y = tSNE_2)) +
         scale_shape_manual(values = c(1, 3)) 
 ```
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 **Test Figure:** tSNE of features of AMP and non-AMP sequences used in
 various AMP prediction models.
@@ -381,7 +438,7 @@ ggplot(filter(tsne_values_AMPmodels_annotated, predictor %in% yay)) +
         scale_shape_manual(values = c(1, 3)) 
 ```
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 **Test Figure:** tSNE of features of AMP and non-AMP sequences used in
 ampir.
@@ -468,13 +525,13 @@ tsne_proteomes_annotated <- as.data.frame(tsne_proteomes$Y) %>%
 
 ### 2.2.1 Plots
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
 
 **Figure 2.4:** PCA and tSNE of features of all AMP and non-AMP
 sequences (between 10-3000 amino acids long) in the proteomes *Homo
 sapiens* and *Arabidopsis thaliana*
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
 
 **Figure 2.5:** PCA of features of **reviewed** AMP and non-AMP
 sequences (between 10-3000 amino acids long) in the proteomes *Homo
