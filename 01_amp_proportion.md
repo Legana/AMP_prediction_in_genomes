@@ -81,6 +81,10 @@ pr_curve_sample_long <- pivot_longer(pr_curve_sample, cols = c("Precision", "Rec
 probability thresholds for an AMP proportion of 0.01 within the ampir
 v.0.1 test set
 
+``` r
+ggsave("figures/tenAMPsinlargebg.png", width = 5, height = 3)
+```
+
 0.01 is a very small proportion and the curves are creating “big steps”.
 To smoothen out the curves, 100 random selection of 1% (10 AMPs) were
 used to average the curves.
@@ -136,7 +140,7 @@ samples_metrics_averages <- samples_metrics %>%
 
 ### 2.0.1 Plot
 
-![](01_amp_proportion_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](01_amp_proportion_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 **Figure 1.2:** The precision and recall curves over a range of
 probability thresholds for an average AMP proportion of 0.01 within the
@@ -197,7 +201,7 @@ as ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha")
 gets smaller and smaller the Precision curve shifts so that high values
 of precision are only achieved for very high `p_threshold` values.
 
-![](01_amp_proportion_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](01_amp_proportion_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 **Figure 1.2:** The precision and recall curves over a range of
 probability thresholds for four different proportion of AMPs in a
@@ -217,10 +221,46 @@ tradeoff.
 
 ### 3.2.1 Plot
 
-![](01_amp_proportion_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](01_amp_proportion_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 **Figure 1.3:** A traditional precision-recall curve depicting various
 alpha values that represent different proportions of AMPs in a genome
+
+*combining plots*
+
+``` r
+various_alphas <- ggplot(pr_data_long,aes(x=p_threshold,y=value)) + 
+  geom_line(aes(colour = metric, linetype = metric)) + facet_wrap(~alpha, labeller= as_labeller(variable_names)) +
+  labs(x = "Probability threshold", y = "", colour = "", linetype = "") +
+  scale_x_continuous(breaks=c(0, 0.50, 1.00)) +
+  scale_y_continuous(breaks=c(0, 0.50, 1.00)) +
+  scale_colour_manual(values = c("blueviolet", "forestgreen")) +
+  theme_classic() +
+  theme(legend.position = "right",
+         strip.background = element_rect(colour = "white")) +
+  guides(colour = guide_legend(reverse=TRUE)) +
+  guides(linetype = guide_legend(reverse=TRUE))
+
+
+pr_data <- pr_data %>% mutate(alpha = as.factor(alpha))
+
+alpha_gradient <- ggplot(pr_data, aes(x=Recall, y=Precision)) +
+  geom_line(aes(colour = alpha, linetype = alpha)) + 
+  scale_color_viridis(discrete = TRUE) +
+  theme(legend.key = element_rect(fill = "white"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        legend.position = "right") +
+  labs(colour = "alpha", linetype = "alpha") +
+  guides(colour = guide_legend(reverse=TRUE)) +
+  guides(linetype = guide_legend(reverse=TRUE))
+
+(various_alphas) / alpha_gradient + plot_annotation(tag_levels = 'A')
+```
+
+![](01_amp_proportion_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 ## 3.3 Comparing the theoretical 0.01 alpha value with the averaged 0.01 AMP proportion from a real test set
 
@@ -239,7 +279,7 @@ v0.1 test set. This was as expected and shows the
 ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha")
 variable is a valid depiction as the proportion of AMPs in a test set.
 
-![](01_amp_proportion_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](01_amp_proportion_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 **Figure 1.4:** The precision and recall curves over a range of
 probability thresholds for A: an average AMP proportion of 0.01 within

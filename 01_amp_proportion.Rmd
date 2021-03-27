@@ -192,14 +192,14 @@ Plot an explicit axis for `p_threshold` using four different $\alpha$ values. Th
 pr_data_long <- pr_data %>% gather("metric","value",-p_threshold,-alpha)
 
 
-variable_names <- c("0.01" = "Proportion of AMPs in genome: 0.01",
-                    "0.05" = "Proportion of AMPs in genome: 0.05",
-                    "0.1" = "Proportion of AMPs in genome: 0.10",
-                    "0.5" = "Proportion of AMPs in genome: 0.50")
+variable_names <- c("0.01" = "alpha: 0.01",
+                    "0.05" = "alpha: 0.05",
+                    "0.1" = "alpha: 0.10",
+                    "0.5" = "alpha: 0.50")
 
 ggplot(pr_data_long,aes(x=p_threshold,y=value)) + 
-  geom_line(aes(colour=metric)) + facet_wrap(~alpha, labeller= as_labeller(variable_names)) +
-  labs(x = "Probability threshold", y = "", colour = "") +
+  geom_line(aes(colour = metric, linetype = metric)) + facet_wrap(~alpha, labeller= as_labeller(variable_names)) +
+  labs(x = "Probability threshold", y = "", colour = "", linetype = "") +
   scale_x_continuous(breaks=c(0, 0.50, 1.00)) +
   scale_y_continuous(breaks=c(0, 0.50, 1.00)) +
   scale_colour_manual(values = c("blueviolet", "forestgreen")) +
@@ -211,7 +211,8 @@ ggplot(pr_data_long,aes(x=p_threshold,y=value)) +
         legend.key.height = unit(2, "cm"),
         legend.box.spacing = unit(0.1, "cm"),
         panel.background = element_blank(),
-        axis.line = element_line(colour = "grey")) +
+        axis.line = element_line(colour = "grey"))+
+  guides(colour = guide_legend(reverse=TRUE)) +
   guides(linetype = guide_legend(reverse=TRUE))
 ```
 
@@ -228,16 +229,20 @@ Using a traditional precision-recall curve is useful in the sense that it very c
 ### Plot
 
 ```{r, echo=FALSE}
+pr_data <- pr_data %>% mutate(alpha = as.factor(alpha))
+
 ggplot(pr_data, aes(x=Recall, y=Precision)) +
-  geom_line(aes(group=as.factor(alpha), colour = as.factor(alpha))) + 
+  geom_line(aes(colour = alpha, linetype = alpha)) + 
   scale_color_viridis(discrete = TRUE) +
   theme(legend.key = element_rect(fill = "white"),
         panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),
         panel.background = element_blank(),
         axis.line = element_line(colour = "grey")) +
-  labs(colour = "alpha") +
-   guides(color = guide_legend(reverse=TRUE))
+  labs(colour = "alpha", linetype = "alpha") +
+  guides(colour = guide_legend(reverse=TRUE)) +
+  guides(linetype = guide_legend(reverse=TRUE))
+
 ```
 
 **Figure 1.3:** A traditional precision-recall curve depicting various alpha values that represent different proportions of AMPs in a genome
@@ -245,6 +250,46 @@ ggplot(pr_data, aes(x=Recall, y=Precision)) +
 
 ```{r, echo=FALSE}
 ggsave("figures/alpha_gradient.png", height = 5, width = 7)
+```
+
+*combining plots*
+
+```{r, fig.height=8, fig.width=7}
+
+various_alphas <- ggplot(pr_data_long,aes(x=p_threshold,y=value)) + 
+  geom_line(aes(colour = metric, linetype = metric)) + facet_wrap(~alpha, labeller= as_labeller(variable_names)) +
+  labs(x = "Probability threshold", y = "", colour = "", linetype = "") +
+  scale_x_continuous(breaks=c(0, 0.50, 1.00)) +
+  scale_y_continuous(breaks=c(0, 0.50, 1.00)) +
+  scale_colour_manual(values = c("blueviolet", "forestgreen")) +
+  theme_classic() +
+  theme(legend.position = "right",
+         strip.background = element_rect(colour = "white")) +
+  guides(colour = guide_legend(reverse=TRUE)) +
+  guides(linetype = guide_legend(reverse=TRUE))
+
+
+pr_data <- pr_data %>% mutate(alpha = as.factor(alpha))
+
+alpha_gradient <- ggplot(pr_data, aes(x=Recall, y=Precision)) +
+  geom_line(aes(colour = alpha, linetype = alpha)) + 
+  scale_color_viridis(discrete = TRUE) +
+  theme(legend.key = element_rect(fill = "white"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        legend.position = "right") +
+  labs(colour = "alpha", linetype = "alpha") +
+  guides(colour = guide_legend(reverse=TRUE)) +
+  guides(linetype = guide_legend(reverse=TRUE))
+
+(various_alphas) / alpha_gradient + plot_annotation(tag_levels = 'A')
+```
+
+
+```{r, echo=FALSE}
+ggsave("figures/alpha_gradient_and_variousalphas.png", height = 8, width = 7)
 ```
 
 ## Comparing the theoretical 0.01 alpha value with the averaged 0.01 AMP proportion from a real test set
@@ -271,8 +316,7 @@ average_plot1perc <- ggplot(filter(samples_metrics_averages, p_threshold >=0.5),
         panel.grid.major.x = element_blank(),
         panel.background = element_blank(),
         axis.line = element_line(colour = "grey")) +
-  guides(color = guide_legend(reverse=TRUE)) +
-  ggtitle("A")
+  guides(color = guide_legend(reverse=TRUE)) 
 
 alpha_001plot <- ggplot(filter(pr_data_alpha1_long, p_threshold >= 0.5), aes(x=p_threshold, y=value)) +  geom_line(aes(colour = metric)) + 
   labs(x = "Probability threshold", y = "", colour = "") +
@@ -282,12 +326,11 @@ alpha_001plot <- ggplot(filter(pr_data_alpha1_long, p_threshold >= 0.5), aes(x=p
         panel.background = element_blank(),
         legend.key=element_blank(),
         axis.line = element_line(colour = "grey")) +
-  guides(colour = guide_legend(reverse = TRUE)) +
-  ggtitle("B")
+  guides(colour = guide_legend(reverse = TRUE))
 
-average1percvsalpha1pc <- average_plot1perc / alpha_001plot
+average_plot1perc / alpha_001plot + plot_annotation(tag_levels = 'A')
 
-average1percvsalpha1pc
+average1percvsalpha1pc <- average_plot1perc / alpha_001plot + plot_annotation(tag_levels = 'A')
 ```
 
 **Figure 1.4:** The precision and recall curves over a range of probability thresholds for A: an average AMP proportion of 0.01 within the ampir v.0.1 test set and B: for alpha, a theoretical proportion of AMPs within a genome, equal to 0.01.
