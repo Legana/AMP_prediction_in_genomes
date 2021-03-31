@@ -251,15 +251,16 @@ prplot <- ggplot(proteome_rocs) +
                      values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50")) +
    guides(colour = guide_legend(nrow = 1))
 
-rocplot / prplot 
+rocplot / prplot  + plot_annotation(tag_levels = 'A')
 ```
 
 **Figure 3.1:** Performance of various AMP predictors in classifying whole proteome data for *Homo sapiens* and *Arabidopsis thaliana*. Performance is shown as ROC curves (top row) and precision-recall curves (second row). 
 H refers to *Homo sapiens* and A refers to *Arabidopsis thaliana*. The numbers that follow are the respective AUC values for either the ROC or PR curve. 
 
 ```{r, echo = FALSE, eval = FALSE}
-rocandprplot <- rocplot / prplot 
-ggsave(plot = rocandprplot, filename = "figures/proteomesrocandpr.png")
+rocandprplot <- rocplot / prplot + plot_annotation(tag_levels = 'A')
+
+ggsave(plot = rocandprplot, filename = "figures/proteomesrocandpr.png", width = 23, height = 18, units = "cm")
 ```
 
 
@@ -293,34 +294,30 @@ proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics, ampgram
 knitr::kable(proteome_metrics[,3:11])
 ```
 
-```{r}
-proteome_metrics_long <- pivot_longer(proteome_metrics[,3:11], cols = c(-Organism, -Model))
+```{r, fig.height=10, fig.width=9}
+proteome_metrics_long <- proteome_metrics %>% select(Recall, Precision, MCC, AUROC, AUPRC, Organism, Model) %>% pivot_longer(cols = c(-Organism, -Model))
 
-library(pals)
-ggplot(proteome_metrics_long, aes(x = name, y = value)) +
+
+ggplot(proteome_metrics_long, aes(x = Organism, y = value)) +
   geom_bar(stat = "identity", aes(fill = Model), position = "dodge") +
-  facet_wrap(~Organism) +
+  facet_wrap(~name, ncol = 1, scales = "free_y") +
   theme_classic() +
-  theme(legend.position = "bottom") +
-  scale_fill_manual(values = watlington(7)) +
-  labs(x = "", fill = "")
-
-ggsave("figures/proteome_metrics_groupedbar.png", width = 20, height = 16, units = "cm")
-
-ggplot(proteome_metrics_long, aes(x = Model, y = value)) +
-  geom_point(aes(colour = Model, shape = Model)) +
-  facet_grid(Organism ~ name ) +
-  scale_shape_manual(values=c(0, 1, 3, 5, 8, 16, 17)) + 
-  labs(colour = "", shape = "") +
-  theme_bw() +
   theme(legend.position = "bottom",
-        axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())
-
-ggsave("figures/proteome_metrics_points.png", width = 20, height = 16, units = "cm")
+        strip.background = element_rect(colour = "white"),
+        strip.text = element_text(face = "bold", size = 10),
+        axis.text.x = element_text(face = "italic", size = 10)) +
+  scale_fill_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy"),
+                     labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy"),
+                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50")) +
+  labs(x = "", fill = "", y = "Performance metric value") +
+  guides(fill = guide_legend(nrow = 1))
 ```
 
+**Figure lost count:** Performance of various AMP predictors in classifying AMPs in whole proteome data for *Homo sapiens* and *Arabidopsis thaliana*.
+
+```{r}
+ggsave("figures/proteome_metrics_groupedbar.png", width = 20, height = 20, units = "cm")
+```
 
 The metrics overall are really low for the ability of models to predict AMPs in proteomes. However, these metrics may not be a very informative evaluation.
 

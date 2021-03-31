@@ -349,39 +349,32 @@ proteomes of *Homo sapiens* and *Arabidopsis thaliana*
 |       0.316 |  0.031 |     0.000 | 0.000 | -0.121 | 0.240 | 0.005 | A. thaliana | amPEPpy                   |
 
 ``` r
-proteome_metrics_long <- pivot_longer(proteome_metrics[,3:11], cols = c(-Organism, -Model))
+proteome_metrics_long <- proteome_metrics %>% select(Recall, Precision, MCC, AUROC, AUPRC, Organism, Model) %>% pivot_longer(cols = c(-Organism, -Model))
 
-library(pals)
-ggplot(proteome_metrics_long, aes(x = name, y = value)) +
+
+ggplot(proteome_metrics_long, aes(x = Organism, y = value)) +
   geom_bar(stat = "identity", aes(fill = Model), position = "dodge") +
-  facet_wrap(~Organism) +
+  facet_wrap(~name, ncol = 1, scales = "free_y") +
   theme_classic() +
-  theme(legend.position = "bottom") +
-  scale_fill_manual(values = watlington(7)) +
-  labs(x = "", fill = "")
+  theme(legend.position = "bottom",
+        strip.background = element_rect(colour = "white"),
+        strip.text = element_text(face = "bold", size = 10),
+        axis.text.x = element_text(face = "italic", size = 10)) +
+  scale_fill_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy"),
+                     labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy"),
+                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50")) +
+  labs(x = "", fill = "", y = "Performance metric value") +
+  guides(fill = guide_legend(nrow = 1))
 ```
 
 ![](03_benchmarking_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
-``` r
-ggsave("figures/proteome_metrics_groupedbar.png", width = 20, height = 16, units = "cm")
-
-ggplot(proteome_metrics_long, aes(x = Model, y = value)) +
-  geom_point(aes(colour = Model, shape = Model)) +
-  facet_grid(Organism ~ name ) +
-  scale_shape_manual(values=c(0, 1, 3, 5, 8, 16, 17)) + 
-  labs(colour = "", shape = "") +
-  theme_bw() +
-  theme(legend.position = "bottom",
-        axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())
-```
-
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-25-2.png)<!-- -->
+**Figure lost count:** Performance of various AMP predictors in
+classifying AMPs in whole proteome data for *Homo sapiens* and
+*Arabidopsis thaliana*.
 
 ``` r
-ggsave("figures/proteome_metrics_points.png", width = 20, height = 16, units = "cm")
+ggsave("figures/proteome_metrics_groupedbar.png", width = 20, height = 20, units = "cm")
 ```
 
 The metrics overall are really low for the ability of models to predict
@@ -396,7 +389,7 @@ numbers of true and false positives were used, with a focus on the low
 false positive regime, as this is what matters most in whole proteome
 scans (Figure 3.2)
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 **Figure 3.2:** The ability of various models to predict AMPs in the low
 false positive regime (&lt;500) in the proteomes of *Arabidopsis
@@ -406,7 +399,7 @@ y-axis show the full complement of known AMPs in each genome (294 for
 restricted to emphasise behaviour in the low false positive (FP) regime
 (FP &lt; 500).
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 **Figure 3.3:** Same as Figure 3.2 but showing the entire false positive
 regime
