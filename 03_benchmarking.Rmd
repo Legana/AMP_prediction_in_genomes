@@ -295,8 +295,13 @@ knitr::kable(proteome_metrics[,3:11])
 ```
 
 ```{r, fig.height=10, fig.width=9}
-proteome_metrics_long <- proteome_metrics %>% select(Recall, Precision, MCC, AUROC, AUPRC, Organism, Model) %>% pivot_longer(cols = c(-Organism, -Model))
+proteome_metrics_long <- proteome_metrics %>% 
+  select(Recall, Precision, MCC, AUROC, AUPRC, Organism, Model) %>% 
+  pivot_longer(cols = c(-Organism, -Model)) %>%
+  mutate(Model = factor(Model, levels = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy")))
+  
 
+  
 
 ggplot(proteome_metrics_long, aes(x = Organism, y = value)) +
   geom_bar(stat = "identity", aes(fill = Model), position = "dodge") +

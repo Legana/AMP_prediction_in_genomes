@@ -349,8 +349,13 @@ proteomes of *Homo sapiens* and *Arabidopsis thaliana*
 |       0.316 |  0.031 |     0.000 | 0.000 | -0.121 | 0.240 | 0.005 | A. thaliana | amPEPpy                   |
 
 ``` r
-proteome_metrics_long <- proteome_metrics %>% select(Recall, Precision, MCC, AUROC, AUPRC, Organism, Model) %>% pivot_longer(cols = c(-Organism, -Model))
+proteome_metrics_long <- proteome_metrics %>% 
+  select(Recall, Precision, MCC, AUROC, AUPRC, Organism, Model) %>% 
+  pivot_longer(cols = c(-Organism, -Model)) %>%
+  mutate(Model = factor(Model, levels = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy")))
+  
 
+  
 
 ggplot(proteome_metrics_long, aes(x = Organism, y = value)) +
   geom_bar(stat = "identity", aes(fill = Model), position = "dodge") +
