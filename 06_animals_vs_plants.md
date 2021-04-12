@@ -1,39 +1,6 @@
 Animal vs plants
 ================
 
-    ## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.0 ──
-
-    ## ✓ ggplot2 3.3.3     ✓ purrr   0.3.4
-    ## ✓ tibble  3.0.4     ✓ dplyr   1.0.2
-    ## ✓ tidyr   1.1.2     ✓ stringr 1.4.0
-    ## ✓ readr   1.4.0     ✓ forcats 0.5.0
-
-    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-    ## x dplyr::filter() masks stats::filter()
-    ## x dplyr::lag()    masks stats::lag()
-
-    ## Loading required package: lattice
-
-    ## 
-    ## Attaching package: 'caret'
-
-    ## The following object is masked from 'package:purrr':
-    ## 
-    ##     lift
-
-    ## Type 'citation("pROC")' for a citation.
-
-    ## 
-    ## Attaching package: 'pROC'
-
-    ## The following object is masked from 'package:precrec':
-    ## 
-    ##     auc
-
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     cov, smooth, var
-
 # Metazoa vs Viridiplantae
 
 ``` r
@@ -45,23 +12,6 @@ swissprot_amps_2 <- read_tsv("data/uniprot-keyword Antimicrobial+[KW-0929] -filt
        str_detect(Taxonomic_lineage, "Viridiplantae") ~ "Plants",
                                         TRUE ~ Taxonomic_lineage))
 ```
-
-    ## 
-    ## ── Column specification ────────────────────────────────────────────────────────
-    ## cols(
-    ##   Entry = col_character(),
-    ##   `Entry name` = col_character(),
-    ##   Status = col_character(),
-    ##   `Protein names` = col_character(),
-    ##   Organism = col_character(),
-    ##   Length = col_double(),
-    ##   `Taxonomic lineage (all)` = col_character(),
-    ##   `Taxonomic lineage (CLASS)` = col_character(),
-    ##   Sequence = col_character(),
-    ##   Peptide = col_character(),
-    ##   Propeptide = col_character(),
-    ##   `Signal peptide` = col_character()
-    ## )
 
 ``` r
 metazoa_pos <- filter(swissprot_amps_2, Taxonomic_lineage == "Animals" & Length < 500) %>%
@@ -248,34 +198,14 @@ metazoa_models_performance <- rbind(metazoa_models_performance, metazoa_pred2, p
 
 ``` r
 m1_roc <- roc(metazoa_predict_and_actual$Label, metazoa_predict_and_actual$Pos)
-```
 
-    ## Setting levels: control = Neg, case = Pos
-
-    ## Setting direction: controls < cases
-
-``` r
 m2_roc <- roc(metazoa_predict_and_actual2$Label, metazoa_predict_and_actual2$Pos)
-```
 
-    ## Setting levels: control = Neg, case = Pos
-    ## Setting direction: controls < cases
-
-``` r
 p1_roc <- roc(plants_predict_and_actual$Label, plants_predict_and_actual$Pos)
-```
 
-    ## Setting levels: control = Neg, case = Pos
-    ## Setting direction: controls < cases
-
-``` r
 p2_roc <- roc(plants_predict_and_actual2$Label, plants_predict_and_actual2$Pos)
-```
 
-    ## Setting levels: control = Neg, case = Pos
-    ## Setting direction: controls < cases
 
-``` r
 roc.test(m1_roc, m2_roc, method = "delong")
 ```
 

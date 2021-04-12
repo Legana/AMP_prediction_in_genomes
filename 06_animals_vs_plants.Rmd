@@ -4,7 +4,7 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 ```{r, echo = FALSE}
@@ -389,4 +389,3 @@ tsne_metaplant_feat_plot <- ggplot(metaplant_tsne_annotated, aes(x = tSNE_1, y =
 ```{r, eval=FALSE, echo=FALSE}
 ggsave("figures/pcatsne_metaplant.png", width = 17, height = 12 ,units = "cm")
 ```
-
