@@ -48,6 +48,37 @@ human_pred_ampir_nobench <- human_proteome %>% select(`Entry name`, Sequence) %>
 ampir_proteome_predictions <- rbind(cress_pred_ampir_prec, cress_pred_ampir_mat, cress_pred_ampir_nobench, human_pred_ampir_prec, human_pred_ampir_mat, human_pred_ampir_nobench) %>% left_join(reference_proteomes, by = "Entry name") %>% select(ID = `Entry name`, prob_AMP, Organism, Label, Model)
 ```
 
+Use ampir v1.1.0 models (updated with additional AMPs) as well as a
+balanced model
+
+``` r
+ampirv1.1_precursor_imbal <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_imbal_full.rds")
+
+ampirv1.1_mature <- readRDS("data/ampir_v1.1.0_data/tuned_mature_full.rds")
+
+ampirv1.1_precursor_bal <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_bal_full.rds")
+
+cress_pred_ampirv1.1_prec_imbal <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_precursor_imbal) %>% add_column(Model = "ampir_v1.1_precursor_imbal")
+
+cress_pred_ampirv1.1_prec_bal <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_precursor_imbal) %>% add_column(Model = "ampir_v1.1_precursor_bal")
+
+cress_pred_ampirv1.1_mat <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_mature )%>% add_column(Model = "ampir_v1.1_mature")
+
+human_pred_ampirv1.1_prec_imbal <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_precursor_imbal) %>% add_column(Model = "ampir_v1.1_precursor_imbal")
+
+human_pred_ampirv1.1_prec_bal <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_precursor_imbal) %>% add_column(Model = "ampir_v1.1_precursor_bal")
+
+human_pred_ampirv1.1_mat <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_mature) %>% add_column(Model = "ampir_v1.1_mature")
+
+ampir_v1.1prec_model_nobench <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_imbal_nobench.rds")
+
+cress_pred_ampirv1.1_nobench <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_v1.1prec_model_nobench) %>% add_column(Model = "ampir_v1.1_precursor_imbal_nobench")
+
+human_pred_ampirv1.1_nobench <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_v1.1prec_model_nobench) %>% add_column(Model = "ampir_v1.1_precursor_imbal_nobench")
+
+ampir_v1.1_proteome_predictions <- rbind(cress_pred_ampirv1.1_prec_imbal, cress_pred_ampirv1.1_prec_bal, cress_pred_ampirv1.1_mat, cress_pred_ampirv1.1_nobench, human_pred_ampirv1.1_prec_imbal, human_pred_ampirv1.1_prec_bal, human_pred_ampirv1.1_mat,human_pred_ampirv1.1_nobench) %>% left_join(reference_proteomes, by = "Entry name") %>% select(ID = `Entry name`, prob_AMP, Organism, Label, Model)
+```
+
 To use the human and *Arabidopsis* proteomes in other predictors, first
 the non-standard amino acids are removed. This is because the majority
 of AMP predictors only accept sequences that contain standard amino
@@ -134,6 +165,34 @@ itself, and therefore unfortunately could not be included in the
 benchmark. An issue was raised with details about this error on the
 [AMPlify’s issue page](https://github.com/bcgsc/AMPlify/issues/1) on
 10/02/2021.
+
+Update: when looking at the commit history, a
+[commit](https://github.com/bcgsc/AMPlify/commit/2c44491b7a8f4815b154307f5b250f991942935a)
+was found which looked like it would fix the issue. After installing the
+released version, I changed the source code for the software according
+to the previously mentioned commit, and the software worked after that.
+
+AMPlify is optimised for protein sequences that are 200 AA or less and
+do not allow input data to contain sequences larger than 200 amino
+acids. Therefore, only proteins that were =&lt; 200 AA were kept in the
+proteomes (9,027 for *A. thaliana* from 39,340 standard AA sequences and
+33,584 for *H. sapiens* from 67,484 standard AA sequences)
+
+``` bash
+cat data/prediction_results/AMPlify1.0.0/AMPlify_results_20210405153447_Athaliana.txt | sed 's/\r//' | awk '$0~/^Sequence ID:/{spid=$3};$0~/^Score:/{printf("%s\t%s\n",spid,$2)}' > data/prediction_results/AMPlify1.0.0/AMPlify_Athaliana.txt 
+
+cat data/prediction_results/AMPlify1.0.0/AMPlify_results_20210405182202_Hsapiens.txt | sed 's/\r//' | awk '$0~/^Sequence ID:/{spid=$3};$0~/^Score:/{printf("%s\t%s\n",spid,$2)}' > data/prediction_results/AMPlify1.0.0/AMPlify_Hsapiens.txt 
+```
+
+``` r
+amplify_file_paths <- c("data/prediction_results/AMPlify1.0.0/AMPlify_Athaliana.txt","data/prediction_results/AMPlify1.0.0/AMPlify_Hsapiens.txt")
+
+amplify_genome_bench <- do.call(rbind,lapply(amplify_file_paths,read_delim, delim = "\t", col_names = c("Entry name", "prob_AMP"))) %>%
+  separate(`Entry name`, into = c(NA, NA,"Entry name"),sep = "\\|") %>%
+  left_join(reference_proteomes, by = "Entry name") %>% 
+  select(ID = `Entry name`, prob_AMP, Organism, Label) %>% 
+  add_column(Model = "AMPlify")
+```
 
 ## AMPgram
 
@@ -232,12 +291,14 @@ ampep_roc <- get_genome_roc(ampep_genome_bench, "amPEP")
 ampgram_roc <- get_genome_roc(ampgram_genome_bench, "AmpGram")
 
 ampeppy_roc <- get_genome_roc(ampeppy_genome_bench, "amPEPpy")
+
+amplify_roc <- get_genome_roc(amplify_genome_bench, "AMPlify")
 ```
 
 *combine ROC metric dataframes*
 
 ``` r
-proteome_rocs <- rbind(ampir_genome_roc, ampscanner_roc, ampep_roc, ampgram_roc, ampeppy_roc)
+proteome_rocs <- rbind(ampir_genome_roc, ampscanner_roc, ampep_roc, ampgram_roc, ampeppy_roc, amplify_roc)
 ```
 
 ## Plots
@@ -290,7 +351,7 @@ informative on imbalanced datasets, none of the models (save perhaps the
 ampir precursor model on *A. thaliana*) were skilled enough to detect
 AMPs in the *H. sapiens* and *A. thaliana* proteomes.
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 **Figure 3.1:** Performance of various AMP predictors in classifying
 whole proteome data for *Homo sapiens* and *Arabidopsis thaliana*.
@@ -324,8 +385,9 @@ ampscan_metrics <- get_metrics(ampscan_genome_bench, "AMPscanner_v2")
 ampep_metrics <- get_metrics(ampep_genome_bench, "amPEP")
 ampgram_metrics <- get_metrics(ampgram_genome_bench, "AmpGram")
 ampeppy_metrics <- get_metrics(ampeppy_genome_bench, "amPEPpy")
+amplify_metrics <- get_metrics(amplify_genome_bench, "AMPlify")
 
-proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics, ampgram_metrics, ampeppy_metrics) %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "H. sapiens", TRUE ~ "A. thaliana"))
+proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics, ampgram_metrics, ampeppy_metrics, amplify_metrics) %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "H. sapiens", TRUE ~ "A. thaliana"))
 ```
 
 **Table 3.1:** Performance metrics of various predictors on the
@@ -347,14 +409,100 @@ proteomes of *Homo sapiens* and *Arabidopsis thaliana*
 |       0.591 |  0.864 |     0.016 | 0.031 |  0.080 | 0.859 | 0.138 | A. thaliana | AmpGram                   |
 |       0.522 |  0.273 |     0.001 | 0.002 | -0.017 | 0.487 | 0.001 | H. sapiens  | amPEPpy                   |
 |       0.316 |  0.031 |     0.000 | 0.000 | -0.121 | 0.240 | 0.005 | A. thaliana | amPEPpy                   |
+|       0.902 |  0.159 |     0.004 | 0.008 |  0.011 | 0.667 | 0.004 | H. sapiens  | AMPlify                   |
+|       0.990 |  0.017 |     0.053 | 0.026 |  0.012 | 0.622 | 0.054 | A. thaliana | AMPlify                   |
+
+``` r
+#compare ampir v1.0.0 vs ampir v1.1.0
+
+ampir_v1.1_genome_roc <- do.call(rbind,lapply(c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature","ampir_v1.1_precursor_imbal_nobench"),function(meth){
+    get_genome_roc(ampir_v1.1_proteome_predictions %>% filter(Model==meth),meth)}))
+
+ampir_rocs <- rbind(ampir_genome_roc, ampir_v1.1_genome_roc)
+
+ampir_v1.1_metrics <- do.call(rbind, lapply(c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature","ampir_v1.1_precursor_imbal_nobench"),function(meth) {
+  get_metrics(ampir_v1.1_proteome_predictions %>% filter(Model==meth), model_name = meth)
+}))
+
+ampir_comparison_metrics <- rbind(ampir_metrics, ampir_v1.1_metrics) %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "H. sapiens", TRUE ~ "A. thaliana"))
+
+ampir_comparison_metrics[,3:11]
+```
+
+    ##    Specificity Recall Precision    F1   MCC AUROC AUPRC    Organism
+    ## 1        0.971  0.755     0.041 0.078 0.172 0.918 0.150  H. sapiens
+    ## 2        0.986  0.986     0.346 0.512 0.580 0.996 0.727 A. thaliana
+    ## 3        0.049  1.000     0.002 0.004 0.009 0.753 0.004  H. sapiens
+    ## 4        0.007  1.000     0.008 0.016 0.008 0.971 0.154 A. thaliana
+    ## 5        0.970  0.573     0.030 0.057 0.127 0.860 0.090  H. sapiens
+    ## 6        0.988  0.554     0.258 0.352 0.371 0.927 0.312 A. thaliana
+    ## 7        0.971  0.864     0.047 0.089 0.197 0.932 0.298  H. sapiens
+    ## 8        0.988  0.990     0.375 0.544 0.605 0.998 0.832 A. thaliana
+    ## 9        0.971  0.864     0.047 0.089 0.197 0.932 0.298  H. sapiens
+    ## 10       0.988  0.990     0.375 0.544 0.605 0.998 0.832 A. thaliana
+    ## 11       0.048  1.000     0.002 0.004 0.009 0.755 0.004  H. sapiens
+    ## 12       0.007  1.000     0.008 0.016 0.007 0.971 0.153 A. thaliana
+    ## 13       0.972  0.555     0.032 0.061 0.128 0.848 0.110  H. sapiens
+    ## 14       0.989  0.588     0.280 0.379 0.400 0.946 0.344 A. thaliana
+    ##                                 Model
+    ## 1                     ampir_precursor
+    ## 2                     ampir_precursor
+    ## 3                        ampir_mature
+    ## 4                        ampir_mature
+    ## 5             ampir_precursor_nobench
+    ## 6             ampir_precursor_nobench
+    ## 7          ampir_v1.1_precursor_imbal
+    ## 8          ampir_v1.1_precursor_imbal
+    ## 9            ampir_v1.1_precursor_bal
+    ## 10           ampir_v1.1_precursor_bal
+    ## 11                  ampir_v1.1_mature
+    ## 12                  ampir_v1.1_mature
+    ## 13 ampir_v1.1_precursor_imbal_nobench
+    ## 14 ampir_v1.1_precursor_imbal_nobench
+
+``` r
+write_excel_csv(ampir_comparison_metrics[,3:11], "ampir_comparison.csv")
+```
+
+``` r
+ampir_rocs  <- ampir_rocs  %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "Homo sapiens", TRUE ~ "Arabidopsis thaliana"))
+
+ampir_all <- ggplot(ampir_rocs) + 
+  geom_line(aes(x = FP, y = TP, colour = Model),size = 1.1) + 
+  xlim(0,500) +
+  facet_wrap(~Organism, scales = "free_y", nrow = 1) +
+  labs(x= "False positives", y = "True positives", colour = "") +
+  theme_classic() +
+  theme(legend.position = "bottom",
+        strip.text = element_text(face = "italic"),
+        strip.background = element_blank()) +
+   guides(colour = guide_legend(nrow = 1)) 
+
+ampir_bal <- ggplot(filter(ampir_rocs, Model == "ampir_v1.1_precursor_bal")) + 
+  geom_line(aes(x = FP, y = TP, colour = Model),size = 1.1) + 
+  xlim(0,500) +
+  facet_wrap(~Organism, scales = "free_y", nrow = 1) +
+  labs(x= "False positives", y = "True positives", colour = "") +
+  theme_classic() +
+  theme(legend.position = "bottom",
+        strip.text = element_text(face = "italic"),
+        strip.background = element_blank()) +
+   guides(colour = guide_legend(nrow = 1))
+
+ampir_all / ampir_bal
+```
+
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+
+``` r
+ggsave("ampir_comparison.png", width = 33, height = 18 ,units = "cm" )
+```
 
 ``` r
 proteome_metrics_long <- proteome_metrics %>% 
   select(Recall, Precision, MCC, AUROC, AUPRC, Organism, Model) %>% 
   pivot_longer(cols = c(-Organism, -Model)) %>%
-  mutate(Model = factor(Model, levels = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy")))
-  
-
+  mutate(Model = factor(Model, levels = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify")))
   
 
 ggplot(proteome_metrics_long, aes(x = Organism, y = value)) +
@@ -365,21 +513,22 @@ ggplot(proteome_metrics_long, aes(x = Organism, y = value)) +
         strip.background = element_rect(colour = "white"),
         strip.text = element_text(face = "bold", size = 10),
         axis.text.x = element_text(face = "italic", size = 10)) +
-  scale_fill_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy"),
-                     labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy"),
-                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50")) +
+  scale_fill_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature",
+                               "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
+                     labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
+                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
   labs(x = "", fill = "", y = "Performance metric value") +
   guides(fill = guide_legend(nrow = 1))
 ```
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 **Figure lost count:** Performance of various AMP predictors in
 classifying AMPs in whole proteome data for *Homo sapiens* and
 *Arabidopsis thaliana*.
 
 ``` r
-ggsave("figures/proteome_metrics_groupedbar.png", width = 20, height = 20, units = "cm")
+ggsave("figures/proteome_metrics_groupedbar.png", width = 21.5, height = 20, units = "cm")
 ```
 
 The metrics overall are really low for the ability of models to predict
@@ -394,7 +543,7 @@ numbers of true and false positives were used, with a focus on the low
 false positive regime, as this is what matters most in whole proteome
 scans (Figure 3.2)
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
 **Figure 3.2:** The ability of various models to predict AMPs in the low
 false positive regime (&lt;500) in the proteomes of *Arabidopsis
@@ -404,7 +553,7 @@ y-axis show the full complement of known AMPs in each genome (294 for
 restricted to emphasise behaviour in the low false positive (FP) regime
 (FP &lt; 500).
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
 
 **Figure 3.3:** Same as Figure 3.2 but showing the entire false positive
 regime
