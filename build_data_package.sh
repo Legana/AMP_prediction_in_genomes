@@ -13,6 +13,12 @@ echo data/ampir_v1/featuresTest_precursor_imbal.rds >> data_list
 echo data/ampir_v1/featuresTrain_mature.rds >> data_list
 echo data/ampir_v1/featuresTest_mature.rds >> data_list
 
+# ampir v1.1.0 models 
+echo data/ampir_v1.1.0_data/tuned_precursor_imbal_full.rds >> data_list
+echo data/ampir_v1.1.0_data/tuned_mature_full.rds >> data_list
+echo data/ampir_v1.1.0_data/tuned_precursor_bal_full.rds >> data_list
+echo data/ampir_v1.1.0_data/tuned_precursor_imbal_nobench.rds >> data_list
+
 # PCA and tsne analysis of predictors and proteomes
 echo cache/all_predictor_data_feats.rds >> data_list
 echo cache/pca_proteomes.rds >> data_list
@@ -73,6 +79,9 @@ echo cache/metazoa_svm.rds >> data_list
 echo cache/metazoa_svm2.rds >> data_list
 echo cache/plants_neg.rds >> data_list
 
+# tree data 
+echo data/tree/phylum_tree.phy >> data_list
+echo data/uniprot-keyword-Antimicrobial+[KW-0929]April2021.xlsx >> data_list
 
 # Arabidopsis thaliana and Homo sapiens proteomes without and with standard AA
 
@@ -95,6 +104,11 @@ echo data/prediction_results/ampep/arab_proteome_standardaa_ampep.txt >> data_li
 echo data/prediction_results/ampep/homo_proteome_standardaa_ampep.txt >> data_list
 echo data/prediction_results/amPEPpy/arab_results.tsv >> data_list
 echo data/prediction_results/amPEPpy/homo_results.tsv >> data_list
+echo data/prediction_results/AMPlify1.0.0/AMPlify_results_20210405153447_Athaliana.txt >> data_list
+echo data/prediction_results/AMPlify1.0.0/AMPlify_results_20210405182202_Hsapiens.txt >> data_list
+echo data/prediction_results/AMPlify1.0.0/AMPlify_Athaliana.txt >> data_list
+echo data/prediction_results/AMPlify1.0.0/AMPlify_Hsapiens.txt >> data_list
+echo data/prediction_results/ampir/ampirv1.1_refproteomes_predictions.rds >> data_list 
 echo cache/ampgram_genome_bench.rds >> data_list
 ### AmpGram 
 
