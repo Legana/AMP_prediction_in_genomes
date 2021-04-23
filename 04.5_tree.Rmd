@@ -17,7 +17,7 @@ library(ape)
 # Phylogenetic tree of organisms that contain AMPs in UniProt 
 
 ```{r}
-uniprot_amps <- readxl::read_xlsx("data/uniprot-keyword-Antimicrobial+[KW-0929]April2021.xlsx") %>%
+swissprot_amps <- readxl::read_xlsx("data/uniprot-keyword-Antimicrobial+[KW-0929]-reviewed-April2021.xlsx") %>%
   rename(Taxonomic_lineage = `Taxonomic lineage (ALL)`) %>%
   rename(Phylum = `Taxonomic lineage (PHYLUM)`) %>%
   rename(Order = `Taxonomic lineage (ORDER)`) %>%
@@ -30,16 +30,9 @@ uniprot_amps <- readxl::read_xlsx("data/uniprot-keyword-Antimicrobial+[KW-0929]A
                                                TRUE ~ Phylum))
 ```
 
-```{r}
-unreviewed_amps_count <- uniprot_amps %>% filter(Status == "unreviewed") %>%
-  count(label) 
-```
-
 Count the reviewed AMPs and add the approximate number of identified species per phylum (Bacteria was kept at a kingdom level so tree wouldn't be overcrowded)
 ```{r}
-swissprot_amps <- uniprot_amps %>% filter(Status == "reviewed")
-
-swissprot_amps_count <- uniprot_amps %>% filter(Status == "reviewed") %>%
+swissprot_amps_count <- swissprot_amps %>%
   count(label) %>%
   mutate(approx_species_n = c(22000, 1000000, 30000, 30000, 30000, 65000, 11000, 7000, 2400, 85000, 261, 20000, 20000, 500000)) %>%
   rename(AMP_count_rev = n)
