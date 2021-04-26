@@ -70,21 +70,33 @@ Match metadata to tree data to make geom_facet work
 newtree <- as_tibble(tree) %>% left_join(swissprot_amps_count) %>% as.treedata()
 ```
 
-### Plot 
-
-So this sort of worksbut there's no axis and when I stuff around with the xlim argument to try and get both plots to appear completely in the plot area , it just seems to mess things up ... !
+For some reason geom_facet can't find the metadata so make a copy of the metadata and rename the data we want to plot ...
 ```{r}
 swissprot_amps_count2 <- swissprot_amps_count %>% rename(AMP_count_rev2 = AMP_count_rev)
+```
+
+### Plot 
 
 
-ggtree(newtree) +
-  geom_tiplab(offset = 0.9, size=3, color ="Black") +
-  #xlim(-5,40) +
-  theme(legend.position = "none") +
-      #  plot.margin = margin(1, 0.5, 1, 1, "cm")) + #t, r, b, l
-  geom_nodelab(aes(label = label), size = 2.5, vjust = -0.5, hjust = 1.1 ) +
-  geom_tippoint(aes(size = approx_species_n), colour = "blue") + 
-  geom_facet(data = data.frame(swissprot_amps_count2), panel = "AMP count", geom = ggstance::geom_barh, mapping = aes(x = AMP_count_rev2), stat = "identity", width = .6)
+```{r}
+newtree_plot <- ggtree(newtree) +
+  geom_tiplab(offset = 0.9, size= 4, color ="Black") +
+  geom_nodelab(aes(label = label), size = 3.5, vjust = -0.5, hjust = 1.1 ) +
+  geom_tippoint(aes(size = approx_species_n), colour = "blueviolet") +
+  theme_tree2() +
+  theme(legend.position = "bottom") +
+  labs(size = "Approximate species count") +
+  xlim_expand(c(0, 20), panel = "Tree")
+  
+p2 <- facet_plot(newtree_plot, panel = "AMP count", data.frame(swissprot_amps_count2),
+           geom = ggstance::geom_barh, mapping = aes(x = AMP_count_rev2), fill = "forestgreen", stat = "identity", width = .3) 
+
+facet_plot(p2, panel = "AMP count", data = data.frame(swissprot_amps_count2), geom = geom_text, mapping = aes(x = AMP_count_rev2 + 80, label = AMP_count_rev2), size = 3)
+```
+
+
+```{r, echo = FALSE}
+ggsave("figures/full_tree.png", width = 24, height = 18, units = "cm")
 ```
 
 
@@ -113,54 +125,74 @@ chordata_arthropoda_amps_count <- chordata_arthropoda_amps %>%
 ca_tree_text <- readLines("data/tree/chordata_arthropodatree.phy") %>%
   paste0(collapse="")
 ca_tree <- read.tree(text = ca_tree_text)
+
+newcatree <- as_tibble(ca_tree) %>% left_join(chordata_arthropoda_amps_count) %>% as.treedata()
+
+chordata_arthropoda_amps_count2 <- chordata_arthropoda_amps_count %>% rename(AMP_count2 = AMP_count)
 ```
 
 
 ## Plot 
 
-Seems to work but still no x axis and also the scaling is wrong. how to fix it so both plots look good? do I use xlim or something else?
-```{r}
-newcatree <- as_tibble(ca_tree) %>% left_join(chordata_arthropoda_amps_count) %>% as.treedata()
+```{r, echo = FALSE}
+caplot <- ggtree(newcatree) +
+  geom_tiplab(offset = 0.9, size=4, color ="Black") +
+  geom_nodelab(aes(label = label), size = 3.5, vjust = -0.5, hjust = 1.1 ) +
+  geom_tippoint(aes(size = approx_species_n), colour = "blueviolet") +
+  theme_tree2() +
+  theme(legend.position = "bottom") +
+  labs(size = "Approximate species count") +
+  xlim_expand(c(-4, 20), panel = "Tree")
 
 
-chordata_arthropoda_amps_count2 <- chordata_arthropoda_amps_count %>% rename(AMP_count2 = AMP_count)
+ca2 <- facet_plot(caplot, data = data.frame(chordata_arthropoda_amps_count2), panel = "AMP count", geom = ggstance::geom_barh, mapping = aes(x = AMP_count2), fill = "forestgreen", stat = "identity", width = .3) 
 
 
-ggtree(newcatree) +
-  geom_tiplab(offset = 0.9, size=3, color ="Black") +
-  #xlim(-1,10) +
-  theme(legend.position = "none") +
-      #  plot.margin = margin(1, 0.5, 1, 1, "cm")) + #t, r, b, l
-  geom_nodelab(aes(label = label), size = 2.5, vjust = -0.5, hjust = 1.1 ) +
-  geom_tippoint(aes(size = approx_species_n), colour = "blue") + 
-  geom_facet(data = data.frame(chordata_arthropoda_amps_count2), panel = "AMP count", geom = ggstance::geom_barh, mapping = aes(x = AMP_count2), stat = "identity", width = .6) 
+facet_plot(ca2, panel = "AMP count", data = data.frame(chordata_arthropoda_amps_count2), geom = geom_text, mapping = aes(x = AMP_count2 + 40, label = AMP_count2), size = 3)
 ```
 
-Trying to plot both plots together as two separate plots but the bars associated with the AMP count don't align properly to the tree lip labels ..... :(  
-```{r}
-tree_y <- function(ggtree, data){
-  left_join(select(data, label), select(ggtree$data, label, y)) %>%
-    pull(y)
-}
+```{r, echo = FALSE}
+ggsave("figures/chordatArthropod_tree.png", width = 24, height = 18, units = "cm")
+```
 
-ca_treeplot <- ggtree(ca_tree) %<+% chordata_arthropoda_amps_count  +
-  geom_tiplab(offset = 0.3, size=3, color="Black") +
-  xlim(NA,20) +
-  theme(legend.position = "none") +
-  geom_nodelab(aes(Class = label), geom = "label") +
-  geom_tippoint(aes(size = approx_species_n)) 
+### Combine tree plots
 
-
-tstplot <- ggplot(chordata_arthropoda_amps_count, aes(tree_y(ca_treeplot, chordata_arthropoda_amps_count), AMP_count)) +
-  geom_col() +
-  coord_flip() +
-  labs(x = "") +
-  theme_classic() +
-  theme(axis.title.y=element_blank(),
-        axis.text.y=element_blank(),
-        axis.ticks.y=element_blank())
+```{r, echo = FALSE, fig.width=10, fig.height=9}
+newtree_plot <- ggtree(newtree) +
+  geom_tiplab(offset = 0.9, size= 3.5, color ="Black") +
+  geom_nodelab(aes(label = label), size = 3, vjust = -0.5, hjust = 1.1 ) +
+  geom_tippoint(aes(size = approx_species_n), colour = "blueviolet") +
+  theme_tree2() +
+  theme(legend.position = "bottom") +
+  labs(size = "Approximate species count") +
+  xlim_expand(c(0, 20), panel = "Tree")
   
+p2 <- facet_plot(newtree_plot, panel = "AMP count", data.frame(swissprot_amps_count2),
+           geom = ggstance::geom_barh, mapping = aes(x = AMP_count_rev2), fill = "forestgreen", stat = "identity", width = .3) 
 
-ca_treeplot + tstplot + plot_annotation(tag_levels = "A")
+p3 <- facet_plot(p2, panel = "AMP count", data = data.frame(swissprot_amps_count2), geom = geom_text, mapping = aes(x = AMP_count_rev2 + 60, label = AMP_count_rev2), size = 3)
+
+caplot <- ggtree(newcatree) +
+  geom_tiplab(offset = 0.9, size=3.5, color ="Black") +
+  geom_nodelab(aes(label = label), size = 3, vjust = -0.5, hjust = 1.1 ) +
+  geom_tippoint(aes(size = approx_species_n), colour = "blueviolet") +
+  theme_tree2() +
+  theme(legend.position = "none") +
+  xlim_expand(c(-3, 20), panel = "Tree")
+
+
+ca2 <- facet_plot(caplot, data = data.frame(chordata_arthropoda_amps_count2), panel = "AMP count", geom = ggstance::geom_barh, mapping = aes(x = AMP_count2), fill = "forestgreen", stat = "identity", width = .3) 
+
+ca3 <- facet_plot(ca2, panel = "AMP count", data = data.frame(chordata_arthropoda_amps_count2), geom = geom_text, mapping = aes(x = AMP_count2 + 40, label = AMP_count2), size = 3)
+
+p3 / ca3 + plot_annotation(tag_levels = "A")
+
 ```
+
+
+```{r, echo = FALSE}
+ggsave("figures/combined_tree.png", width = 24, height = 18, units = "cm")
+```
+
+
 
