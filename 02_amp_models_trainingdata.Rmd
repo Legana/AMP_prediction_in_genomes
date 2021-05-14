@@ -14,7 +14,6 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 library(ampir)
 library(tidyverse)
 library(patchwork)
-library(Rtsne)
 set.seed(3)
 ```
 
@@ -224,11 +223,9 @@ ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
 
 **Figure 2.2:** The sequence length of all AMP and non-AMP sequences used in various AMP prediction models. 
 
-```{r, eval=FALSE, echo=FALSE}
-ggsave("figures/model_lengths_combined.png", width = 16, height = 14, units = "cm", dpi = 500)
-```
 
-## PCA and t-SNE of AMP and non-AMP features
+
+## PCA of AMP and non-AMP features
 
 *Calculating features with ampir*
 ```{r, eval = FALSE}
@@ -258,39 +255,7 @@ pca_values <- pca_features$x %>%
    mutate(class = factor(class, levels = c("non-AMP", "AMP"), labels = c("non-AMP", "AMP")))
 ```
 
-*t-SNE on features*
-```{r}
-all_predictor_data_feats <- all_predictor_data_feats %>%
-  mutate(seq_name_unique = make.unique(seq_name, sep = "_"))
 
-
-features_unique <- all_predictor_data_feats %>%
-  column_to_rownames(var = "seq_name_unique") %>%
-  select(c(Amphiphilicity:Xc2.lambda.2)) %>%
-  unique()
-
-seq_names_unique <- rownames_to_column(features_unique, var = "seq_name")
-```
-
-
-```{r, eval = FALSE}
-tsne_features <- features_unique %>%
-  as.matrix() %>%
-  Rtsne(pca_scale = TRUE)
-
-saveRDS(tsne_features, "cache/tsne_AMPmodelsfeatures.rds")
-```
-
-```{r, echo = FALSE}
-tsne_features <-readRDS("cache/tsne_AMPmodelsfeatures.rds")
-```
-
-```{r}
-tsne_values_AMPmodels_annotated <- as.data.frame(tsne_features$Y) %>%
-   add_column(seq_name = seq_names_unique$seq_name) %>%
-   rename(tSNE_1 = V1, tSNE_2 = V2) %>%
-   left_join(all_predictor_data)
-```
 
 ### Plots 
 
@@ -332,9 +297,6 @@ scale_colour_manual(values = c("brown4", "darkblue"))
 
 **Figure 2.3:** PCA of features of AMP and non-AMP sequences used in various AMP prediction models in training and testing sets. 
 
-```{r, eval=FALSE, echo=FALSE}
-ggsave("figures/pca_model_feats_tt.png", width = 18, height = 16 ,units = "cm")
-```
 
 
 ```{r, fig.width=9, fig.height=7}
@@ -371,11 +333,8 @@ scale_colour_manual(values = c("brown4", "darkblue")) +
 **Figure 2.3:** PCA of features of AMP and non-AMP sequences used in various AMP prediction models. 
 
 
-```{r, eval=FALSE, echo=FALSE}
-ggsave("figures/pca_model_feats.png", width = 18, height = 17 ,units = "cm")
-```
-
 Combining model sequence length and PCA plots 
+
 ```{r, fig.width=8, fig.height=13}
 
 model_seqlengths <- ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
@@ -434,51 +393,8 @@ model_seqlengths / (pca_models | pca1_models) + plot_annotation(tag_levels = 'A'
 ggsave("figures/model_lengths_and_feats.png", width = 21, height = 31 ,units = "cm")
 ```
 
-*some issues here. in order to use tSNE, you have to use "unique()" which removes stuff. in this case it removed quite a bit, including all the non-AMPs for deep_ampep...*
-```{r}
-ggplot(tsne_values_AMPmodels_annotated, aes(x = tSNE_1, y = tSNE_2)) +
-   geom_point(aes(colour = class, shape = class)) +
-   facet_wrap(~predictor) +
-   labs(colour = "", shape = "") +
-   theme(legend.position = "bottom",
-        #strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.text.y.right = element_blank(),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank()) +
-        scale_colour_manual(values = c("darkblue", "brown4")) +
-        scale_shape_manual(values = c(1, 3)) 
 
-```
-
-**Test Figure:** tSNE of features of AMP and non-AMP sequences used in various AMP prediction models. 
-
-*ampir only* 
-```{r}
-yay <- c("ampir_precursor","ampir_mature")
-
-tsne_values_amps <- filter(tsne_values_AMPmodels_annotated, predictor %in% yay & class == "AMP")
-tsne_values_nonamps <- filter(tsne_values_AMPmodels_annotated, predictor %in% yay & class == "non-AMP")
-
-ggplot(filter(tsne_values_AMPmodels_annotated, predictor %in% yay)) +
-   geom_point(data = tsne_values_nonamps, aes(x = tSNE_1, y = tSNE_2, colour = class, shape = class), size = 0.7) +
-   geom_point(data = tsne_values_amps, aes(x = tSNE_1, y = tSNE_2, colour = class, shape = class), size = 0.7) +
-   facet_grid(predictor ~ factor(dataset, levels = c("Train", "Test"), labels = c("Training set", "Testing set")), scales = "free_y") +
-   labs(x = "tSNE 1", y = "tSNE 2", shape = "", colour = "") +
-   theme(legend.position = "bottom",
-        strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank()) +
-        scale_colour_manual(values = c("darkblue", "brown4")) +
-        scale_shape_manual(values = c(1, 3)) 
-```
-
-**Test Figure:** tSNE of features of AMP and non-AMP sequences used in ampir.
-
-
-
-## PCA and tSNE on reference proteomes
+## PCA on reference proteomes
 
 Read in *Homo sapiens* and *Arabidopsis thaliana* proteomes and keep only sequences longer than 10 amino acids and with standard amino acids to match predictor data used for the previous PCA.
 
@@ -514,26 +430,6 @@ pca_proteomes <- reference_proteomes_feats %>%
    prcomp(scale. = TRUE)
 ```
 
-Change proteome data to unique for tSNE preparation
-```{r}
-reference_proteomes_feats_unique <- reference_proteomes_feats %>%
-   column_to_rownames("seq_name") %>%
-   select(c(1:29)) %>%
-   unique()
-```
-
-Run tSNE analysis 
-```{r, eval = FALSE}
-tsne_proteomes <- reference_proteomes_feats_unique %>%
-   as.matrix() %>%
-   Rtsne(pca_scale = TRUE, num_threads = 4)
-
-saveRDS(tsne_proteomes, "cache/tsne_proteomes.rds")
-```
-
-```{r, echo =FALSE}
-tsne_proteomes <- readRDS("cache/tsne_proteomes.rds")
-```
 
 ```{r, echo=FALSE, eval=FALSE}
 saveRDS(pca_proteomes, "cache/pca_proteomes.rds")
@@ -555,15 +451,6 @@ pca_prot_percentages <- round(pca_proteomes$sdev^2 / sum(pca_proteomes$sdev^2) *
 pca_prot_percentages <- paste(colnames(pca_proteomes$x),"(",paste(as.character(pca_prot_percentages), "%",")", sep = ""))
 
 
-
-reference_proteomes_feats_uniquew_id <- reference_proteomes_feats_unique %>%
-   rownames_to_column("seq_name")
-
-tsne_proteomes_annotated <- as.data.frame(tsne_proteomes$Y) %>%
-   add_column(seq_name = reference_proteomes_feats_uniquew_id$seq_name) %>%
-   rename(tSNE_1 = V1, tSNE_2 = V2) %>%
-   left_join(reference_proteomes, by = c("seq_name" = "Entry name")) %>%
-   mutate(class = ifelse(Label == "Pos", "AMP","non-AMP"))
 ```
 
 ### Plots 
@@ -599,37 +486,7 @@ pca1_proteomes_plot <- ggplot(pca_proteomes_w_annotations, aes(x = PC1)) +
         panel.grid.minor = element_blank(),
         panel.grid.major = element_blank()) +
 scale_colour_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) 
-
-tsne_proteomes_amps <- filter(tsne_proteomes_annotated, class == "AMP")
-tsne_proteomes_nonamps <- filter(tsne_proteomes_annotated, class == "non-AMP")
-
-tsne_proteomes_plot <- ggplot(tsne_proteomes_annotated) +
-         geom_point(data = tsne_proteomes_nonamps, aes(x = tSNE_1, y = tSNE_2, colour = class, shape = class)) +
-         geom_point(data = tsne_proteomes_amps, aes(x = tSNE_1, y = tSNE_2, colour = class, shape = class)) +
-         facet_wrap(~factor(Organism, levels = c("Homo sapiens (Human)", "Arabidopsis thaliana (Mouse-ear cress)"), labels = c("H. sapiens", "A. thaliana")),
-         scales = "free_y") +
-         labs(x = "tSNE 1", y = "tSNE 2", colour = "", shape = "") +
-         theme_classic() +
-         theme(legend.position = "bottom",
-              strip.background = element_blank(),
-              panel.grid.minor = element_blank(),
-              panel.grid.major = element_blank(),
-              strip.text = element_text(face = "italic")) +
-          scale_colour_manual(values = c("darkblue", "brown4")) +
-          scale_shape_manual(values = c(1, 3)) +
-   guides(colour = guide_legend(override.aes = list(size=3)))
-
-(pca_proteomes_plot | pca1_proteomes_plot) / tsne_proteomes_plot + plot_annotation(tag_levels = 'A')
-
 ```
-
-**Figure 2.4:** PCA and tSNE of features of all AMP and non-AMP sequences (between 10-3000 amino acids long) in the proteomes *Homo sapiens* and *Arabidopsis thaliana* 
-
-```{r, eval=FALSE, echo=FALSE}
-ggsave("figures/pcatsne_proteomes.png", width = 17, height = 12 ,units = "cm")
-```
-
-
 
 ```{r, echo = FALSE,  fig.width=8, fig.height=5}
 
@@ -660,30 +517,6 @@ pca1_proteomes_plot_rev <- ggplot(filter(pca_proteomes_w_annotations, Status == 
         panel.grid.major = element_blank()) +
 scale_colour_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) 
 
-
-tsne_proteomes_plot_rev <- ggplot(tsne_proteomes_annotated) +
-         geom_point(data = filter(tsne_proteomes_nonamps, Status == "reviewed") , aes(x = tSNE_1, y = tSNE_2, colour = class, shape = class)) +
-         geom_point(data = filter(tsne_proteomes_amps, Status == "reviewed"), aes(x = tSNE_1, y = tSNE_2, colour = class, shape = class)) +
-         facet_wrap(~factor(Organism, levels = c("Homo sapiens (Human)", "Arabidopsis thaliana (Mouse-ear cress)"), labels = c("H. sapiens", "A. thaliana")),
-         scales = "free_y") +
-         labs(x = "tSNE 1", y = "tSNE 2", colour = "", shape = "") +
-         theme_classic() +
-         theme(legend.position = "bottom",
-              strip.background = element_blank(),
-              panel.grid.minor = element_blank(),
-              panel.grid.major = element_blank(),
-              strip.text = element_text(face = "italic")) +
-          scale_colour_manual(values = c("darkblue", "brown4")) +
-          scale_shape_manual(values = c(1, 3)) +
-   guides(colour = guide_legend(override.aes = list(size=3)))
-
-(pca_proteomes_plot_rev | pca1_proteomes_plot_rev) / tsne_proteomes_plot_rev + plot_annotation(tag_levels = 'A')
+pca_proteomes_plot_rev + pca1_proteomes_plot_rev
 ```
-
-**Figure 2.5:** PCA of features of **reviewed** AMP and non-AMP sequences (between 10-3000 amino acids long) in the proteomes *Homo sapiens* and *Arabidopsis thaliana* 
-
-```{r, eval=FALSE, echo=FALSE}
-ggsave("figures/pcatsne_proteomes_reviewed.png", width = 17, height = 12 ,units = "cm")
-```
-
 

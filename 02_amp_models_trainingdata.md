@@ -4,11 +4,10 @@ Training datasets in other AMP predictors
 -   [1 Introduction](#introduction)
 -   [2 AMP predictor data](#amp-predictor-data)
     -   [2.0.1 Plots](#plots)
-    -   [2.1 PCA and t-SNE of AMP and non-AMP
-        features](#pca-and-t-sne-of-amp-and-non-amp-features)
+    -   [2.1 PCA of AMP and non-AMP
+        features](#pca-of-amp-and-non-amp-features)
         -   [2.1.1 Plots](#plots-1)
-    -   [2.2 PCA and tSNE on reference
-        proteomes](#pca-and-tsne-on-reference-proteomes)
+    -   [2.2 PCA on reference proteomes](#pca-on-reference-proteomes)
         -   [2.2.1 Plots](#plots-2)
 
 # 1 Introduction
@@ -238,7 +237,7 @@ as these were not specified.
 **Figure 2.2:** The sequence length of all AMP and non-AMP sequences
 used in various AMP prediction models.
 
-## 2.1 PCA and t-SNE of AMP and non-AMP features
+## 2.1 PCA of AMP and non-AMP features
 
 *Calculating features with ampir*
 
@@ -277,24 +276,9 @@ features_unique <- all_predictor_data_feats %>%
 seq_names_unique <- rownames_to_column(features_unique, var = "seq_name")
 ```
 
-``` r
-tsne_features <- features_unique %>%
-  as.matrix() %>%
-  Rtsne(pca_scale = TRUE)
-
-saveRDS(tsne_features, "cache/tsne_AMPmodelsfeatures.rds")
-```
-
-``` r
-tsne_values_AMPmodels_annotated <- as.data.frame(tsne_features$Y) %>%
-   add_column(seq_name = seq_names_unique$seq_name) %>%
-   rename(tSNE_1 = V1, tSNE_2 = V2) %>%
-   left_join(all_predictor_data)
-```
-
 ### 2.1.1 Plots
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 **Figure 2.3:** PCA of features of AMP and non-AMP sequences used in
 various AMP prediction models in training and testing sets.
@@ -330,7 +314,7 @@ scale_colour_manual(values = c("brown4", "darkblue")) +
 (pca_models | pca1_models) + plot_annotation(tag_levels = 'A')
 ```
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 **Figure 2.3:** PCA of features of AMP and non-AMP sequences used in
 various AMP prediction models.
@@ -390,60 +374,9 @@ scale_colour_manual(values = c("brown4", "darkblue")) +
 model_seqlengths / (pca_models | pca1_models) + plot_annotation(tag_levels = 'A')
 ```
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
-*some issues here. in order to use tSNE, you have to use “unique()”
-which removes stuff. in this case it removed quite a bit, including all
-the non-AMPs for deep\_ampep…*
-
-``` r
-ggplot(tsne_values_AMPmodels_annotated, aes(x = tSNE_1, y = tSNE_2)) +
-   geom_point(aes(colour = class, shape = class)) +
-   facet_wrap(~predictor) +
-   labs(colour = "", shape = "") +
-   theme(legend.position = "bottom",
-        #strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.text.y.right = element_blank(),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank()) +
-        scale_colour_manual(values = c("darkblue", "brown4")) +
-        scale_shape_manual(values = c(1, 3)) 
-```
-
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
-
-**Test Figure:** tSNE of features of AMP and non-AMP sequences used in
-various AMP prediction models.
-
-*ampir only*
-
-``` r
-yay <- c("ampir_precursor","ampir_mature")
-
-tsne_values_amps <- filter(tsne_values_AMPmodels_annotated, predictor %in% yay & class == "AMP")
-tsne_values_nonamps <- filter(tsne_values_AMPmodels_annotated, predictor %in% yay & class == "non-AMP")
-
-ggplot(filter(tsne_values_AMPmodels_annotated, predictor %in% yay)) +
-   geom_point(data = tsne_values_nonamps, aes(x = tSNE_1, y = tSNE_2, colour = class, shape = class), size = 0.7) +
-   geom_point(data = tsne_values_amps, aes(x = tSNE_1, y = tSNE_2, colour = class, shape = class), size = 0.7) +
-   facet_grid(predictor ~ factor(dataset, levels = c("Train", "Test"), labels = c("Training set", "Testing set")), scales = "free_y") +
-   labs(x = "tSNE 1", y = "tSNE 2", shape = "", colour = "") +
-   theme(legend.position = "bottom",
-        strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank()) +
-        scale_colour_manual(values = c("darkblue", "brown4")) +
-        scale_shape_manual(values = c(1, 3)) 
-```
-
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
-
-**Test Figure:** tSNE of features of AMP and non-AMP sequences used in
-ampir.
-
-## 2.2 PCA and tSNE on reference proteomes
+## 2.2 PCA on reference proteomes
 
 Read in *Homo sapiens* and *Arabidopsis thaliana* proteomes and keep
 only sequences longer than 10 amino acids and with standard amino acids
@@ -482,25 +415,6 @@ pca_proteomes <- reference_proteomes_feats %>%
    prcomp(scale. = TRUE)
 ```
 
-Change proteome data to unique for tSNE preparation
-
-``` r
-reference_proteomes_feats_unique <- reference_proteomes_feats %>%
-   column_to_rownames("seq_name") %>%
-   select(c(1:29)) %>%
-   unique()
-```
-
-Run tSNE analysis
-
-``` r
-tsne_proteomes <- reference_proteomes_feats_unique %>%
-   as.matrix() %>%
-   Rtsne(pca_scale = TRUE, num_threads = 4)
-
-saveRDS(tsne_proteomes, "cache/tsne_proteomes.rds")
-```
-
 ``` r
 pca_proteomes_x <- pca_proteomes$x %>% as.data.frame() %>% mutate(`Entry name` = reference_proteomes$`Entry name`)
 
@@ -510,29 +424,6 @@ pca_proteomes_w_annotations <- pca_proteomes_x %>%
 
 pca_prot_percentages <- round(pca_proteomes$sdev^2 / sum(pca_proteomes$sdev^2) * 100, 2)
 pca_prot_percentages <- paste(colnames(pca_proteomes$x),"(",paste(as.character(pca_prot_percentages), "%",")", sep = ""))
-
-
-
-reference_proteomes_feats_uniquew_id <- reference_proteomes_feats_unique %>%
-   rownames_to_column("seq_name")
-
-tsne_proteomes_annotated <- as.data.frame(tsne_proteomes$Y) %>%
-   add_column(seq_name = reference_proteomes_feats_uniquew_id$seq_name) %>%
-   rename(tSNE_1 = V1, tSNE_2 = V2) %>%
-   left_join(reference_proteomes, by = c("seq_name" = "Entry name")) %>%
-   mutate(class = ifelse(Label == "Pos", "AMP","non-AMP"))
 ```
 
 ### 2.2.1 Plots
-
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
-
-**Figure 2.4:** PCA and tSNE of features of all AMP and non-AMP
-sequences (between 10-3000 amino acids long) in the proteomes *Homo
-sapiens* and *Arabidopsis thaliana*
-
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
-
-**Figure 2.5:** PCA of features of **reviewed** AMP and non-AMP
-sequences (between 10-3000 amino acids long) in the proteomes *Homo
-sapiens* and *Arabidopsis thaliana*
