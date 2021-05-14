@@ -19,9 +19,8 @@ echo data/ampir_v1.1.0_data/tuned_mature_full.rds >> data_list
 echo data/ampir_v1.1.0_data/tuned_precursor_bal_full.rds >> data_list
 echo data/ampir_v1.1.0_data/tuned_precursor_imbal_nobench.rds >> data_list
 
-# PCA analysis of predictors and proteomes
+# Features for PCA of predictors and proteomes
 echo cache/all_predictor_data_feats.rds >> data_list
-echo cache/pca_proteomes.rds >> data_list
 
 
 # Data from AMP predictors 
