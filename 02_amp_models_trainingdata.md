@@ -1,16 +1,7 @@
 Training datasets in other AMP predictors
 ================
 
--   [1 Introduction](#introduction)
--   [2 AMP predictor data](#amp-predictor-data)
-    -   [2.0.1 Plots](#plots)
-    -   [2.1 PCA of AMP and non-AMP
-        features](#pca-of-amp-and-non-amp-features)
-        -   [2.1.1 Plots](#plots-1)
-    -   [2.2 PCA on reference proteomes](#pca-on-reference-proteomes)
-        -   [2.2.1 Plots](#plots-2)
-
-# 1 Introduction
+# Introduction
 
 The effectiveness of supervised learning methods for predictive modeling
 is highly affected by the data that were used to train the model with.
@@ -23,7 +14,7 @@ best from new data it is used or tested on. For antimicrobial peptide
 data generally refers to sequences that presumably do not have
 antimicrobial activity (non-AMPs).
 
-# 2 AMP predictor data
+# AMP predictor data
 
 The training and test sets of six recent AMP predictors were examined to
 assess their effectiveness in genome-wide AMP prediction.
@@ -217,166 +208,20 @@ ampir_feats <- rbind(ampir_prec_feats, ampir_mat_feats) %>% mutate(class = ifels
 ampir_data <- ampir_feats %>% select(seq_name, seq_aa, class, dataset, length, predictor)
 ```
 
-### 2.0.1 Plots
+``` r
+all_predictor_data <- rbind(iAMP2L_data, ampep_data, deep_ampep_data, ampeppy_data, ampscan_data, amplify_data, ampgram_test_data, ampir_data)
+
+all_predictor_data <- all_predictor_data %>% filter(length >10)
+```
 
 ``` r
 all_predictor_data_wcounts <- all_predictor_data %>%
                                 group_by(class, dataset, length, predictor) %>%
-                                summarise(number = n())
+                                summarise(number = n()) %>%
+    mutate(predictor = factor(predictor, levels = c("iAMP-2L", "AMP Scanner v2", "AmPEP", "AmPEPpy", "deep_AmPEP", "AMPlify", "AmpGram", "ampir_precursor", "ampir_mature")))
 ```
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
-
-**Figure 2.1:** The sequence length of AMP and non-AMP sequences in the
-training and testing set of various AMP prediction models. The training
-set for AmpGram and the testing sets for amPEP and amPEPpy are missing
-as these were not specified.
-
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
-
-**Figure 2.2:** The sequence length of all AMP and non-AMP sequences
-used in various AMP prediction models.
-
-## 2.1 PCA of AMP and non-AMP features
-
-*Calculating features with ampir*
-
-``` r
-all_predictor_data <- all_predictor_data %>% filter(length >10)
-  
-all_predictor_data_feats <- all_predictor_data %>% calculate_features(min_len = 10)
-```
-
-*PCA on features*
-
-``` r
-pca_features <- all_predictor_data_feats %>% 
-   select(c(Amphiphilicity:Xc2.lambda.2)) %>%
-   prcomp(scale. = TRUE)
-
-pca_values <- pca_features$x %>% 
-   as.data.frame() %>% 
-   mutate(seq_name = all_predictor_data_feats$seq_name) %>% 
-   left_join(all_predictor_data, by = "seq_name") %>%
-   mutate(class = factor(class, levels = c("non-AMP", "AMP"), labels = c("non-AMP", "AMP")))
-```
-
-*t-SNE on features*
-
-``` r
-all_predictor_data_feats <- all_predictor_data_feats %>%
-  mutate(seq_name_unique = make.unique(seq_name, sep = "_"))
-
-
-features_unique <- all_predictor_data_feats %>%
-  column_to_rownames(var = "seq_name_unique") %>%
-  select(c(Amphiphilicity:Xc2.lambda.2)) %>%
-  unique()
-
-seq_names_unique <- rownames_to_column(features_unique, var = "seq_name")
-```
-
-### 2.1.1 Plots
-
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
-
-**Figure 2.3:** PCA of features of AMP and non-AMP sequences used in
-various AMP prediction models in training and testing sets.
-
-``` r
-pca_models <-  ggplot(pca_values) +
-   geom_point(data = pca_values_nonamps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
-   geom_point(data = pca_values_amps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
-   facet_grid(predictor ~., scales = "free_y") +
-   labs(x = pca_percentages[1], y = pca_percentages[2], shape = "", colour = "") +
-   theme(legend.position = "bottom",
-        #strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.text.y.right = element_blank(),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank()) +
-        scale_colour_manual(values = c("darkblue", "brown4")) +
-        scale_shape_manual(values = c(1, 3)) +
-   guides(colour = guide_legend(override.aes = list(size=1)))
-
-pca1_models <- ggplot(pca_values, aes(x = PC1)) +
-   stat_density(aes(colour = class), geom = "line", position = "identity") +
-   facet_grid(predictor ~., scales = "free_y") +
-   labs(x = pca_percentages[1], y = "Density", colour = "") +
-   theme(legend.position = "bottom",
-        strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank()) +
-scale_colour_manual(values = c("brown4", "darkblue")) +
-   guides(colour = guide_legend(override.aes = list(size=1)))
-
-(pca_models | pca1_models) + plot_annotation(tag_levels = 'A')
-```
-
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
-
-**Figure 2.3:** PCA of features of AMP and non-AMP sequences used in
-various AMP prediction models.
-
-Combining model sequence length and PCA plots
-
-``` r
-model_seqlengths <- ggplot(all_predictor_data_wcounts, aes(x = length, y = number)) +
-  geom_col(aes(fill = factor(class, levels = c("non-AMP", "AMP")))) +
-  facet_grid(predictor ~ . , scales = "free_y") +
-  labs(x = "Sequence length", y = "Number of sequences", fill = "") +
-  xlim(0,300) +
-  theme(legend.position = "none",
-        strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank()) +
-  scale_fill_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) +
-  scale_x_continuous(breaks = c(0, 50, 100, 200, 300, 400, 500))
-
-
-
-pca_percentages <- round(pca_features$sdev^2 / sum(pca_features$sdev^2) * 100, 2)
-pca_percentages <- paste(colnames(pca_features$x),"(",paste(as.character(pca_percentages), "%",")", sep = ""))
-
-pca_values_amps <- filter(pca_values, class == "AMP")
-pca_values_nonamps <- filter(pca_values, class == "non-AMP")
-
-
-pca_models <-  ggplot(pca_values) +
-   geom_point(data = pca_values_nonamps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
-   geom_point(data = pca_values_amps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
-   facet_grid(predictor ~., scales = "free_y") +
-   labs(x = pca_percentages[1], y = pca_percentages[2], shape = "", colour = "") +
-   theme(legend.position = "bottom",
-        #strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.text.y.right = element_blank(),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank()) +
-        scale_colour_manual(values = c("darkblue", "brown4")) +
-        scale_shape_manual(values = c(1, 3)) +
-   guides(colour = guide_legend(override.aes = list(size=1)))
-
-pca1_models <- ggplot(pca_values, aes(x = PC1)) +
-   stat_density(aes(colour = class), geom = "line", position = "identity") +
-   facet_grid(predictor ~., scales = "free_y") +
-   labs(x = pca_percentages[1], y = "Density", colour = "") +
-   theme(legend.position = "bottom",
-        strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank()) +
-scale_colour_manual(values = c("brown4", "darkblue")) +
-   guides(colour = guide_legend(override.aes = list(size=1)))
-
-model_seqlengths / (pca_models | pca1_models) + plot_annotation(tag_levels = 'A')
-```
-
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
-
-## 2.2 PCA on reference proteomes
+## PCA of AMP and non-AMP features on models and proteomes
 
 Read in *Homo sapiens* and *Arabidopsis thaliana* proteomes and keep
 only sequences longer than 10 amino acids and with standard amino acids
@@ -388,42 +233,103 @@ reference_proteomes <- read_tsv("data/proteomes/uniprot-proteome UP000005640.tab
   mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg")) %>%
   filter(Length >10) %>%
   filter(Length <3000) %>%
-  filter(grepl(Sequence ,pattern='^[ARNDCEQGHILKMFPSTWYV]+$'))
+  filter(grepl(Sequence, pattern='^[ARNDCEQGHILKMFPSTWYV]+$'))
 ```
 
-Calculate features
+*Calculating features with ampir*
 
 ``` r
+all_predictor_data_feats <- all_predictor_data %>% calculate_features(min_len = 10)
+
 reference_proteomes_seqnames <- reference_proteomes %>%
   select(`Entry name`, Sequence) %>%
   as.data.frame()
 
 reference_proteomes_feats <- reference_proteomes_seqnames %>% calculate_features()
+```
 
-saveRDS(reference_proteomes_feats, "cache/reference_proteome_feats.rds")
+*add class and names and combine model and proteome features*
+
+``` r
+all_predictor_data_feats <- all_predictor_data_feats %>% mutate(class = all_predictor_data$class) %>% mutate(name = all_predictor_data$predictor) %>% mutate(length = all_predictor_data$length)
+
+reference_proteomes_feats <- reference_proteomes_feats %>% mutate(class = ifelse(reference_proteomes$Label == "Pos", "AMP","non-AMP")) %>% mutate(name = case_when(str_detect(reference_proteomes$Organism, "Homo") ~ "Homo sapiens", TRUE ~ "Arabidopsis thaliana")) %>% mutate(length = reference_proteomes$Length)
+
+predictor_and_proteome_feats <- rbind(all_predictor_data_feats, reference_proteomes_feats) %>% mutate(name = factor(name, levels = c("iAMP-2L", "AMP Scanner v2", "AmPEP", "AmPEPpy", "deep_AmPEP", "AMPlify", "AmpGram", "ampir_precursor", "ampir_mature", "Homo sapiens", "Arabidopsis thaliana")))
+
+
+predictor_and_proteome_counts <- predictor_and_proteome_feats %>%
+                            group_by(class, length, name) %>%
+                            summarise(number = n())
 ```
 
 ``` r
-reference_proteomes_feats <- readRDS("cache/reference_proteome_feats.rds")
-```
-
-Run PCA analysis
-
-``` r
-pca_proteomes <- reference_proteomes_feats %>% 
+pca_features_pp <- predictor_and_proteome_feats %>% 
    select(c(Amphiphilicity:Xc2.lambda.2)) %>%
    prcomp(scale. = TRUE)
+
+pca_values_pp <- pca_features_pp$x %>% 
+   as.data.frame() %>%
+   mutate(seq_name = predictor_and_proteome_feats$seq_name) %>%
+   left_join(predictor_and_proteome_feats, by = "seq_name")
 ```
 
 ``` r
-pca_proteomes_x <- pca_proteomes$x %>% as.data.frame() %>% mutate(`Entry name` = reference_proteomes$`Entry name`)
+pca_prot_percentages <- round(pca_features_pp$sdev^2 / sum(pca_features_pp$sdev^2) * 100, 2)
+pca_prot_percentages <- paste(colnames(pca_features_pp$x),"(",paste(as.character(pca_prot_percentages), "%",")", sep = ""))
 
-pca_proteomes_w_annotations <- pca_proteomes_x %>%
-   left_join(reference_proteomes, by = "Entry name") %>%
-   mutate(class = ifelse(Label == "Pos", "AMP","non-AMP"))
+pca_values_pp_amps <- filter(pca_values_pp, class == "AMP")
+pca_values_pp_nonamps <- filter(pca_values_pp, class == "non-AMP")
 
-pca_prot_percentages <- round(pca_proteomes$sdev^2 / sum(pca_proteomes$sdev^2) * 100, 2)
-pca_prot_percentages <- paste(colnames(pca_proteomes$x),"(",paste(as.character(pca_prot_percentages), "%",")", sep = ""))
+model_seqlength <- ggplot(predictor_and_proteome_counts, aes(x = length, y = number)) +
+  geom_col(aes(fill = factor(class, levels = c("non-AMP", "AMP")))) +
+  facet_grid(name ~ . , scales = "free_y") +
+  labs(x = "Sequence length", y = "Number of sequences", fill = "") +
+  xlim(0,300) +
+  theme(legend.position = "none",
+        strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        strip.text = element_text(face = "italic")) +
+  scale_fill_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) 
+
+pca_models <-  ggplot(pca_values_pp) +
+   geom_point(data = pca_values_pp_nonamps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
+   geom_point(data = pca_values_pp_amps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
+   facet_grid(name ~., scales = "free_y") +
+   labs(x = pca_prot_percentages[1], y = pca_prot_percentages[2], shape = "", colour = "") +
+   theme(legend.position = "bottom",
+        #strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.text.y.right = element_blank(),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        strip.text = element_text(face = "italic")) +
+        scale_colour_manual(values = c("darkblue", "brown4")) +
+        scale_shape_manual(values = c(1, 3)) +
+   guides(colour = guide_legend(override.aes = list(size=1)))
+
+
+pca1_models <- ggplot(pca_values_pp, aes(x = PC1)) +
+   stat_density(aes(colour = class), geom = "line", position = "identity") +
+   facet_grid(name ~., scales = "free_y") +
+   labs(x = pca_prot_percentages[1], y = "Density", colour = "") +
+   theme(legend.position = "bottom",
+        strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        strip.text = element_text(face = "italic")) +
+scale_colour_manual(values = c("brown4", "darkblue")) +
+   guides(colour = guide_legend(override.aes = list(size=1)))
+
+model_seqlength /  (pca_models | pca1_models) + plot_annotation(tag_levels = 'A')
 ```
 
-### 2.2.1 Plots
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+**Figure 2.1:** A) Sequence length, B) Scatterplot of the first two
+principal components (PC), C) Density plot of the first PC of all AMP
+and non-AMP sequences used in various AMP prediction models and in the
+proteomes of *Homo sapiens* and *Arabidopsis thaliana*.
