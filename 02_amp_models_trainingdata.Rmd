@@ -248,7 +248,7 @@ pca_values_pp_amps <- filter(pca_values_pp, class == "AMP")
 pca_values_pp_nonamps <- filter(pca_values_pp, class == "non-AMP")
 
 model_seqlength <- ggplot(predictor_and_proteome_counts, aes(x = length, y = number)) +
-  geom_col(aes(fill = factor(class, levels = c("non-AMP", "AMP")))) +
+  geom_col(aes(fill = factor(class, levels = c("non-AMP", "AMP")), alpha = class)) +
   facet_grid(name ~ . , scales = "free_y") +
   labs(x = "Sequence length", y = "Number of sequences", fill = "") +
   xlim(0,300) +
@@ -257,25 +257,28 @@ model_seqlength <- ggplot(predictor_and_proteome_counts, aes(x = length, y = num
         strip.background = element_blank(),
         panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
+        panel.background = element_rect(fill = "white", colour = "grey"),
+        legend.key = element_rect(fill = "white"),
         strip.text = element_text(face = "italic")) +
-  scale_fill_manual(values = c("AMP" = "darkblue", "non-AMP" = "brown4")) 
+  scale_fill_manual(values = c("AMP" = "blueviolet", "non-AMP" = "forestgreen")) +
+  scale_alpha_discrete(range = c(1, 0.5))
 
 pca_models <-  ggplot(pca_values_pp) +
-   geom_point(data = pca_values_pp_nonamps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
+   geom_point(data = pca_values_pp_nonamps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7, alpha = 0.5) +
    geom_point(data = pca_values_pp_amps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
    facet_grid(name ~., scales = "free_y") +
    labs(x = pca_prot_percentages[1], y = pca_prot_percentages[2], shape = "", colour = "") +
    theme(legend.position = "bottom",
-        #strip.text.y.right = element_text(angle = 0, hjust = 0),
         strip.text.y.right = element_blank(),
         strip.background = element_blank(),
         panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
+        panel.background = element_rect(fill = "white", colour = "grey"),
+        legend.key = element_rect(fill = "white"),
         strip.text = element_text(face = "italic")) +
-        scale_colour_manual(values = c("darkblue", "brown4")) +
+        scale_colour_manual(values = c("blueviolet", "forestgreen")) +
         scale_shape_manual(values = c(1, 3)) +
    guides(colour = guide_legend(override.aes = list(size=1)))
-
 
 pca1_models <- ggplot(pca_values_pp, aes(x = PC1)) +
    stat_density(aes(colour = class), geom = "line", position = "identity") +
@@ -286,11 +289,14 @@ pca1_models <- ggplot(pca_values_pp, aes(x = PC1)) +
         strip.background = element_blank(),
         panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
+        panel.background = element_rect(fill = "white", colour = "grey"),
+        legend.key = element_rect(fill = "white"),
         strip.text = element_text(face = "italic")) +
-scale_colour_manual(values = c("brown4", "darkblue")) +
+scale_colour_manual(values = c("blueviolet", "forestgreen")) +
    guides(colour = guide_legend(override.aes = list(size=1)))
 
-model_seqlength /  (pca_models | pca1_models) + plot_annotation(tag_levels = 'A')
+model_seqlength /  (pca_models | pca1_models) + plot_annotation(tag_levels = "A")
+
 ```
 
 **Figure 2.1:** A) Sequence length,  B) Scatterplot of the first two principal components (PC), C) Density plot of the first PC of all AMP and non-AMP sequences used in various AMP prediction models and in the proteomes of *Homo sapiens* and *Arabidopsis thaliana*.
