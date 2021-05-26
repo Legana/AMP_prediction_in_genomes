@@ -4,20 +4,33 @@ Training datasets in other AMP predictors
 # Introduction
 
 The effectiveness of supervised learning methods for predictive modeling
-is highly affected by the data that were used to train the model with.
-Supervised learning is a part of machine learning which finds patterns
-between data characteristics and labels (positive and negative) that are
-assigned to the training data used to facilitate learning of the model.
-Once the model has been trained, it can then predict which label fits
-best from new data it is used or tested on. For antimicrobial peptide
-(AMP) prediction, positive data refers to AMP sequences and negative
-data generally refers to sequences that presumably do not have
-antimicrobial activity (non-AMPs).
+depends on the degree to which the training data is a good match for the
+query data for which prediction is sought. For antimicrobial peptide
+(AMP) prediction, training typically occurs on a dataset composed of
+sequences with known antimicrobial activity (positive AMPs) and a
+background or negative set comprised of sequences that presumably do not
+have antimicrobial activity (non-AMPs). In this document we will explore
+the composition of both positive and negative datasets used by AMP
+predictors. We find that although there is much overlap in their use of
+positive AMPs there are substantial differences in (a) the use of
+precursor vs mature peptides, (b) the extent to which positive and
+negative data have length-matched distributions, and (c) the ratio of
+positive and negative cases (balance).
+
+Our focus in on the use of AMP predictors as part of an ’omics-based
+novel AMP discovery workflow. In this context the input/query data is
+usually the complete set of predicted proteins for an organism, which
+might be derived from translations of gene models or from translated
+transcriptome sequences. Here we refer to such a dataset as a proteome,
+and in this document we will refer to proteomes of two very well studied
+organisms, Humans (*Homo sapiens*) and *Arabidopsis thaliana* (a plant)
+both of which have relatively completely classified proteomes.
 
 # AMP predictor data
 
 The training and test sets of six recent AMP predictors were examined to
-assess their effectiveness in genome-wide AMP prediction.
+assess the degree to which they varied between predictors, and how well
+they matched the proteomes of *Arabidopsis thaliana* and *Homo sapiens*.
 
 **Table 2.1:** Summary table of the number of positive and negative
 sequences present in the training and test set in six AMP predictors
@@ -46,20 +59,6 @@ accuracy. Their training data, or benchmark dataset as they termed it,
 comprises of 897 AMPs and 2,405 non-AMPs. Their test or independent
 dataset comprises of 920 AMPs and 920 non-AMPs.
 
-``` r
-iAMP2L_train <- read_faa("data/amp_predictors/iAMP-2L/xiao_benchmark.fasta") %>% 
-  mutate(class = ifelse(grepl(seq_name,pattern = "^AP"), "AMP", "non-AMP")) %>% 
-  distinct(seq_name, .keep_all = TRUE) %>%
-  add_column(dataset="Train") 
-  
-iAMP2L_test <- read_faa("data/amp_predictors/iAMP-2L/xiao_independent.fasta") %>% 
-  mutate(class = ifelse(grepl(seq_name,pattern = "^AP"), "AMP", "non-AMP")) %>%
-  add_column(dataset="Test") 
-  
-iAMP2L_data <- rbind(iAMP2L_train, iAMP2L_test) %>%
-  mutate(length = nchar(seq_aa)) %>% add_column(predictor="iAMP-2L")
-```
-
 **AmPEP Training Data**
 
 The AmPEP 2018 AMP predictor provides its training data available
@@ -69,14 +68,6 @@ dataset used by amPEP is a large dataset of 166,791 non-AMP sequences
 and 3,268 AMPs. amPEP used the Xiao et al. 2013 dataset from the iAMP-2L
 predictor as a test set (see above).
 
-``` r
-ampep_data <- read_faa("data/amp_predictors/amPEP/M_model_train_nonAMP_sequence.fasta") %>% add_column(class="non-AMP") %>% 
-  rbind(read_faa("data/amp_predictors/amPEP/M_model_train_AMP_sequence.fasta") %>% add_column(class="AMP")) %>% 
-  add_column(dataset = "Train") %>%
-  mutate(length = nchar(seq_aa)) %>% add_column(predictor="AmPEP") %>%
-  mutate(seq_name = paste0("amPEP_trainset_neg", 1:n()))
-```
-
 AmPEP was redesigned in 2020 as Deep-AmPEP30 to focus on short AMPs (
 &lt; 30 amino acids) by [Yan et
 al](https://doi.org/10.1016/j.omtn.2020.05.006) and its training and
@@ -85,31 +76,15 @@ test data is available
 training set consists of 1,529 AMPs and non-AMPs and their test set
 consists of 94 AMPs and non-AMPs.
 
-``` r
-deep_ampep_data <- read_faa("data/amp_predictors/deepamPEP30/train_ne.fasta") %>%
-   rbind(read_faa("data/amp_predictors/deepamPEP30/test_ne.fasta")) %>%
-  add_column(class = "non-AMP") %>%
-  rbind(read_faa("data/amp_predictors/deepamPEP30/train_po.fasta") %>%
-  rbind(read_faa("data/amp_predictors/deepamPEP30/test_po.fasta")) %>%
-          add_column(class = "AMP")) %>%
-  mutate(dataset = case_when(
-    str_detect(seq_name, "^test") ~ "Test",
-    str_detect(seq_name, "^uni") ~ "Test",
-                             TRUE ~ "Train")) %>%
-  mutate(length = nchar(seq_aa)) %>% 
-  add_column(predictor="deep_AmPEP")
-```
-
 AmPEP was additionally created as a python application, amPEPpy, by
 [Lawrence et al. 2020](https://doi.org/10.1093/bioinformatics/btaa917).
-amPEPpy’s training data originated from amPEP and were obtained via
-amPEPpy’s [GitHub page](https://github.com/tlawrence3/amPEPpy).
-
-``` r
-ampeppy_data <- read_faa("data/amp_predictors/amPEPpy/M_model_train_nonAMP_sequence.numbered.proplen.subsample.fasta") %>% add_column(class="non-AMP") %>% 
-  rbind(read_faa("data/amp_predictors/amPEPpy/M_model_train_AMP_sequence.numbered.fasta") %>% add_column(class="AMP")) %>% 
-  add_column(dataset = "Train") %>% mutate(length = nchar(seq_aa)) %>% add_column(predictor="AmPEPpy")
-```
+amPEPpy’s training data originated from amPEP but were modified to
+ensure that positive and negative sets had the same length distribution.
+The data were obtained via amPEPpy’s [GitHub
+page](https://github.com/tlawrence3/amPEPpy). No specific test data were
+used for this predictor. The authors used OOB error to calculate
+elements of the confusion matrix meaning that the composition of test
+data was effectively identical to the training set.
 
 **AMP Scanner v2 Data**
 
@@ -119,24 +94,6 @@ for training, testing and evaluation are available directly for download
 from <https://www.dveltri.com/ascan/v2/about.html>. AMP Scanner’s
 training data consisted of 1,066 AMP and non-AMP sequences. Their
 testing data consisted of 712 AMP and non-AMP sequences.
-
-``` r
-ampscan_train_data <- read_faa("data/amp_predictors/AMP_Scan2_OrigPaper_Dataset/AMP.tr.fa") %>%
-   rbind(read_faa("data/amp_predictors/AMP_Scan2_OrigPaper_Dataset/AMP.eval.fa")) %>%
-  rbind(read_faa("data/amp_predictors/AMP_Scan2_OrigPaper_Dataset/DECOY.tr.fa")) %>%
-  rbind(read_faa("data/amp_predictors/AMP_Scan2_OrigPaper_Dataset/DECOY.eval.fa")) %>%
-             add_column(dataset="Train")
-
-ampscan_test_data <- rbind(read_faa("data/amp_predictors/AMP_Scan2_OrigPaper_Dataset/AMP.te.fa")) %>%
-  rbind(read_faa("data/amp_predictors/AMP_Scan2_OrigPaper_Dataset/DECOY.te.fa")) %>%
-             add_column(dataset="Test")
-
-ampscan_data <- rbind(ampscan_train_data, ampscan_test_data) %>%
-  mutate(class = case_when(str_detect(seq_name, "^Uni") ~ "non-AMP", TRUE ~ "AMP")) %>%
-    mutate(length = nchar(seq_aa)) %>% 
-    add_column(predictor="AMP Scanner v2") %>%
-  relocate(class, .before = dataset)
-```
 
 **AMPlify data**
 
@@ -156,17 +113,6 @@ page](https://github.com/bcgsc/AMPlify). Their training set consists of
 3,338 AMPs and 3,338 non-AMPs and their test set consists of 835 AMPs
 and 835 non-AMPs.
 
-``` r
-amplify_data <- read_faa("data/amp_predictors/AMPlify/AMP_train_20190414.fa") %>%
-   rbind(read_faa("data/amp_predictors/AMPlify/non_AMP_train_20190414.fa")) %>%
-  add_column(dataset = "Train") %>%
-  rbind(read_faa("data/amp_predictors/AMPlify/AMP_test_20190414.fa") %>%
-  rbind(read_faa("data/amp_predictors/AMPlify/non_AMP_test_20190414.fa")) %>%
-          add_column(dataset = "Test")) %>%
-  mutate(class = case_when(str_detect(seq_name, "^trAMP|^teAMP") ~ "AMP", TRUE ~ "non-AMP")) %>%
-  mutate(length = nchar(seq_aa)) %>% add_column(predictor="AMPlify") %>% relocate(class, .before = dataset)
-```
-
 AmpGram was created in 2020 and in addition to the standard AMPs, it
 also focuses on predicting longer proteins that contain antimicrobial
 activity, such as the milk protein, lactoferrin, and on non-AMP proteins
@@ -184,157 +130,94 @@ from the [DAMPD](https://dx.doi.org/10.1093%2Fnar%2Fgkr1063) and
 [APD3](https://doi.org/10.1093/nar/gkv1278) AMP databases and non-AMPs
 from UniProt.
 
-``` r
-ampgram_test_data <- read_faa("data/amp_predictors/AmpGram/benchmark.fasta") %>% mutate(class = case_when(str_detect(seq_name, "^dbAMP") ~ "AMP", TRUE ~ "non-AMP")) %>% add_column(dataset = "Test") %>% mutate(length = nchar(seq_aa)) %>% add_column(predictor = "AmpGram")
-```
-
 **ampir**
 
 ampir was divided in two different models, precursor, which focuses on
 longer sequences (between 60-300) and mature, which only contains short
 sequences (between 10-50)
 
-``` r
-ampir_prec_feats_train <- readRDS("data/ampir_v1/featuresTrain_precursor_imbal.rds") %>% mutate(dataset = "Train")
-ampir_prec_feats_test <- readRDS("data/ampir_v1/featuresTest_precursor_imbal.rds") %>% mutate(dataset = "Test")
-ampir_prec_feats <- rbind(ampir_prec_feats_train, ampir_prec_feats_test) %>% mutate(predictor = "ampir_precursor")
+# Comparing the composition of predictor training/test data with reference proteomes
 
-ampir_mat_feats_train <- readRDS("data/ampir_v1/featuresTrain_mature.rds") %>% mutate(dataset = "Train")
-ampir_mat_feats_test <- readRDS("data/ampir_v1/featuresTest_mature.rds") %>% mutate(dataset = "Test")
-ampir_mat_feats <- rbind(ampir_mat_feats_train, ampir_mat_feats_test) %>% mutate(predictor = "ampir_mature")
+First we compare the test and training data of each predictor. For all
+predictors other than AmPEP the length distributions of test and
+training were almost identical reflecting the fact the in most cases the
+test set was a randomly held-back portion of the same data used to
+generate the training set. AmPEP is the exception to this and has a
+different distribution for the test data, this being derived from the
+Xiao et al benchmark set.
 
-ampir_feats <- rbind(ampir_prec_feats, ampir_mat_feats) %>% mutate(class = ifelse(Label == "Tg", "AMP","non-AMP"))
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
-ampir_data <- ampir_feats %>% select(seq_name, seq_aa, class, dataset, length, predictor)
-```
+**Figure Supp\_2.1:** Comparison of sequence length distributions for
+positive (AMP; purple) and negative (non-AMP; green) fractions in test
+and training data eight AMP predictors.
 
-``` r
-all_predictor_data <- rbind(iAMP2L_data, ampep_data, deep_ampep_data, ampeppy_data, ampscan_data, amplify_data, ampgram_test_data, ampir_data)
+Given the close correspondence in composition between test and training
+data for most predictors we will simply consider the entire dataset (ie
+both test and train merged together).
 
-all_predictor_data <- all_predictor_data %>% filter(length >10)
-```
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
-``` r
-all_predictor_data_wcounts <- all_predictor_data %>%
-                                group_by(class, dataset, length, predictor) %>%
-                                summarise(number = n()) %>%
-    mutate(predictor = factor(predictor, levels = c("iAMP-2L", "AMP Scanner v2", "AmPEP", "AmPEPpy", "deep_AmPEP", "AMPlify", "AmpGram", "ampir_precursor", "ampir_mature")))
-```
+**Figure 2.2:** Comparison of sequence length distributions for positive
+(AMP; purple) and negative (non-AMP; green) fractions in merged (test
+and training) data for eight AMP predictors, and for the proteomes of
+*A. thaliana* and *H. sapiens*.
 
-## PCA of AMP and non-AMP features on models and proteomes
+# Overlap in positive AMP data between predictors
 
-Read in *Homo sapiens* and *Arabidopsis thaliana* proteomes and keep
-only sequences longer than 10 amino acids and with standard amino acids
-to match predictor data used for the previous PCA.
+There are several databases that list AMPs with confirmed activity,
+including [APD 3](http://aps.unmc.edu/AP/), [DRAMP
+2.0](http://dramp.cpu-bioinfor.org/),
+[dbAMP](http://140.138.77.240/~dbamp/index.php) and
+[UniProt](https://www.uniprot.org/uniprot/?query=keyword%3A%22Antimicrobial+%5BKW-0929%5D%22&sort=score)
+and most predictors use one or more of these as the basis for
+constructing their positive AMP dataset.
 
-``` r
-reference_proteomes <- read_tsv("data/proteomes/uniprot-proteome UP000005640.tab") %>%
-  rbind(read_tsv("data/proteomes/uniprot-proteome UP000006548.tab")) %>%
-  mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg")) %>%
-  filter(Length >10) %>%
-  filter(Length <3000) %>%
-  filter(grepl(Sequence, pattern='^[ARNDCEQGHILKMFPSTWYV]+$'))
-```
+Here we explore the degree of overlap between AMP predictor positive
+training data that exists as a result of these shared origins, and how
+this interacts with the length distribution of AMPs and degree to which
+mature peptides vs precursor proteins are included.
 
-*Calculating features with ampir*
-
-``` r
-all_predictor_data_feats <- all_predictor_data %>% calculate_features(min_len = 10)
-
-reference_proteomes_seqnames <- reference_proteomes %>%
-  select(`Entry name`, Sequence) %>%
-  as.data.frame()
-
-reference_proteomes_feats <- reference_proteomes_seqnames %>% calculate_features()
-```
-
-*add class and names and combine model and proteome features*
-
-``` r
-all_predictor_data_feats <- all_predictor_data_feats %>% mutate(class = all_predictor_data$class) %>% mutate(name = all_predictor_data$predictor) %>% mutate(length = all_predictor_data$length)
-
-reference_proteomes_feats <- reference_proteomes_feats %>% mutate(class = ifelse(reference_proteomes$Label == "Pos", "AMP","non-AMP")) %>% mutate(name = case_when(str_detect(reference_proteomes$Organism, "Homo") ~ "Homo sapiens", TRUE ~ "Arabidopsis thaliana")) %>% mutate(length = reference_proteomes$Length)
-
-predictor_and_proteome_feats <- rbind(all_predictor_data_feats, reference_proteomes_feats) %>% mutate(name = factor(name, levels = c("iAMP-2L", "AMP Scanner v2", "AmPEP", "AmPEPpy", "deep_AmPEP", "AMPlify", "AmpGram", "ampir_precursor", "ampir_mature", "Homo sapiens", "Arabidopsis thaliana")))
-
-
-predictor_and_proteome_counts <- predictor_and_proteome_feats %>%
-                            group_by(class, length, name) %>%
-                            summarise(number = n())
-```
-
-``` r
-pca_features_pp <- predictor_and_proteome_feats %>% 
-   select(c(Amphiphilicity:Xc2.lambda.2)) %>%
-   prcomp(scale. = TRUE)
-
-pca_values_pp <- pca_features_pp$x %>% 
-   as.data.frame() %>%
-   mutate(seq_name = predictor_and_proteome_feats$seq_name) %>%
-   left_join(predictor_and_proteome_feats, by = "seq_name")
-```
-
-``` r
-pca_prot_percentages <- round(pca_features_pp$sdev^2 / sum(pca_features_pp$sdev^2) * 100, 2)
-pca_prot_percentages <- paste(colnames(pca_features_pp$x),"(",paste(as.character(pca_prot_percentages), "%",")", sep = ""))
-
-pca_values_pp_amps <- filter(pca_values_pp, class == "AMP")
-pca_values_pp_nonamps <- filter(pca_values_pp, class == "non-AMP")
-
-model_seqlength <- ggplot(predictor_and_proteome_counts, aes(x = length, y = number)) +
-  geom_col(aes(fill = factor(class, levels = c("non-AMP", "AMP")), alpha = class)) +
-  facet_grid(name ~ . , scales = "free_y") +
-  labs(x = "Sequence length", y = "Number of sequences", fill = "") +
-  xlim(0,300) +
-  theme(legend.position = "none",
-        strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.background = element_rect(fill = "white", colour = "grey"),
-        legend.key = element_rect(fill = "white"),
-        strip.text = element_text(face = "italic")) +
-  scale_fill_manual(values = c("AMP" = "blueviolet", "non-AMP" = "forestgreen")) +
-  scale_alpha_discrete(range = c(1, 0.5))
-
-pca_models <-  ggplot(pca_values_pp) +
-   geom_point(data = pca_values_pp_nonamps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7, alpha = 0.5) +
-   geom_point(data = pca_values_pp_amps, aes(x = PC1, y = PC2, colour = class, shape = class), size = 0.7) +
-   facet_grid(name ~., scales = "free_y") +
-   labs(x = pca_prot_percentages[1], y = pca_prot_percentages[2], shape = "", colour = "") +
-   theme(legend.position = "bottom",
-        strip.text.y.right = element_blank(),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.background = element_rect(fill = "white", colour = "grey"),
-        legend.key = element_rect(fill = "white"),
-        strip.text = element_text(face = "italic")) +
-        scale_colour_manual(values = c("blueviolet", "forestgreen")) +
-        scale_shape_manual(values = c(1, 3)) +
-   guides(colour = guide_legend(override.aes = list(size=1)))
-
-pca1_models <- ggplot(pca_values_pp, aes(x = PC1)) +
-   stat_density(aes(colour = class), geom = "line", position = "identity") +
-   facet_grid(name ~., scales = "free_y") +
-   labs(x = pca_prot_percentages[1], y = "Density", colour = "") +
-   theme(legend.position = "bottom",
-        strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.background = element_rect(fill = "white", colour = "grey"),
-        legend.key = element_rect(fill = "white"),
-        strip.text = element_text(face = "italic")) +
-scale_colour_manual(values = c("blueviolet", "forestgreen")) +
-   guides(colour = guide_legend(override.aes = list(size=1)))
-
-model_seqlength /  (pca_models | pca1_models) + plot_annotation(tag_levels = "A")
-```
+To examine sequence overlap between databases we used the stringdist
+package to calculate the [Jaro
+distance](https://en.wikipedia.org/wiki/Jaro–Winkler_distance) between
+all pairs of positive AMP sequences across all predictor training/test
+datasets. The Jaro distance was chosen because it is normalised for the
+length of both sequences and produces a value between 0 (exact match)
+and 1 (completely dissimilar). Highly similar sequences (Jaro distance
+&lt;0.2) were considered to be the same as these are likely strong
+homologs and manual inspection revealed that in many cases these matches
+occurred between mostly identical sequences with minor differences,
+likely due to reporting conventions and/or minor discrepancies between
+databases.
 
 ![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
-**Figure 2.1:** A) Sequence length, B) Scatterplot of the first two
-principal components (PC), C) Density plot of the first PC of all AMP
-and non-AMP sequences used in various AMP prediction models and in the
-proteomes of *Homo sapiens* and *Arabidopsis thaliana*.
+**Figure 2.3:** UpSet plot showing overlap between training data used
+for eight AMP predictors. Note that overlaps between predictors,
+`ampirprecursor`, `ampeppy` and `ampep` (shown in red) contain
+relatively large fractions of longer sequences and sequences with signal
+peptides.
+
+# Typical Sequence Structure of AMP Precursor Proteins
+
+As shown in Figures 2.2 and 2.3 there is a significant divide between
+the composition of AMP predictor training sets based on the length
+distribution of included sequences. This is significant because many
+AMPs are first secreted as a longer precursor sequence that then
+undergoes cleavage to produce a mature (shorter) peptide. Some databases
+only list this shorter peptide sequence as it is the active peptide,
+however, when working with raw proteome input data the sequences given
+will be translated coding sequences from gene models and therefore
+correspond to the precursor sequence with no reliable way to accurately
+deduce the mature sequence. A survey of precursor sequences for AMPs
+listed in Uniprot can be used to reveal the typical sequence structure
+of precursors. Here we take advantage of the fact that for many well
+characterised AMPs in Uniprot the positions of the signal peptide,
+mature peptide and c-terminal sequence are given.
+
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+
+**Figure 2.4:** Sequence composition of 831 AMP sequences with length
+&gt; 50 (likely precursors) in Uniprot showing the relative locations of
+Signal Peptide, Mature AMP and C-terminal sequences.

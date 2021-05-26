@@ -47,6 +47,12 @@ echo data/amp_predictors/AMPlify/non_AMP_test_20190414.fa >> data_list
 echo data/amp_predictors/AMPlify/non_AMP_train_20190414.fa >> data_list
 echo data/amp_predictors/AmpGram/benchmark.fasta >> data_list
 
+# Data for comparing between predictors
+
+ls data/clustering/*train.amp.fasta >> data_list
+echo data/clustering/train.amp.signalp >> data_list
+echo data/clustering/test.amp.signalp >> data_list
+
 # Positive and negative datasets from the Swiss-Prot database (accessed January 2021)
 echo data/uniprot-keyword Antimicrobial+[KW-0929] -filtered-reviewed yes.tab >> data_list
 echo data/uniprot-taxonomy Deuterostomia+[33511] +reviewed yes+NOT+keyword--.fasta >> data_list
@@ -1181,6 +1187,9 @@ echo data/prediction_results/ampgram/arab/ampin96.fasta.rds >> data_list
 echo data/prediction_results/ampgram/arab/ampin97.fasta.rds >> data_list
 echo data/prediction_results/ampgram/arab/ampin98.fasta.rds >> data_list
 echo data/prediction_results/ampgram/arab/ampin99.fasta.rds >> data_list
+
+
+
 
 
 tar -zcvf data_amp_pred.tgz -T data_list
