@@ -17,7 +17,7 @@ Precision recall for AMP proportions in a genome
         -   [3.2.1 Plot](#plot-3)
     -   [3.3 Comparing the theoretical 0.01 alpha value with the
         averaged 0.01 AMP proportion from a real test
-        set](#comparing-the-theoretical-0.01-alpha-value-with-the-averaged-0.01-amp-proportion-from-a-real-test-set)
+        set](#comparing-the-theoretical-001-alpha-value-with-the-averaged-001-amp-proportion-from-a-real-test-set)
         -   [3.3.1 Plot](#plot-4)
 
 To start, we read in ampir’s v\_0.1 trained model as well as the test

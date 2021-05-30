@@ -41,8 +41,6 @@ The training and test sets of six recent AMP predictors were examined to assess 
 | ampir_precursor v1 | 1,187 | 11,864 | 296 | 2,966
 | ampir_mature v1 | 2,586 | 2,657 | 646 | 664
 
-
-
 *NS: not specified
 
 **iAMP-2L Data**
@@ -60,8 +58,7 @@ iAMP2L_test <- read_faa("data/amp_predictors/iAMP-2L/xiao_independent.fasta") %>
   add_column(dataset="Test") 
   
 iAMP2L_data <- rbind(iAMP2L_train, iAMP2L_test) %>%
-  mutate(length = nchar(seq_aa)) %>% add_column(predictor="iAMP-2L")
-
+  mutate(length = nchar(seq_aa)) %>% add_column(name="iAMP-2L")
 ```
 
 **AmPEP Training Data**
@@ -72,7 +69,7 @@ The AmPEP 2018 AMP predictor provides its training data available directly for d
 ampep_data <- read_faa("data/amp_predictors/amPEP/M_model_train_nonAMP_sequence.fasta") %>% add_column(class="non-AMP") %>% 
   rbind(read_faa("data/amp_predictors/amPEP/M_model_train_AMP_sequence.fasta") %>% add_column(class="AMP")) %>% 
   add_column(dataset = "Train") %>%
-  mutate(length = nchar(seq_aa)) %>% add_column(predictor="AmPEP") %>%
+  mutate(length = nchar(seq_aa)) %>% add_column(name="AmPEP") %>%
   mutate(seq_name = paste0("amPEP_trainset_neg", 1:n()))
 ```
 
@@ -90,17 +87,20 @@ deep_ampep_data <- read_faa("data/amp_predictors/deepamPEP30/train_ne.fasta") %>
     str_detect(seq_name, "^uni") ~ "Test",
                              TRUE ~ "Train")) %>%
   mutate(length = nchar(seq_aa)) %>% 
-  add_column(predictor="deep_AmPEP")
-
+  add_column(name="deep_AmPEP")
 ```
 
 
 AmPEP was additionally created as a python application, amPEPpy, by [Lawrence et al. 2020](https://doi.org/10.1093/bioinformatics/btaa917). amPEPpy's training data originated from amPEP but were modified to ensure that positive and negative sets had the same length distribution. The data were obtained via amPEPpy's [GitHub page](https://github.com/tlawrence3/amPEPpy).  No specific test data were used for this predictor.  The authors used OOB error to calculate elements of the confusion matrix meaning that the composition of test data was effectively identical to the training set. 
 
 ```{r}
-ampeppy_data <- read_faa("data/amp_predictors/amPEPpy/M_model_train_nonAMP_sequence.numbered.proplen.subsample.fasta") %>% add_column(class="non-AMP") %>% 
-  rbind(read_faa("data/amp_predictors/amPEPpy/M_model_train_AMP_sequence.numbered.fasta") %>% add_column(class="AMP")) %>% 
-  add_column(dataset = "Train") %>% mutate(length = nchar(seq_aa)) %>% add_column(predictor="AmPEPpy")
+ampeppy_data <- read_faa("data/amp_predictors/amPEPpy/M_model_train_nonAMP_sequence.numbered.proplen.subsample.fasta") %>% 
+  add_column(class="non-AMP") %>% 
+  rbind(read_faa("data/amp_predictors/amPEPpy/M_model_train_AMP_sequence.numbered.fasta") %>% 
+          add_column(class="AMP")) %>% 
+          add_column(dataset = "Train") %>% 
+          mutate(length = nchar(seq_aa)) %>% 
+  add_column(name="AmPEPpy")
 ```
 
 **AMP Scanner v2 Data**
@@ -121,7 +121,7 @@ ampscan_test_data <- rbind(read_faa("data/amp_predictors/AMP_Scan2_OrigPaper_Dat
 ampscan_data <- rbind(ampscan_train_data, ampscan_test_data) %>%
   mutate(class = case_when(str_detect(seq_name, "^Uni") ~ "non-AMP", TRUE ~ "AMP")) %>%
     mutate(length = nchar(seq_aa)) %>% 
-    add_column(predictor="AMP Scanner v2") %>%
+    add_column(name="AMP Scanner v2") %>%
   relocate(class, .before = dataset)
 ```
 
@@ -137,7 +137,7 @@ amplify_data <- read_faa("data/amp_predictors/AMPlify/AMP_train_20190414.fa") %>
   rbind(read_faa("data/amp_predictors/AMPlify/non_AMP_test_20190414.fa")) %>%
           add_column(dataset = "Test")) %>%
   mutate(class = case_when(str_detect(seq_name, "^trAMP|^teAMP") ~ "AMP", TRUE ~ "non-AMP")) %>%
-  mutate(length = nchar(seq_aa)) %>% add_column(predictor="AMPlify") %>% relocate(class, .before = dataset)
+  mutate(length = nchar(seq_aa)) %>% add_column(name="AMPlify") %>% relocate(class, .before = dataset)
 ```
 
 AmpGram was created in 2020 and in addition to the standard AMPs, it also focuses on predicting longer proteins that contain antimicrobial activity, such as the milk protein, lactoferrin, and on non-AMP proteins which produce antimicrobial proteolysis products, such as human thrombin. AmpGram uses amino acid motifs and the random forest model to classify AMPs [Burdukiewicz et al. 2020](https://doi.org/10.3390/ijms21124310). AmpGram's analysis details and data can be obtained from [AmpGram's analysis repository](https://github.com/michbur/AmpGram-analysis). Their training data is not specified as a file but their benchmark data can be found in the `benchmark.fasta` file. This test set contains 247 AMP and non-AMP sequences. AmpGram also used the dataset from [Gabere and Noble 2017](https://doi.org/10.1093/bioinformatics/btx081) which used AMPs from the [DAMPD](https://dx.doi.org/10.1093%2Fnar%2Fgkr1063) and [APD3](https://doi.org/10.1093/nar/gkv1278) AMP databases and non-AMPs from UniProt.
@@ -147,7 +147,7 @@ ampgram_test_data <- read_faa("data/amp_predictors/AmpGram/benchmark.fasta") %>%
   mutate(class = case_when(str_detect(seq_name, "^dbAMP") ~ "AMP", TRUE ~ "non-AMP")) %>% 
   add_column(dataset = "Test") %>% 
   mutate(length = nchar(seq_aa)) %>% 
-  add_column(predictor = "AmpGram")
+  add_column(name = "AmpGram")
 ```
 
 **ampir**
@@ -157,18 +157,18 @@ ampir was divided in two different models, precursor, which focuses on longer se
 ```{r}
 ampir_prec_feats_train <- readRDS("data/ampir_v1/featuresTrain_precursor_imbal.rds") %>% mutate(dataset = "Train")
 ampir_prec_feats_test <- readRDS("data/ampir_v1/featuresTest_precursor_imbal.rds") %>% mutate(dataset = "Test")
-ampir_prec_feats <- rbind(ampir_prec_feats_train, ampir_prec_feats_test) %>% mutate(predictor = "ampir_precursor")
+ampir_prec_feats <- rbind(ampir_prec_feats_train, ampir_prec_feats_test) %>% mutate(name = "ampir_precursor")
 
 ampir_mat_feats_train <- readRDS("data/ampir_v1/featuresTrain_mature.rds") %>% mutate(dataset = "Train")
 ampir_mat_feats_test <- readRDS("data/ampir_v1/featuresTest_mature.rds") %>% mutate(dataset = "Test")
-ampir_mat_feats <- rbind(ampir_mat_feats_train, ampir_mat_feats_test) %>% mutate(predictor = "ampir_mature")
+ampir_mat_feats <- rbind(ampir_mat_feats_train, ampir_mat_feats_test) %>% mutate(name = "ampir_mature")
 
 ampir_feats <- rbind(ampir_prec_feats, ampir_mat_feats) %>% mutate(class = ifelse(Label == "Tg", "AMP","non-AMP"))
 
-ampir_data <- ampir_feats %>% select(seq_name, seq_aa, class, dataset, length, predictor)
+ampir_data <- ampir_feats %>% select(seq_name, seq_aa, class, dataset, length, name)
+
 
 write_tsv(ampir_data,"data/clustering/ampir_data.tsv")
-
 ```
 
 ```{r}
@@ -177,119 +177,103 @@ all_predictor_data <- rbind(iAMP2L_data, ampep_data, deep_ampep_data, ampeppy_da
 all_predictor_data <- all_predictor_data %>% filter(length >10)
 ```
 
+
 ```{r}
-# all_predictor_data_wcounts <- all_predictor_data %>%
-#                                 group_by(class, dataset, length, predictor) %>%
-#                                 summarise(number = n()) %>%
-#     mutate(predictor = factor(predictor, levels = c("iAMP-2L", "AMP Scanner v2", "AmPEP", "AmPEPpy", "deep_AmPEP", "AMPlify", "AmpGram", "ampir_precursor", "ampir_mature")))
+# Published Benchmark Datasets
+
+#In addition to the test sets used by individual AMP predictors several key reviews ([Xu et al](http://dx.doi.org/10.1093/bib/bbab083) and [Gaberre and #Noble](http://dx.doi.org/10.1093/bioinformatics/btx081)) have attempted to objectively evaluate performance across many predictors using a consistent benchmark dataset. 
+
+# We will ignore this for now because the provenance of the Xu et al database is uncertain.
+
+xu_benchmark_data_pos <- read_faa("data/xu_final_AMPs.fasta") %>% 
+  mutate(class = "AMP") %>% 
+  add_column(dataset = "Test") %>% 
+  mutate(length = nchar(seq_aa)) %>% 
+  add_column(name = "Xu")
+
+xu_benchmark_data_neg <- read_faa("data/xu_final_nonAMPs.fasta") %>% 
+  mutate(class = "non-AMP") %>% 
+  add_column(dataset = "Test") %>% 
+  mutate(length = nchar(seq_aa)) %>% 
+  add_column(name = "Xu")
+
+xu_benchmark_data <- rbind(xu_benchmark_data_pos,xu_benchmark_data_neg)
 ```
 
 
-# Comparing the composition of predictor training/test data with reference proteomes
+# Reference proteomes
 
+As representative examples of the type of data that would be used as input in 'omics scanning applications we used the complete proteome sets of *Arabidopsis thaliana* (a plant) and *Homo sapiens* (human).  Both organisms have been intensively studied and as a consequence their reference proteomes are likely to include sequences for the vast majority of protein-coding genes.  Functional information for the proteins, including AMPs in these species is among the most complete available, but it even for these organisms it is highly likely that some known AMPs have not been identified.  Our assumption here is that these proteomes are completely classified for AMP activity (ie every AMP correctly identified). 
 
 ```{r}
 # Read in *Homo sapiens* and *Arabidopsis thaliana* proteomes and keep only sequences longer than 10 amino acids and with standard amino acids to match predictor data used for the previous PCA.
 
 reference_proteomes <- read_tsv("data/proteomes/uniprot-proteome UP000005640.tab") %>%
   rbind(read_tsv("data/proteomes/uniprot-proteome UP000006548.tab")) %>%
-  mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg")) %>%
+  mutate(class = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "AMP", TRUE ~ "non-AMP")) %>%
+  mutate(name = case_when(str_detect(Organism, "Homo") ~ "Homo sapiens", TRUE ~ "Arabidopsis thaliana")) %>%
   filter(Length >10) %>%
   filter(Length <3000) %>%
-  filter(grepl(Sequence, pattern='^[ARNDCEQGHILKMFPSTWYV]+$'))
+  filter(grepl(Sequence, pattern='^[ARNDCEQGHILKMFPSTWYV]+$')) %>% 
+  add_column(dataset=NA) %>% 
+  select(seq_name=`Entry name`,seq_aa=Sequence, class,dataset,length=Length,name)
 
-# Perform feature calculation with ampir if needed. Otherwise read cached values.
-
-if ( file.exists("cache/all_predictor_data_feats.rds")){
-  all_predictor_data_feats <- readRDS("cache/all_predictor_data_feats.rds")
-} else {
-  all_predictor_data_feats <-  calculate_features(all_predictor_data,min_len = 10) %>% 
-    cbind(all_predictor_data %>% select(-seq_name)) %>% 
-    select(seq_name:Xc2.lambda.19,class,name=predictor,length,dataset)
-  
-  saveRDS(all_predictor_data_feats, "cache/all_predictor_data_feats.rds")
-}
-
-if ( file.exists("cache/reference_proteome_feats.rds")){
-  reference_proteomes_feats <- readRDS("cache/reference_proteome_feats.rds")
-} else {
-  reference_proteomes_feats <- reference_proteomes %>%
-    select(`Entry name`, Sequence) %>%
-    as.data.frame() %>% 
-    calculate_features() %>% 
-    cbind(reference_proteomes) %>%
-    mutate(class = ifelse(Label == "Pos", "AMP","non-AMP")) %>%
-    mutate(name = case_when(str_detect(Organism, "Homo") ~ "Homo sapiens", TRUE ~ "Arabidopsis thaliana")) %>%  
-    add_column(dataset=NA) %>% 
-    select(seq_name:Xc2.lambda.19,class,name,length=Length,dataset)
-  
-  saveRDS(reference_proteomes_feats, "cache/reference_proteome_feats.rds")
-}
-
-ampep_test <- all_predictor_data_feats %>% 
-  filter(name=="iAMP-2L") %>% 
-  filter(dataset=="Test") %>% 
-  mutate(name="AmPEP")
-
-ampeppy_test <- all_predictor_data_feats %>% 
-  filter(name=="AmPEPpy") %>% 
-  filter(dataset=="Train") %>% 
-  mutate(dataset="Test")
 
 name_to_factor <- function(data){
   data %>% 
-  mutate(name = factor(name, levels = c("iAMP-2L", "AMP Scanner v2", "AmPEP", "AmPEPpy", "deep_AmPEP", "AMPlify", "AmpGram", "ampir_precursor", "ampir_mature", "Homo sapiens", "Arabidopsis thaliana")))
+  mutate(name = factor(name, levels = c("iAMP-2L", "AMP Scanner v2", "AmPEP", "AmPEPpy", "deep_AmPEP", "AMPlify", "AmpGram", "ampir_precursor", "ampir_mature","Xu", "Homo sapiens", "Arabidopsis thaliana")))
 }
-
-predictor_and_proteome_feats <- rbind(all_predictor_data_feats, reference_proteomes_feats) %>% name_to_factor
-
-predictor_and_proteome_feats_tetr <- rbind(all_predictor_data_feats, ampep_test,ampeppy_test, reference_proteomes_feats) %>% name_to_factor
 ```
 
 First we compare the test and training data of each predictor.  For all predictors other than AmPEP the length distributions of test and training were almost identical reflecting the fact the in most cases the test set was a randomly held-back portion of the same data used to generate the training set. AmPEP is the exception to this and has a different distribution for the test data, this being derived from the Xiao et al benchmark set. 
 
 
 ```{r, fig.width=8, fig.height=8}
+length_histogram <- function(data){
+  data %>% 
+  ggplot() +
+  geom_histogram(aes(fill=class,x=length),position="dodge",binwidth=5) +
+  facet_wrap(~name, ncol=1,scales = "free_y") +
+  labs(x = "Sequence length", y = "Number of sequences", fill = "") +
+  xlim(0,300) +
+  theme(legend.position = "none",
+        strip.text.y.right = element_text(angle = 0, hjust = 0),
+        strip.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.background = element_rect(fill = "white", colour = "grey"),
+        legend.key = element_rect(fill = "white"),
+        strip.text = element_text(face = "italic")) +
+  scale_fill_manual(values = c("AMP" = "blueviolet", "non-AMP" = "forestgreen")) +
+  scale_alpha_discrete(range = c(1, 0.5))
+}
+
+# For these two predictors the test datasets are already in the data. 
+# We just need to copy some rows to add them.
+ampep_test <- all_predictor_data %>% 
+  filter(name=="iAMP-2L") %>% 
+  filter(dataset=="Test") %>% 
+  mutate(name="AmPEP")
+
+ampeppy_test <- all_predictor_data %>% 
+  filter(name=="AmPEPpy") %>% 
+  filter(dataset=="Train") %>% 
+  mutate(dataset="Test")
+
+
+test_vs_train_data <- rbind(all_predictor_data, ampep_test,ampeppy_test, reference_proteomes) %>% 
+  name_to_factor %>% 
+  filter(name!="AmpGram") 
+
 model_seqlength_tr <- 
-  predictor_and_proteome_feats_tetr %>% 
+  test_vs_train_data %>% 
   filter(dataset %in% c("Train")) %>% 
-  filter(name!="AmpGram") %>% 
-  ggplot() +
-  geom_histogram(aes(fill=class,x=length),position="dodge",binwidth=5) +
-  facet_wrap(~name, ncol=1,scales = "free_y") +
-  labs(x = "Sequence length", y = "Number of sequences", fill = "") +
-  xlim(0,300) +
-  theme(legend.position = "none",
-        strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.background = element_rect(fill = "white", colour = "grey"),
-        legend.key = element_rect(fill = "white"),
-        strip.text = element_text(face = "italic")) +
-  scale_fill_manual(values = c("AMP" = "blueviolet", "non-AMP" = "forestgreen")) +
-  scale_alpha_discrete(range = c(1, 0.5))
-
-
+  length_histogram()
+  
 model_seqlength_te <- 
-  predictor_and_proteome_feats_tetr %>% 
-  filter(dataset %in% c("Test")) %>% 
+  test_vs_train_data %>% 
   filter(name!="AmpGram") %>% 
-  ggplot() +
-  geom_histogram(aes(fill=class,x=length),position="dodge",binwidth=5) +
-  facet_wrap(~name, ncol=1,scales = "free_y") +
-  labs(x = "Sequence length", y = "Number of sequences", fill = "") +
-  xlim(0,300) +
-  theme(legend.position = "none",
-        strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.background = element_rect(fill = "white", colour = "grey"),
-        legend.key = element_rect(fill = "white"),
-        strip.text = element_text(face = "italic")) +
-  scale_fill_manual(values = c("AMP" = "blueviolet", "non-AMP" = "forestgreen")) +
-  scale_alpha_discrete(range = c(1, 0.5))
+  length_histogram()
 
 model_seqlength_te + model_seqlength_tr
 ggsave("figures/test_vs_train.png")
@@ -300,22 +284,9 @@ ggsave("figures/test_vs_train.png")
 Given the close correspondence in composition between test and training data for most predictors we will simply consider the entire dataset (ie both test and train merged together).  
 
 ```{r, fig.width=8, fig.height=10}
-model_seqlength <- predictor_and_proteome_feats %>% 
-  ggplot() +
-  geom_histogram(aes(fill=class,x=length),position="dodge",binwidth=5) +
-  facet_wrap(~name, ncol=1,scales = "free_y") +
-  labs(x = "Sequence length", y = "Number of sequences", fill = "") +
-  xlim(0,300) +
-  theme(legend.position = "none",
-        strip.text.y.right = element_text(angle = 0, hjust = 0),
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.background = element_rect(fill = "white", colour = "grey"),
-        legend.key = element_rect(fill = "white"),
-        strip.text = element_text(face = "italic")) +
-  scale_fill_manual(values = c("AMP" = "blueviolet", "non-AMP" = "forestgreen")) +
-  scale_alpha_discrete(range = c(1, 0.5))
+model_seqlength <- rbind(all_predictor_data,reference_proteomes) %>% 
+  name_to_factor() %>% 
+ length_histogram()
 
 model_seqlength
 ```
@@ -329,6 +300,15 @@ There are several databases that list AMPs with confirmed activity, including [A
 Here we explore the degree of overlap between AMP predictor positive training data that exists as a result of these shared origins, and how this interacts with the length distribution of AMPs and degree to which mature peptides vs precursor proteins are included. 
 
 To examine sequence overlap between databases we used the stringdist package to calculate the [Jaro distance](https://en.wikipedia.org/wiki/Jaro–Winkler_distance) between all pairs of positive AMP sequences across all predictor training/test datasets. The Jaro distance was chosen because it is normalised for the length of both sequences and produces a value between 0 (exact match) and 1 (completely dissimilar).  Highly similar sequences (Jaro distance <0.2) were considered to be the same as these are likely strong homologs and manual inspection revealed that in many cases these matches occurred between mostly identical sequences with minor differences, likely due to reporting conventions and/or minor discrepancies between databases.    
+
+```{r, eval=FALSE,include=FALSE}
+rbind(all_predictor_data,xu_benchmark_data,reference_proteomes) %>% 
+  filter(name %in% c("Xu","Homo sapiens", "Arabidopsis thaliana")) %>% 
+  filter(class=="AMP") %>% 
+  write_tsv("data/clustering/benchmarks.amp.tsv")
+```
+
+
 
 ```{r}
 raw_train_amp_data <- list.files("data/clustering/","*train.amp.fasta",full.names = T) %>% 
@@ -346,7 +326,8 @@ if ( length(which(signalp_train_amp$X1!=raw_train_amp_data$seq_name))>0 | length
 
 amp_data <- rbind(raw_train_amp_data,raw_test_amp_data) %>% 
   add_column(signalp = c(signalp_train_amp$X10=="Y",signalp_test_amp$X10=="Y")) %>% 
-  tidyr::extract(seq_name,into=c("predictor","id"),regex= "([^_]+)_(.*)_t[a-z]+_amp")
+  tidyr::extract(seq_name,into=c("predictor","id"),regex= "([^_]+)_(.*)_t[a-z]+_amp") %>% 
+  filter(predictor!="xu") # Exclude due to uncertain provenance
 ```
 
 ```{r}
@@ -374,14 +355,14 @@ seq_groups <- cutree(seq_clust,h=0.2)
 set_data <- amp_data_wide %>% 
   add_column(group=seq_groups) %>% 
   group_by(group) %>% 
-  summarise(seq_aa=first(seq_aa),signalp=sum(signalp)>0,across(ampep:iamp2l,~ sum(.x)>0)) %>% 
+  summarise(seq_aa=first(seq_aa),signalp=sum(signalp)>0,across(ampep:homosapiens,~ sum(.x)>0)) %>% 
   select(-group) %>% 
   mutate(seq_len = str_length(seq_aa)) %>% 
   column_to_rownames(var="seq_aa") %>% 
   as.data.frame() %>% 
   mutate(signalp = ifelse(signalp,"Signal Peptide","No Signal Peptide"))
 
-preds <- c("ampep","ampeppy","ampirmature","ampirprecursor","amplify","ampscan2","deepampep","iamp2l")
+preds <- c("ampep","ampeppy","ampirmature","ampirprecursor","amplify","ampscan2","deepampep","iamp2l","homosapiens","arabidopsisthaliana")
 ```
 
 ```{r,fig.width=12,fig.height=10}
@@ -421,6 +402,8 @@ amps_upset <- upset(set_data,preds,
     min_size=50
 )
 amps_upset
+
+ggsave(filename="figures/amp_data_overlaps.png",width = 10,height = 8)
 ```
 
 **Figure 2.3:** UpSet plot showing overlap between training data used for eight AMP predictors.  Note that overlaps between predictors, `ampirprecursor`, `ampeppy` and `ampep` (shown in red) contain relatively large fractions of longer sequences and sequences with signal peptides. 

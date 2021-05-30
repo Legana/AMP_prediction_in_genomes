@@ -136,7 +136,19 @@ ampir was divided in two different models, precursor, which focuses on
 longer sequences (between 60-300) and mature, which only contains short
 sequences (between 10-50)
 
-# Comparing the composition of predictor training/test data with reference proteomes
+# Reference proteomes
+
+As representative examples of the type of data that would be used as
+input in ’omics scanning applications we used the complete proteome sets
+of *Arabidopsis thaliana* (a plant) and *Homo sapiens* (human). Both
+organisms have been intensively studied and as a consequence their
+reference proteomes are likely to include sequences for the vast
+majority of protein-coding genes. Functional information for the
+proteins, including AMPs in these species is among the most complete
+available, but it even for these organisms it is highly likely that some
+known AMPs have not been identified. Our assumption here is that these
+proteomes are completely classified for AMP activity (ie every AMP
+correctly identified).
 
 First we compare the test and training data of each predictor. For all
 predictors other than AmPEP the length distributions of test and
@@ -191,7 +203,7 @@ occurred between mostly identical sequences with minor differences,
 likely due to reporting conventions and/or minor discrepancies between
 databases.
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 **Figure 2.3:** UpSet plot showing overlap between training data used
 for eight AMP predictors. Note that overlaps between predictors,
@@ -216,7 +228,7 @@ of precursors. Here we take advantage of the fact that for many well
 characterised AMPs in Uniprot the positions of the signal peptide,
 mature peptide and c-terminal sequence are given.
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 **Figure 2.4:** Sequence composition of 831 AMP sequences with length
 &gt; 50 (likely precursors) in Uniprot showing the relative locations of
