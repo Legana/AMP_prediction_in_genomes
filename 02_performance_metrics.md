@@ -1,21 +1,14 @@
 Performance Metrics in an ’Omics-Scanning Context
 ================
 
--   [1 Background](#background)
--   [2 Effect of alpha on precision and recall
-    curves](#effect-of-alpha-on-precision-and-recall-curves)
--   [3 Supplementary: Empirical test that the formulae for alpha scaling
-    of the confusion matrix are
-    correct](#supplementary-empirical-test-that-the-formulae-for-alpha-scaling-of-the-confusion-matrix-are-correct)
-
-# 1 Background
+# Background
 
 There are many metrics that are typically reported when evaluating the
 performance of machine learning based AMP prediction methods (see for
-example Xu et al \[@Xu2021-ku\] ). At their core, all of these metrics
-are based on the four quantities that make up the “confusion matrix”,
-and which represent modes of successful classification (TN, TP) and
-modes of failure (FP, FN):
+example (Xu et al. 2021) ). At their core, all of these metrics are
+based on the four quantities that make up the “confusion matrix,” and
+which represent modes of successful classification (TN, TP) and modes of
+failure (FP, FN):
 
 | mode      | AMPs (+tve) | non-AMP (-ve) |
 |-----------|-------------|---------------|
@@ -89,7 +82,7 @@ come into play:
     regime where ![p](https://latex.codecogs.com/png.latex?p "p") is
     much higher than 0.5
 
-# 2 Effect of alpha on precision and recall curves
+# Effect of alpha on precision and recall curves
 
 We begin by exploring how the two key characteristics of ’omics-scanning
 (low ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha")
@@ -181,7 +174,7 @@ values for both.
 **Figure 2.2:** A precision-recall curve depicting various alpha values
 that represent different proportions of AMPs in a genome
 
-# 3 Supplementary: Empirical test that the formulae for alpha scaling of the confusion matrix are correct
+# Supplementary: Empirical test that the formulae for alpha scaling of the confusion matrix are correct
 
 Here we perform a simple check to ensure that the formulae shown above
 for scaling of precision and recall under different values of alpha are
@@ -201,10 +194,23 @@ obtain a smooth curve representative of the original (larger) dataset.
 The precision and recall curves obtained via this bootstrapping process
 appear almost identical to those obtained using the theoretical scaling.
 
-![](02_performance_metrics_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](02_performance_metrics_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-**Figure 1.4:** The precision and recall curves over a range of
+**Figure 2.3:** The precision and recall curves over a range of
 probability thresholds for
 ![\\alpha=0.01](https://latex.codecogs.com/png.latex?%5Calpha%3D0.01 "\alpha=0.01")
 **A:** Obtained empirically via bootstrapping: and **B:** obtained using
 theoretical scaling of the confusion matrix.
+
+<div id="refs" class="references csl-bib-body hanging-indent">
+
+<div id="ref-Xu2021-ku" class="csl-entry">
+
+Xu, Jing, Fuyi Li, André Leier, Dongxu Xiang, Hsin-Hui Shen, Tatiana T
+Marquez Lago, Jian Li, Dong-Jun Yu, and Jiangning Song. 2021.
+“Comprehensive Assessment of Machine Learning-Based Methods for
+Predicting Antimicrobial Peptides.” *Brief. Bioinform.*, March.
+
+</div>
+
+</div>

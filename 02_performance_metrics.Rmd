@@ -3,6 +3,8 @@ title: "Performance Metrics in an 'Omics-Scanning Context"
 output:
    github_document:
      pandoc_args: "--webtex"
+
+bibliography: bibliography.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -22,7 +24,7 @@ set.seed(6)
 
 # Background
 
-There are many metrics that are typically reported when evaluating the performance of machine learning based AMP prediction methods (see for example Xu et al [@Xu2021-ku] ).  At their core, all of these metrics are based on the four quantities that make up the "confusion matrix", and which represent modes of successful classification (TN, TP) and modes of failure (FP, FN):
+There are many metrics that are typically reported when evaluating the performance of machine learning based AMP prediction methods (see for example [@Xu2021-ku] ).  At their core, all of these metrics are based on the four quantities that make up the "confusion matrix", and which represent modes of successful classification (TN, TP) and modes of failure (FP, FN):
 
 mode | AMPs (+tve) | non-AMP (-ve)
 -----|-------------|--------------
@@ -180,20 +182,9 @@ ggsave(combo_plot,filename = "figures/alpha_gradient_and_variousalphas.png", hei
 
 Here we perform a simple check to ensure that the formulae shown above for scaling of precision and recall under different values of alpha are correct.  We do this by randomly subsampling the raw outputs from ampir to produce a dataset with a specified proportion of true AMPs (ie a specified $\alpha$).  
 
-```{r}
-
-#ampir_prob_data_tg_10 <- ampir_prob_data[sample(grep("Pos", ampir_prob_data$Label), 10),]
-
-#ampir_prob_data_bg_tg10 <- rbind(ampir_prob_data_tg_10, ampir_prob_data_bg)
-```
-
 This random subsample (with $\alpha=0.01$) is then used to calculate a confusion matrix over a range of probability thresholds as done above for $\alpha=0.5$. Since the total number of AMPs in this random subsample is very small it is necessary to take the average across many such random subsamples to obtain a smooth curve representative of the original (larger) dataset. The precision and recall curves obtained via this bootstrapping process appear almost identical to those obtained using the theoretical scaling.
 
 ```{r}
-#pr_curve_sample <- map_df(seq(0.01, 0.99, 0.01), calc_cm_metrics, ampir_prob_data_bg_tg10)
-
-#pr_curve_sample_long <- pivot_longer(pr_curve_sample, cols = c("Precision", "Recall"), names_to = "metric", values_to = "value")
-
 ampir_prob_data_bg <- ampir_prob_data[grep("Neg", ampir_prob_data$Label),]
 ampir_prob_data_tg <- filter(ampir_prob_data, Label == "Pos")
 
@@ -202,11 +193,17 @@ samples_list <- replicate(n = 100, ampir_prob_data_tg %>%
                              slice_sample(n=10) %>% 
                              rbind(ampir_prob_data_bg), simplify = F)
 
-samples_list_metrics <- lapply(seq_along(samples_list), function(i) {
-                               map_df(seq(0.01, 0.99, 0.01),
-                                        calc_cm_metrics, 
-                                        samples_list[[i]])})
+if (file.exists("cache/samples_list_metrics.rds")){
+  samples_list_metrics <- read_rds("cache/samples_list_metrics.rds")
+} else {
 
+  samples_list_metrics <- lapply(seq_along(samples_list), function(i) {
+                                 map_df(seq(0.01, 0.99, 0.01),
+                                          calc_cm_metrics, 
+                                          samples_list[[i]])})
+
+    write_rds(samples_list_metrics,"cache/samples_list_metrics.rds")
+  }
 
 #Now I have a list with 100 dataframes in it that each contain metrics calculated with `calc_cm_metrics` from 100 dataframes that each contain 10 random AMPs and 996 background proteins.
 
@@ -259,7 +256,7 @@ average1percvsalpha1pc <- average_plot1perc / alpha_001plot + plot_annotation(ta
 ggsave("figures/alpha_vs_average.png", average1percvsalpha1pc)
 ```
 
-**Figure 1.4:** The precision and recall curves over a range of probability thresholds for $\alpha=0.01$ **A:** Obtained empirically via bootstrapping: and **B:** obtained using theoretical scaling of the confusion matrix.
+**Figure 2.3:** The precision and recall curves over a range of probability thresholds for $\alpha=0.01$ **A:** Obtained empirically via bootstrapping: and **B:** obtained using theoretical scaling of the confusion matrix.
 
 
 
