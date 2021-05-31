@@ -1,6 +1,10 @@
 ---
-title: "Benchmarking predictors"
-output: github_document
+title: "Benchmarking in an 'omics-scanning context"
+output: 
+  github_document:
+    pandoc_args: "--webtex"
+
+bibliography: bibliography.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -145,7 +149,7 @@ ampep_genome_bench <- do.call(rbind,lapply(ampep_file_paths,read_csv)) %>%
 
 amPEPpy was run according to the example provided on the [amPEPpy GitHub repository](https://github.com/tlawrence3/amPEPpy) in a Conda environment. The prediction results consist of 67,484 predictions from the original 
 
-```{python, eval = FALSE}
+```bash
 ampep predict -m pretrained_models/amPEP.model -i ../cache/arab_proteome_standardaa.fasta -o arab_results.tsv --seed 2012
 ampep predict -m pretrained_models/amPEP.model -i ../cache/homo_proteome_standardaa.fasta -o homo_results.tsv --seed 2012
 ```

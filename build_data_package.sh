@@ -47,6 +47,13 @@ echo data/amp_predictors/AMPlify/non_AMP_test_20190414.fa >> data_list
 echo data/amp_predictors/AMPlify/non_AMP_train_20190414.fa >> data_list
 echo data/amp_predictors/AmpGram/benchmark.fasta >> data_list
 
+
+# Data for comparing between predictors
+
+ls data/clustering/*train.amp.fasta >> data_list
+echo data/clustering/train.amp.signalp >> data_list
+echo data/clustering/test.amp.signalp >> data_list
+
 # Prediction results from AMP predictors on their respective test sets
 
 echo data/prediction_results/ampep/xiao_independent_ampep.txt >> data_list
@@ -1193,6 +1200,9 @@ echo data/prediction_results/ampgram/arab/ampin96.fasta.rds >> data_list
 echo data/prediction_results/ampgram/arab/ampin97.fasta.rds >> data_list
 echo data/prediction_results/ampgram/arab/ampin98.fasta.rds >> data_list
 echo data/prediction_results/ampgram/arab/ampin99.fasta.rds >> data_list
+
+
+
 
 
 tar -zcvf data_amp_pred.tgz -T data_list
