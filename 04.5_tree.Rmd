@@ -52,7 +52,6 @@ tree_text <- readLines("data/tree/phylum_tree.phy") %>%
   paste0(collapse="")
 
 tree <- read.tree(text = tree_text)
-
 ```
 
 Match metadata to tree data to make geom_facet work 
@@ -112,7 +111,6 @@ chordata_arthropoda_amps_count <- chordata_arthropoda_amps %>%
   mutate(approx_species_n_thousand = approx_species_n / 1000) %>%
   rename(AMP_count = n) %>%
   mutate(percentage = round(AMP_count / sum(AMP_count) * 100, digits = 2)) 
-
 ```
 
 
@@ -140,8 +138,18 @@ caplot <- ggtree(newcatree) +
   xlim_expand(c(-4, 20), panel = "Tree")
 
 
-ca2 <- facet_plot(caplot, data = data.frame(chordata_arthropoda_amps_count2), panel = "AMP count", geom = ggstance::geom_barh, mapping = aes(x = AMP_count2), fill = "forestgreen", stat = "identity", width = .3) 
+ggtree(newcatree) +
+  geom_tiplab(offset = 0.9, size=4, color ="Black") +
+  geom_nodelab(aes(label = label), size = 3.5, vjust = -0.5, hjust = 1.1 ) +
+  geom_tippoint(aes(size = approx_species_n_thousand), colour = "blueviolet") +
+  theme_tree2() +
+  theme(legend.position = "bottom") +
+  labs(size = "Approximate species count (thousands)") +
+  xlim_expand(c(-4, 20), panel = "Tree") +
+  scale_colour_manual(values = c("blue", "red"),
+                      labels = c("Chordata", "Arthropoda"))
 
+ca2 <- facet_plot(caplot, data = data.frame(chordata_arthropoda_amps_count2), panel = "AMP count", geom = ggstance::geom_barh, mapping = aes(x = AMP_count2), fill = "forestgreen", stat = "identity", width = .3)
 
 facet_plot(ca2, panel = "AMP count", data = data.frame(chordata_arthropoda_amps_count2), geom = geom_text, mapping = aes(x = AMP_count2 + 40, label = AMP_count2), size = 3)
 ```
@@ -193,6 +201,10 @@ p3 / ca3  + plot_annotation(tag_levels = 'A') + plot_layout(guides = "collect") 
 ```{r, echo = FALSE}
 ggsave("figures/combined_tree.png", width = 23, height = 18, units = "cm")
 ```
+
+**Figure #:** 
+
+*for this figure I was thinking to colour the branch tip of Chordata and Arthropoda with two different colours in part A and then use those same colours to colour the Chordata and Arthropoda branches in part B (to make clearer that Part B is a "zoomed in" version of Part A.... I tried to do this today (using groupOTU, groupClade and using a column from the df but all without success ..... )*
 
 
 ## Combining the two trees and metadata
