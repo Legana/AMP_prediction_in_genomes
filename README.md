@@ -2,11 +2,12 @@
 This repository looks at how best to predict AMPs in genomes and how to
 assess prediction performance
 
--   [AMP proportions in genomes](01_amp_proportion.md) : Rmd file
-    [01\_amp\_proportion.Rmd](01_amp_proportion.Rmd)
--   [Training data used in AMP
-    predictors](02_amp_models_trainingdata.md) : Rmd file
-    [02\_amp\_models\_trainingdata.Rmd](02_amp_models_trainingdata.Rmd)
+-   [Comparison of training and test data used by AMP
+    predictors](01_data_comparison.md) : Rmd file
+    [01\_data\_comparison.Rmd](01_data_comparison.Rmd)
+-   [Performance metrics in an omics-scanning
+    context](02_performance_metrics.md) : Rmd file
+    [02\_performance\_metrics.Rmd](02_performance_metrics.Rmd)
 -   [Benchmarking AMP predictors](03_benchmarking.md) : Rmd file
     [03\_benchmarking.Rmd](03_benchmarking.Rmd)
 -   [Taxonomic composition of SwissProt
