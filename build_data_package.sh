@@ -99,6 +99,7 @@ echo cache/plants_neg.rds >> data_list
 # tree data 
 echo data/tree/phylum_tree.phy >> data_list
 echo data/tree/chordata_arthropodatree.phy >> data_list
+echo data/tree/fulltree.phy >> data_list
 
 echo data/uniprot-keyword-Antimicrobial+[KW-0929]-reviewed-April2021.xlsx >> data_list
 
