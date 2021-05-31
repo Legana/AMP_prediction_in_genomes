@@ -279,7 +279,7 @@ model_seqlength_te + model_seqlength_tr
 ggsave("figures/test_vs_train.png")
 ```
 
-**Figure Supp_2.1:** Comparison of sequence length distributions for positive (AMP; purple) and negative (non-AMP; green) fractions in test and training data eight AMP predictors.  
+**Figure Supp_1.1:** Comparison of sequence length distributions for positive (AMP; purple) and negative (non-AMP; green) fractions in test and training data eight AMP predictors.  
 
 Given the close correspondence in composition between test and training data for most predictors we will simply consider the entire dataset (ie both test and train merged together).  
 
@@ -291,7 +291,7 @@ model_seqlength <- rbind(all_predictor_data,reference_proteomes) %>%
 model_seqlength
 ```
 
-**Figure 2.2:** Comparison of sequence length distributions for positive (AMP; purple) and negative (non-AMP; green) fractions in merged (test and training) data for eight AMP predictors, and for the proteomes of *A. thaliana* and *H. sapiens*.
+**Figure 1.2:** Comparison of sequence length distributions for positive (AMP; purple) and negative (non-AMP; green) fractions in merged (test and training) data for eight AMP predictors, and for the proteomes of *A. thaliana* and *H. sapiens*.
 
 # Overlap in positive AMP data between predictors
 
@@ -406,11 +406,11 @@ amps_upset
 ggsave(filename="figures/amp_data_overlaps.png",width = 10,height = 8)
 ```
 
-**Figure 2.3:** UpSet plot showing overlap between training data used for eight AMP predictors.  Note that overlaps between predictors, `ampirprecursor`, `ampeppy` and `ampep` (shown in red) contain relatively large fractions of longer sequences and sequences with signal peptides. 
+**Figure 1.3:** UpSet plot showing overlap between training data used for eight AMP predictors.  Note that overlaps between predictors, `ampirprecursor`, `ampeppy` and `ampep` (shown in red) contain relatively large fractions of longer sequences and sequences with signal peptides. 
 
 # Typical Sequence Structure of AMP Precursor Proteins
 
-As shown in Figures 2.2 and 2.3 there is a significant divide between the composition of AMP predictor training sets based on the length distribution of included sequences.  This is significant because many AMPs are first secreted as a longer precursor sequence that then undergoes cleavage to produce a mature (shorter) peptide.  Some databases only list this shorter peptide sequence as it is the active peptide, however, when working with raw proteome input data the sequences given will be translated coding sequences from gene models and therefore correspond to the precursor sequence with no reliable way to accurately deduce the mature sequence.  A survey of precursor sequences for AMPs listed in Uniprot can be used to reveal the typical sequence structure of precursors.  Here we take advantage of the fact that for many well characterised AMPs in Uniprot the positions of the signal peptide, mature peptide and c-terminal sequence are given.  
+As shown in Figures 1.2 and 1.3 there is a significant divide between the composition of AMP predictor training sets based on the length distribution of included sequences.  This is significant because many AMPs are first secreted as a longer precursor sequence that then undergoes cleavage to produce a mature (shorter) peptide.  Some databases only list this shorter peptide sequence as it is the active peptide, however, when working with raw proteome input data the sequences given will be translated coding sequences from gene models and therefore correspond to the precursor sequence with no reliable way to accurately deduce the mature sequence.  A survey of precursor sequences for AMPs listed in Uniprot can be used to reveal the typical sequence structure of precursors.  Here we take advantage of the fact that for many well characterised AMPs in Uniprot the positions of the signal peptide, mature peptide and c-terminal sequence are given.  
 
 ```{r}
 uniprot <- readxl::read_excel("data/uniprot-keyword-Antimicrobial+[KW-0929]April2021.xlsx") 
@@ -448,6 +448,6 @@ rbind(pos_s,pos_p,pos_c) %>%
   theme(legend.title = element_blank()) 
 ```
 
-**Figure 2.4:** Sequence composition of 831 AMP sequences with length > 50 (likely precursors) in Uniprot showing the relative locations of Signal Peptide, Mature AMP and C-terminal sequences. 
+**Figure 1.4:** Sequence composition of 831 AMP sequences with length > 50 (likely precursors) in Uniprot showing the relative locations of Signal Peptide, Mature AMP and C-terminal sequences. 
 
 

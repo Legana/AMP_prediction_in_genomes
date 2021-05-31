@@ -158,9 +158,9 @@ generate the training set. AmPEP is the exception to this and has a
 different distribution for the test data, this being derived from the
 Xiao et al benchmark set.
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](01_data_comparison_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
-**Figure Supp\_2.1:** Comparison of sequence length distributions for
+**Figure Supp\_1.1:** Comparison of sequence length distributions for
 positive (AMP; purple) and negative (non-AMP; green) fractions in test
 and training data eight AMP predictors.
 
@@ -168,9 +168,9 @@ Given the close correspondence in composition between test and training
 data for most predictors we will simply consider the entire dataset (ie
 both test and train merged together).
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](01_data_comparison_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
-**Figure 2.2:** Comparison of sequence length distributions for positive
+**Figure 1.2:** Comparison of sequence length distributions for positive
 (AMP; purple) and negative (non-AMP; green) fractions in merged (test
 and training) data for eight AMP predictors, and for the proteomes of
 *A. thaliana* and *H. sapiens*.
@@ -203,9 +203,9 @@ occurred between mostly identical sequences with minor differences,
 likely due to reporting conventions and/or minor discrepancies between
 databases.
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](01_data_comparison_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
-**Figure 2.3:** UpSet plot showing overlap between training data used
+**Figure 1.3:** UpSet plot showing overlap between training data used
 for eight AMP predictors. Note that overlaps between predictors,
 `ampirprecursor`, `ampeppy` and `ampep` (shown in red) contain
 relatively large fractions of longer sequences and sequences with signal
@@ -213,7 +213,7 @@ peptides.
 
 # Typical Sequence Structure of AMP Precursor Proteins
 
-As shown in Figures 2.2 and 2.3 there is a significant divide between
+As shown in Figures 1.2 and 1.3 there is a significant divide between
 the composition of AMP predictor training sets based on the length
 distribution of included sequences. This is significant because many
 AMPs are first secreted as a longer precursor sequence that then
@@ -228,8 +228,8 @@ of precursors. Here we take advantage of the fact that for many well
 characterised AMPs in Uniprot the positions of the signal peptide,
 mature peptide and c-terminal sequence are given.
 
-![](02_amp_models_trainingdata_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](01_data_comparison_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
-**Figure 2.4:** Sequence composition of 831 AMP sequences with length
+**Figure 1.4:** Sequence composition of 831 AMP sequences with length
 &gt; 50 (likely precursors) in Uniprot showing the relative locations of
 Signal Peptide, Mature AMP and C-terminal sequences.
