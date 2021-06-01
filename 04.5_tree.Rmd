@@ -13,6 +13,7 @@ library(tidyverse)
 library(tidytree)
 library(ape)
 library(patchwork)
+library(ggnewscale)
 ```
 
 # Phylogenetic tree of organisms that contain AMPs in UniProt 
@@ -57,7 +58,8 @@ tree <- read.tree(text = tree_text)
 Match metadata to tree data to make geom_facet work 
 
 ```{r}
-newtree <- as_tibble(tree) %>% left_join(swissprot_amps_count) %>% as.treedata()
+newtree <- as_tibble(tree) %>% left_join(swissprot_amps_count) %>% mutate(brcol = case_when(label == "Chordata" ~ "#E7298A", label == "Arthropoda" ~ "#A6761D", TRUE ~ "black")) %>% as.treedata()
+
 ```
 
 For some reason geom_facet can't find the metadata so make a copy of the metadata and rename the data we want to plot ...
@@ -70,9 +72,10 @@ swissprot_amps_count2 <- swissprot_amps_count %>% rename(AMP_count_2 = AMP_count
 
 
 ```{r}
-newtree_plot <- ggtree(newtree) +
+newtree_plot <- ggtree(newtree, aes(colour = I(brcol))) +
   geom_tiplab(offset = 0.9, size= 4, color ="Black") +
   geom_nodelab(aes(label = label), size = 3.5, vjust = -0.5, hjust = 1.1 ) +
+  ggnewscale::new_scale_color() +
   geom_tippoint(aes(size = approx_species_n_thousand), colour = "blueviolet") +
   theme_tree2() +
   theme(legend.position = "bottom") +
@@ -119,7 +122,12 @@ ca_tree_text <- readLines("data/tree/chordata_arthropodatree.phy") %>%
   paste0(collapse="")
 ca_tree <- read.tree(text = ca_tree_text)
 
-newcatree <- as_tibble(ca_tree) %>% left_join(chordata_arthropoda_amps_count) %>% as.treedata()
+newcatree <- ca_tree %>% 
+  groupClade("Chordata") %>% 
+  groupClade("Arthropoda") %>%
+  as_tibble(ca_tree) %>%
+  left_join(chordata_arthropoda_amps_count) %>% 
+  as.treedata()
 
 chordata_arthropoda_amps_count2 <- chordata_arthropoda_amps_count %>% rename(AMP_count2 = AMP_count)
 ```
@@ -128,26 +136,18 @@ chordata_arthropoda_amps_count2 <- chordata_arthropoda_amps_count %>% rename(AMP
 ## Plot 
 
 ```{r, echo = FALSE}
-caplot <- ggtree(newcatree) +
+caplot <- ggtree(newcatree, aes(colour = group)) +
+  scale_colour_manual(values = c("#E7298A", "#A6761D")) + 
   geom_tiplab(offset = 0.9, size=4, color ="Black") +
-  geom_nodelab(aes(label = label), size = 3.5, vjust = -0.5, hjust = 1.1 ) +
+  geom_nodelab(aes(label = label), size = 3.5, vjust = -0.5, hjust = 1.1, colour = "black" ) +
+  ggnewscale::new_scale_color() + 
   geom_tippoint(aes(size = approx_species_n_thousand), colour = "blueviolet") +
   theme_tree2() +
   theme(legend.position = "bottom") +
   labs(size = "Approximate species count (thousands)") +
-  xlim_expand(c(-4, 20), panel = "Tree")
+  xlim_expand(c(-4, 20), panel = "Tree") 
 
 
-ggtree(newcatree) +
-  geom_tiplab(offset = 0.9, size=4, color ="Black") +
-  geom_nodelab(aes(label = label), size = 3.5, vjust = -0.5, hjust = 1.1 ) +
-  geom_tippoint(aes(size = approx_species_n_thousand), colour = "blueviolet") +
-  theme_tree2() +
-  theme(legend.position = "bottom") +
-  labs(size = "Approximate species count (thousands)") +
-  xlim_expand(c(-4, 20), panel = "Tree") +
-  scale_colour_manual(values = c("blue", "red"),
-                      labels = c("Chordata", "Arthropoda"))
 
 ca2 <- facet_plot(caplot, data = data.frame(chordata_arthropoda_amps_count2), panel = "AMP count", geom = ggstance::geom_barh, mapping = aes(x = AMP_count2), fill = "forestgreen", stat = "identity", width = .3)
 
@@ -162,9 +162,10 @@ ggsave("figures/chordatArthropod_tree.png", width = 24, height = 18, units = "cm
 
 
 ```{r, echo = FALSE, fig.width=10, fig.height=9}
-newtree_plot <- ggtree(newtree) +
+newtree_plot <- ggtree(newtree, aes(color = I(brcol))) + 
   geom_tiplab(offset = 0.9, size= 3.5, color ="Black") +
   geom_nodelab(aes(label = label), size = 3, vjust = -0.5, hjust = 1.1 ) +
+  ggnewscale::new_scale_color() + 
   geom_tippoint(aes(size = approx_species_n_thousand), colour = "blueviolet") +
   theme_tree2() +
   theme(legend.position = "bottom") +
@@ -176,9 +177,11 @@ p2 <- facet_plot(newtree_plot, panel = "AMP count", data.frame(swissprot_amps_co
 
 p3 <- facet_plot(p2, panel = "AMP count", data = data.frame(swissprot_amps_count2), geom = geom_text, mapping = aes(x = AMP_count_2 + 80, label = AMP_count_2), size = 3)
 
-caplot <- ggtree(newcatree) +
+caplot <- ggtree(newcatree, aes(colour = group)) +
+  scale_colour_manual(values = c("#E7298A", "#A6761D")) + 
   geom_tiplab(offset = 0.9, size=3.5, color ="Black") +
-  geom_nodelab(aes(label = label), size = 3, vjust = -0.5, hjust = 1.1 ) +
+  geom_nodelab(aes(label = label), size = 3.5, vjust = -0.5, hjust = 1.1, colour = "black" ) +
+  ggnewscale::new_scale_color() + 
   geom_tippoint(aes(size = approx_species_n_thousand), colour = "blueviolet") +
   theme_tree2() +
   theme(legend.position = "none") +
@@ -204,8 +207,7 @@ ggsave("figures/combined_tree.png", width = 23, height = 18, units = "cm")
 
 **Figure #:** 
 
-*for this figure I was thinking to colour the branch tip of Chordata and Arthropoda with two different colours in part A and then use those same colours to colour the Chordata and Arthropoda branches in part B (to make clearer that Part B is a "zoomed in" version of Part A.... I tried to do this today (using groupOTU, groupClade and using a column from the df but all without success ..... )*
-
+*TODO: either hide the "group" legend or edit it and rename the 0 and 1 to Chordata and Arthropoda respectively. How?...* 
 
 ## Combining the two trees and metadata
 
