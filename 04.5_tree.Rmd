@@ -137,7 +137,7 @@ chordata_arthropoda_amps_count2 <- chordata_arthropoda_amps_count %>% rename(AMP
 
 ```{r, echo = FALSE}
 caplot <- ggtree(newcatree, aes(colour = group)) +
-  scale_colour_manual(values = c("#E7298A", "#A6761D")) + 
+  scale_colour_manual(values = c("#E7298A", "#A6761D"), guide = "none") + 
   geom_tiplab(offset = 0.9, size=4, color ="Black") +
   geom_nodelab(aes(label = label), size = 3.5, vjust = -0.5, hjust = 1.1, colour = "black" ) +
   ggnewscale::new_scale_color() + 
@@ -146,8 +146,6 @@ caplot <- ggtree(newcatree, aes(colour = group)) +
   theme(legend.position = "bottom") +
   labs(size = "Approximate species count (thousands)") +
   xlim_expand(c(-4, 20), panel = "Tree") 
-
-
 
 ca2 <- facet_plot(caplot, data = data.frame(chordata_arthropoda_amps_count2), panel = "AMP count", geom = ggstance::geom_barh, mapping = aes(x = AMP_count2), fill = "forestgreen", stat = "identity", width = .3)
 
@@ -178,7 +176,7 @@ p2 <- facet_plot(newtree_plot, panel = "AMP count", data.frame(swissprot_amps_co
 p3 <- facet_plot(p2, panel = "AMP count", data = data.frame(swissprot_amps_count2), geom = geom_text, mapping = aes(x = AMP_count_2 + 80, label = AMP_count_2), size = 3)
 
 caplot <- ggtree(newcatree, aes(colour = group)) +
-  scale_colour_manual(values = c("#E7298A", "#A6761D")) + 
+  scale_colour_manual(values = c("#E7298A", "#A6761D"), guide = "none") + 
   geom_tiplab(offset = 0.9, size=3.5, color ="Black") +
   geom_nodelab(aes(label = label), size = 3.5, vjust = -0.5, hjust = 1.1, colour = "black" ) +
   ggnewscale::new_scale_color() + 
@@ -187,7 +185,7 @@ caplot <- ggtree(newcatree, aes(colour = group)) +
   theme(legend.position = "none") +
 #  labs(size = "Approximate species count (thousands)") +
   xlim_expand(c(-4, 20), panel = "Tree") +
-  guides(size = FALSE)
+  guides(size = "none")
 
 
 ca2 <- facet_plot(caplot, data = data.frame(chordata_arthropoda_amps_count2), panel = "AMP count", geom = ggstance::geom_barh, mapping = aes(x = AMP_count2), fill = "forestgreen", stat = "identity", width = .3) 
@@ -205,55 +203,8 @@ p3 / ca3  + plot_annotation(tag_levels = 'A') + plot_layout(guides = "collect") 
 ggsave("figures/combined_tree.png", width = 23, height = 18, units = "cm")
 ```
 
-**Figure #:** 
-
-*TODO: either hide the "group" legend or edit it and rename the 0 and 1 to Chordata and Arthropoda respectively. How?...* 
-
-## Combining the two trees and metadata
-
-To see if tree looks better combined as 1 big tree rather than subdivided....
-
-```{r}
-fulltree_text <- readLines("data/tree/fulltree.phy") %>%
-  paste0(collapse="")
-
-fulltree <- read.tree(text = fulltree_text)
-```
+**Figure #:** The number of AMPs present in the SwissProt database corresponding to A) eukaryotic phyla and bacteria and B) classes within the metazoan phyla Chordata (pink branches) and Arthropoda (brown branches)
 
 
-```{r}
-tree_data <- rbind(chordata_arthropoda_amps_count, swissprot_amps_count) %>% mutate(approx_species_n_thousand = approx_species_n / 1000)
-```
-
-```{r}
-newfulltree <- as_tibble(fulltree) %>% left_join(tree_data) %>% as.treedata()
-
-tree_data2 <- tree_data %>% rename(AMP_count2 = AMP_count)
-```
-
-## plot
-
-not sure if this is better as there are AMP counts for both the phylum "Chordata" and for the classes within Chordata (and same for Arthropoda) and they overlap on the AMP count panel plot which therefore looks messy ...
-and the extra groups make it look a bit busy (in the AMP count plot ...)
-
-```{r}
-newfulltree_plot <- ggtree(newfulltree) +
-  geom_tiplab(offset = 0.5, size= 3.5, color ="Black") +
-  geom_nodelab(aes(label = label), size = 3, vjust = -0.5, hjust = 1.1 ) +
-  geom_tippoint(aes(size = approx_species_n_thousand), colour = "blueviolet") +
-  theme_tree2() +
-  theme(legend.position = "bottom") +
-  labs(size = "Approximate species count (thousands)") +
-  xlim_expand(c(0, 25), panel = "Tree")
-  
-
-
-f2 <- facet_plot(newfulltree_plot, panel = "AMP count", data.frame(tree_data2),
-           geom = ggstance::geom_barh, mapping = aes(x =  AMP_count2), fill = "forestgreen", stat = "identity", width = .3) 
-
-facet_plot(f2, panel = "AMP count", data = data.frame(tree_data2), geom = geom_text, mapping = aes(x = AMP_count2 + 60, label = AMP_count2), size = 3)
-
-
-```
 
 
