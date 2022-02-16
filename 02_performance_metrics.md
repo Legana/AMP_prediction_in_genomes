@@ -174,6 +174,30 @@ values for both.
 **Figure 2.2:** A precision-recall curve depicting various alpha values
 that represent different proportions of AMPs in a genome
 
+# Effect of alpha on ROC curves
+
+Previous work has highlighted the fact that with unbalanced data, ROC
+curves are less informative of algorithm performance compared with
+precision-recall curves (Davis and Goadrich 2006). This can easily be
+seen by considering the two axes in a ROC curve (y=TPR,x=FPR), and the
+way that these scale with
+![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha"). The
+equations below clearly show that neither the x or y axes of a ROC curve
+are affected by changes in
+![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha") which
+implies that both ROC curves themselves and associated metrics (AUROC)
+are completely invariant with the dataset balance. In some situations
+this may be desirable, however, for omics-scanning where there is a
+strong requirement for high precision (which does vary with
+![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha"))
+ROC-based metrics can provide a misleading estimate of performance.
+
+$$ ROC\_{y} = TPR = \\
+
+ROC\_{y}^{} = = TPR = ROC\_y \\
+
+ROC\_{x} = FPR = \\ ROC\_{x}^{} = = FPR = ROC\_{x} $$
+
 # Supplementary: Empirical test that the formulae for alpha scaling of the confusion matrix are correct
 
 Here we perform a simple check to ensure that the formulae shown above
@@ -203,6 +227,15 @@ probability thresholds for
 theoretical scaling of the confusion matrix.
 
 <div id="refs" class="references csl-bib-body hanging-indent">
+
+<div id="ref-Davis2006-di" class="csl-entry">
+
+Davis, Jesse, and Mark Goadrich. 2006. “The Relationship Between
+Precision-Recall and ROC Curves.” In *Proceedings of the 23rd
+International Conference on Machine Learning*, 233–40. ICML ’06. New
+York, NY, USA: Association for Computing Machinery.
+
+</div>
 
 <div id="ref-Xu2021-ku" class="csl-entry">
 
