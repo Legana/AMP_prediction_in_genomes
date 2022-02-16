@@ -183,9 +183,7 @@ Previous work has highlighted the fact that with unbalanced data, ROC curves are
 
 $$
 ROC_{y} = TPR = \frac{TP}{TP+FN} \\
-
 ROC_{y}^{\alpha} = \frac{\alpha TP}{\alpha TP + \alpha FN} = TPR = ROC_y \\
-
 ROC_{x} = FPR = \frac{FP}{FP+TN} \\
 ROC_{x}^{\alpha} = \frac{(1-\alpha)FP}{(1-\alpha)FP + (1-\alpha)TN} = FPR = ROC_{x}
 $$

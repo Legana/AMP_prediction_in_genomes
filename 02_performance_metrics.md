@@ -192,11 +192,17 @@ strong requirement for high precision (which does vary with
 ![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha"))
 ROC-based metrics can provide a misleading estimate of performance.
 
-$$ ROC\_{y} = TPR = \\
-
-ROC\_{y}^{} = = TPR = ROC\_y \\
-
-ROC\_{x} = FPR = \\ ROC\_{x}^{} = = FPR = ROC\_{x} $$
+![
+ROC\_{y} = TPR = \\frac{TP}{TP+FN} \\\\
+ROC\_{y}^{\\alpha} = \\frac{\\alpha TP}{\\alpha TP + \\alpha FN} = TPR = ROC\_y \\\\
+ROC\_{x} = FPR = \\frac{FP}{FP+TN} \\\\
+ROC\_{x}^{\\alpha} = \\frac{(1-\\alpha)FP}{(1-\\alpha)FP + (1-\\alpha)TN} = FPR = ROC\_{x}
+](https://latex.codecogs.com/png.latex?%0AROC_%7By%7D%20%3D%20TPR%20%3D%20%5Cfrac%7BTP%7D%7BTP%2BFN%7D%20%5C%5C%0AROC_%7By%7D%5E%7B%5Calpha%7D%20%3D%20%5Cfrac%7B%5Calpha%20TP%7D%7B%5Calpha%20TP%20%2B%20%5Calpha%20FN%7D%20%3D%20TPR%20%3D%20ROC_y%20%5C%5C%0AROC_%7Bx%7D%20%3D%20FPR%20%3D%20%5Cfrac%7BFP%7D%7BFP%2BTN%7D%20%5C%5C%0AROC_%7Bx%7D%5E%7B%5Calpha%7D%20%3D%20%5Cfrac%7B%281-%5Calpha%29FP%7D%7B%281-%5Calpha%29FP%20%2B%20%281-%5Calpha%29TN%7D%20%3D%20FPR%20%3D%20ROC_%7Bx%7D%0A "
+ROC_{y} = TPR = \frac{TP}{TP+FN} \\
+ROC_{y}^{\alpha} = \frac{\alpha TP}{\alpha TP + \alpha FN} = TPR = ROC_y \\
+ROC_{x} = FPR = \frac{FP}{FP+TN} \\
+ROC_{x}^{\alpha} = \frac{(1-\alpha)FP}{(1-\alpha)FP + (1-\alpha)TN} = FPR = ROC_{x}
+")
 
 # Supplementary: Empirical test that the formulae for alpha scaling of the confusion matrix are correct
 

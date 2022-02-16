@@ -232,7 +232,7 @@ gimme_ampgram_predictions <- function(filepath) {
 ```
 
 
-```{r, eval = FALSE}
+```{r}
 if (file.exists("cache/ampgram_genome_bench.rds")) {
   ampgram_genome_bench <- readRDS("cache/ampgram_genome_bench.rds")
 } else {
@@ -247,16 +247,11 @@ ampgram_genome_bench <- ampgram_predictions %>%
   left_join(reference_proteomes, by = "Entry name") %>% 
   select(ID = `Entry name`, prob_AMP = "TRUE", Organism, Label) %>% 
   add_column(Model = "AmpGram")
+
+  saveRDS(ampgram_genome_bench, "cache/ampgram_genome_bench.rds")
 }
 ```
 
-```{r, echo = FALSE, eval = FALSE}
-saveRDS(ampgram_genome_bench, "cache/ampgram_genome_bench.rds")
-```
-
-```{r, echo = FALSE}
-ampgram_genome_bench <- readRDS("cache/ampgram_genome_bench.rds")
-```
 
 
 ### Calculating performance metrics - ROC curves
@@ -280,21 +275,21 @@ get_genome_roc <- function(data, model_name){
 To use `get_genome_roc.R` on ampir data, an additional loop had to be implemented as in this case, ampir is subdivided into three different models and therefore metric calculations needed to be done three different times, one for each model.
 
 ```{r}
-ampir_genome_roc <- do.call(rbind,lapply(c("ampir_precursor","ampir_mature", "ampir_precursor_nobench"),function(meth){
-    get_genome_roc(ampir_proteome_predictions %>% filter(Model==meth),meth)}))
+ampir_genome_roc <- do.call(rbind,lapply(c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature", "ampir_v1.1prec_model_nobench"),function(meth){
+    get_genome_roc(ampir_v1.1_proteome_predictions %>% filter(Model==meth),meth)}))
 ```
 
 
 ```{r}
-ampscanner_roc <- get_genome_roc(ampscan_genome_bench, "AMPscanner_v2")
+ampscanner_roc <- get_genome_roc(ampscan_genome_bench %>% rename(Organism=dataset), "AMPscanner_v2")
 
-ampep_roc <- get_genome_roc(ampep_genome_bench, "amPEP")
+ampep_roc <- get_genome_roc(ampep_genome_bench %>% rename(Organism=dataset), "amPEP")
 
 ampgram_roc <- get_genome_roc(ampgram_genome_bench, "AmpGram")
 
-ampeppy_roc <- get_genome_roc(ampeppy_genome_bench, "amPEPpy")
+ampeppy_roc <- get_genome_roc(ampeppy_genome_bench %>% rename(Organism=dataset), "amPEPpy")
 
-amplify_roc <- get_genome_roc(amplify_genome_bench, "AMPlify")
+amplify_roc <- get_genome_roc(amplify_genome_bench %>% rename(Organism=dataset), "AMPlify")
 
 ```
 
@@ -319,12 +314,12 @@ rocplot <- ggplot(proteome_rocs) +
         strip.background = element_blank(),
         strip.text = element_text(face = "italic",
                                   size = 10)) +
- scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature",
+ scale_colour_manual(breaks = c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature", "ampir_v1.1prec_model_nobench",
                                 "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     labels = c("ampir_prec\nH .92 A .99", "ampir_prec_nb\nH .86 A .93", "ampir_mat\nH .75 A .97",
+                     labels = c("ampir_prec_imbal\nH .92 A .99","ampir_prec_bal","ampir_mature","ampir_prec_nb",
                                 "AMPscanner\nH .79 A .92", "amPEP\nH .43 A .16", "AmpGram\nH .81 A .86", "amPEPpy\nH .49 A .24",
                                 "AMPlify\n H .67 A .62"),
-                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
+                     values = c("blueviolet", "goldenrod2", "darkslategray","black", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
  guides(colour = guide_legend(nrow = 1))
 
 prplot <- ggplot(proteome_rocs) + 
@@ -335,12 +330,12 @@ prplot <- ggplot(proteome_rocs) +
   theme(legend.position = "bottom",
         strip.background = element_blank(),
         strip.text = element_blank()) +
- scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature",
+ scale_colour_manual(breaks = c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature", "ampir_v1.1prec_model_nobench",
                                 "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     labels = c("ampir_prec\nH .15 A .73", "ampir_prec_nb\nH .09 A .31", "ampir_mat\nH .004 A .15",
+                     labels = c("ampir_prec_imbal\nH .92 A .99","ampir_prec_bal","ampir_mature","ampir_prec_nb",
                                 "AMPscanner\nH .006 A .09", "amPEP\nH .001 A .004", "AmpGram\nH .01 A .1", "amPEPpy\nH .001 A .005",
                                 "AMPlify\n H .004 A .05"),
-                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
+                     values = c("blueviolet", "goldenrod2", "darkslategray","black", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
    guides(colour = guide_legend(nrow = 1))
 
 rocplot / prplot  + plot_annotation(tag_levels = 'A')
@@ -368,15 +363,15 @@ get_metrics <- function(bench_data, model_name) {
     }))
 }
 
-ampir_metrics <- do.call(rbind, lapply(c("ampir_precursor","ampir_mature", "ampir_precursor_nobench"),function(meth) {
-  get_metrics(ampir_proteome_predictions %>% filter(Model==meth), model_name = meth)
+ampir_metrics <- do.call(rbind, lapply(c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature", "ampir_v1.1prec_model_nobench"),function(meth) {
+  get_metrics(ampir_v1.1_proteome_predictions %>% filter(Model==meth), model_name = meth)
 }))
 
-ampscan_metrics <- get_metrics(ampscan_genome_bench, "AMPscanner_v2")
-ampep_metrics <- get_metrics(ampep_genome_bench, "amPEP")
+ampscan_metrics <- get_metrics(ampscan_genome_bench %>% rename(Organism=dataset), "AMPscanner_v2")
+ampep_metrics <- get_metrics(ampep_genome_bench %>% rename(Organism=dataset), "amPEP")
 ampgram_metrics <- get_metrics(ampgram_genome_bench, "AmpGram")
-ampeppy_metrics <- get_metrics(ampeppy_genome_bench, "amPEPpy")
-amplify_metrics <- get_metrics(amplify_genome_bench, "AMPlify")
+ampeppy_metrics <- get_metrics(ampeppy_genome_bench %>% rename(Organism=dataset), "amPEPpy")
+amplify_metrics <- get_metrics(amplify_genome_bench %>% rename(Organism=dataset), "AMPlify")
 
 proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics, ampgram_metrics, ampeppy_metrics, amplify_metrics) %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "H. sapiens", TRUE ~ "A. thaliana"))
 ```
@@ -387,62 +382,11 @@ proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics, ampgram
 knitr::kable(proteome_metrics[,3:11])
 ```
 
-```{r}
-#compare ampir v1.0.0 vs ampir v1.1.0
-
-ampir_v1.1_genome_roc <- do.call(rbind,lapply(c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature","ampir_v1.1_precursor_imbal_nobench"),function(meth){
-    get_genome_roc(ampir_v1.1_proteome_predictions %>% filter(Model==meth),meth)}))
-
-ampir_rocs <- rbind(ampir_genome_roc, ampir_v1.1_genome_roc)
-
-ampir_v1.1_metrics <- do.call(rbind, lapply(c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature","ampir_v1.1_precursor_imbal_nobench"),function(meth) {
-  get_metrics(ampir_v1.1_proteome_predictions %>% filter(Model==meth), model_name = meth)
-}))
-
-ampir_comparison_metrics <- rbind(ampir_metrics, ampir_v1.1_metrics) %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "H. sapiens", TRUE ~ "A. thaliana"))
-
-ampir_comparison_metrics[,3:11]
-
-write_excel_csv(ampir_comparison_metrics[,3:11], "ampir_comparison.csv")
-```
-
-
-```{r,  fig.width=13, fig.height=5}
-ampir_rocs  <- ampir_rocs  %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "Homo sapiens", TRUE ~ "Arabidopsis thaliana"))
-
-ampir_all <- ggplot(ampir_rocs) + 
-  geom_line(aes(x = FP, y = TP, colour = Model),size = 1.1) + 
-  xlim(0,500) +
-  facet_wrap(~Organism, scales = "free_y", nrow = 1) +
-  labs(x= "False positives", y = "True positives", colour = "") +
-  theme_classic() +
-  theme(legend.position = "bottom",
-        strip.text = element_text(face = "italic"),
-        strip.background = element_blank()) +
-   guides(colour = guide_legend(nrow = 1)) 
-
-ampir_bal <- ggplot(filter(ampir_rocs, Model == "ampir_v1.1_precursor_bal")) + 
-  geom_line(aes(x = FP, y = TP, colour = Model),size = 1.1) + 
-  xlim(0,500) +
-  facet_wrap(~Organism, scales = "free_y", nrow = 1) +
-  labs(x= "False positives", y = "True positives", colour = "") +
-  theme_classic() +
-  theme(legend.position = "bottom",
-        strip.text = element_text(face = "italic"),
-        strip.background = element_blank()) +
-   guides(colour = guide_legend(nrow = 1))
-
-ampir_all / ampir_bal
-
-ggsave("ampir_comparison.png", width = 33, height = 18 ,units = "cm" )
-```
-
 
 ```{r, fig.height=10, fig.width=9}
 proteome_metrics_long <- proteome_metrics %>% 
   select(Recall, Precision, MCC, AUROC, AUPRC, Organism, Model) %>% 
-  pivot_longer(cols = c(-Organism, -Model)) %>%
-  mutate(Model = factor(Model, levels = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify")))
+  pivot_longer(cols = c(-Organism, -Model)) 
   
 
 ggplot(proteome_metrics_long, aes(x = Organism, y = value)) +
@@ -453,10 +397,10 @@ ggplot(proteome_metrics_long, aes(x = Organism, y = value)) +
         strip.background = element_rect(colour = "white"),
         strip.text = element_text(face = "bold", size = 10),
         axis.text.x = element_text(face = "italic", size = 10)) +
-  scale_fill_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature",
+  scale_fill_manual(breaks = c("ampir_v1.1_precursor_imbal", "ampir_v1.1_precursor_bal", "ampir_v1.1_mature","ampir_v1.1prec_model_nobench",
                                "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
+                     labels = c("ampir_prec_imbal", "ampir_prec_bal", "ampir_mat","ampir_pred_nb","AMPscanner", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
+                     values = c("blueviolet", "goldenrod2", "darkslategray","black", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
   labs(x = "", fill = "", y = "Performance metric value") +
   guides(fill = guide_legend(nrow = 1))
 ```
@@ -496,8 +440,7 @@ proteome_rocs %>% mutate(Organism = ifelse(Organism=="Homo sapiens (Human)","Hom
         panel.background = element_rect(fill = "black"),
         axis.line = element_line(colour = "grey"),
         axis.text = element_text(colour="grey", size = 10),
-        axis.title = element_text(colour="white", size = 14)) +
-   scale_color_manual(values=c("aquamarine", "#56B4E9", "#D55E00", "#F0E442", "springgreen4", "hotpink", "lightgrey", "burlywood")) 
+        axis.title = element_text(colour="white", size = 14)) 
 ```
 
 ```{r, echo=FALSE, fig.width=9, fig.height=5}
@@ -512,10 +455,10 @@ ggplot(proteome_rocs) +
   theme(legend.position = "bottom",
         strip.text = element_text(face = "italic"),
         strip.background = element_blank()) +
-  scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature",
+  scale_colour_manual(breaks = c("ampir_v1.1_precursor_imbal", "ampir_v1.1_precursor_bal", "ampir_v1.1_mature","ampir_v1.1prec_model_nobench",
                                  "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
+                     labels = c("ampir_prec_imbal", "ampir_prec_bal", "ampir_mat","ampir_pred_nb","AMPscanner", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
+                     values = c("blueviolet", "goldenrod2", "darkslategray","black", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
    guides(colour = guide_legend(nrow = 1))
 ```
 
@@ -525,25 +468,3 @@ ggplot(proteome_rocs) +
 ggsave("figures/TPFPcountproteomesXLIM.png", width = 21, height = 9 ,units = "cm")
 ```
 
-
-```{r, echo=FALSE, fig.width=9, fig.height=5}
-ggplot(proteome_rocs) + 
-  geom_line(aes(x = FP, y = TP, colour = Model),size = 1.1) + 
-  facet_wrap(~Organism, scales = "free", nrow = 1) +
-  labs(x= "False positives", y = "True positives", colour = "") +
-  theme_classic() +
-  theme(legend.position = "bottom",
-        strip.text = element_text(face = "italic"),
-        strip.background = element_blank()) +
-  scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature",
-                                 "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
-   guides(colour = guide_legend(nrow = 1))
-```
-
-**Figure 3.3:** Same as Figure 3.2 but showing the entire false positive regime 
-
-```{r, eval=FALSE, echo=FALSE}
-ggsave("figures/TPFPcountproteomes.png", width = 21, height = 9 ,units = "cm")
-```
