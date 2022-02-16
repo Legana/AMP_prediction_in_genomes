@@ -47,16 +47,29 @@ echo data/amp_predictors/AMPlify/non_AMP_test_20190414.fa >> data_list
 echo data/amp_predictors/AMPlify/non_AMP_train_20190414.fa >> data_list
 echo data/amp_predictors/AmpGram/benchmark.fasta >> data_list
 
+
 # Data for comparing between predictors
 
 ls data/clustering/*train.amp.fasta >> data_list
 echo data/clustering/train.amp.signalp >> data_list
 echo data/clustering/test.amp.signalp >> data_list
 
+# Prediction results from AMP predictors on their respective test sets
+
+echo data/prediction_results/ampep/xiao_independent_ampep.txt >> data_list
+echo data/prediction_results/amPEPpy/xiao_independent_ampeppy_results.tsv >> data_list
+echo data/prediction_results/AMPlify1.0.0/AMPlify_results_20210531101008amps.txt >> data_list
+echo data/prediction_results/AMPlify1.0.0/AMPlify_results_20210531101827nonamps.txt >> data_list
+echo data/prediction_results/ampgram/ampgram_testset_pred.rds >> data_list 
+echo data/prediction_results/ampscanner_v2/amps_testset1622422872011_Prediction_Summary.csv >> data_list
+echo data/prediction_results/ampscanner_v2/nonamps_testset1622423918497_Prediction_Summary.csv >> data_list
+
+
 # Positive and negative datasets from the Swiss-Prot database (accessed January 2021)
 echo data/uniprot-keyword Antimicrobial+[KW-0929] -filtered-reviewed yes.tab >> data_list
 echo data/uniprot-taxonomy Deuterostomia+[33511] +reviewed yes+NOT+keyword--.fasta >> data_list
 echo data/uniprot-taxonomy Protostomia+[33317] +reviewed yes+NOT+keyword--.fasta >> data_list
+
 
 # Deuterostome and protostome model data
 
@@ -86,6 +99,7 @@ echo cache/plants_neg.rds >> data_list
 # tree data 
 echo data/tree/phylum_tree.phy >> data_list
 echo data/tree/chordata_arthropodatree.phy >> data_list
+echo data/tree/fulltree.phy >> data_list
 
 echo data/uniprot-keyword-Antimicrobial+[KW-0929]-reviewed-April2021.xlsx >> data_list
 
