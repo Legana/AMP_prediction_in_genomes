@@ -25,9 +25,9 @@ Our focus in on the use of AMP predictors as part of an 'omics-based novel AMP d
 
 # AMP predictor data
 
-The training and test sets of six recent AMP predictors were examined to assess the degree to which they varied between predictors, and how well they matched the proteomes of *Arabidopsis thaliana* and *Homo sapiens*. 
+The training and test sets of nine AMP predictors (**Table 1.2**) were examined to assess the degree to which they varied between predictors, and how well they matched the proteomes of *Arabidopsis thaliana* and *Homo sapiens*. 
 
-**Table 2.1:** Summary table of the number of positive and negative sequences present in the training and test set in six AMP predictors
+**Table 1.1:** Summary table of the number of positive and negative sequences present in the training and test set in six AMP predictors
 
 | AMP predictor | Train - AMPs | Train - non-AMPs | Test - AMPs | Test - non-AMPs |
 | :--- | :---: | :---: | :---: | :---: |
@@ -42,6 +42,21 @@ The training and test sets of six recent AMP predictors were examined to assess 
 | ampir_mature v1 | 2,586 | 2,657 | 646 | 664
 
 *NS: not specified
+
+
+**Table 1.2:** AMP Predictors with their publications and accessibility
+
+| AMP predictor name | Reference | Availability |
+| ------------------------ | --------------- | -------------- |
+| iAMPpred (iAMP-2L) | [Meher et al. 2017](https://doi.org/10.1038/srep42362) | [iAMPpred webserver](http://cabgrid.res.in:8080/amppred/)
+| amPEP  | [Bhadra et al. 2018](https://doi.org/10.1038/s41598-018-19752-w) | [MATLAB source code](https://sourceforge.net/projects/axpep/files/AmPEP_MATLAB_code/)
+| Deep-amPEP30 | [Yan et al. 2020](https://doi.org/10.1016/j.omtn.2020.05.006) | [Web Server](https://cbbio.online/AxPEP/)
+| amPEPpy | [Lawrence et al 2020](http://dx.doi.org/10.1093/bioinformatics/btaa917) | [Python script](https://github.com/tlawrence3/amPEPpy)
+| AMP scanner v2 | [Veltri et al. 2018](https://doi.org/10.1093/bioinformatics/bty179) | [amp scanner webserver](https://www.dveltri.com/ascan/v2/ascan.html) 
+| AMPlify | [Li et al. 2020](https://www.biorxiv.org/content/10.1101/2020.06.16.155705v1.full) | [Github repository](https://github.com/bcgsc/AMPlify)
+| AmpGram | [Burdukiewicz et al 2020](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7352166/) | [Github repository](https://github.com/michbur/AmpGram)
+| ampir | [Fingerhut et al 2020](https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bioinformatics/btaa653) | [Github repository](https://github.com/legana/ampir)
+
 
 **iAMP-2L Data**
 
@@ -139,6 +154,8 @@ amplify_data <- read_faa("data/amp_predictors/AMPlify/AMP_train_20190414.fa") %>
   mutate(class = case_when(str_detect(seq_name, "^trAMP|^teAMP") ~ "AMP", TRUE ~ "non-AMP")) %>%
   mutate(length = nchar(seq_aa)) %>% add_column(name="AMPlify") %>% relocate(class, .before = dataset)
 ```
+
+**AmpGram data**
 
 AmpGram was created in 2020 and in addition to the standard AMPs, it also focuses on predicting longer proteins that contain antimicrobial activity, such as the milk protein, lactoferrin, and on non-AMP proteins which produce antimicrobial proteolysis products, such as human thrombin. AmpGram uses amino acid motifs and the random forest model to classify AMPs [Burdukiewicz et al. 2020](https://doi.org/10.3390/ijms21124310). AmpGram's analysis details and data can be obtained from [AmpGram's analysis repository](https://github.com/michbur/AmpGram-analysis). Their training data is not specified as a file but their benchmark data can be found in the `benchmark.fasta` file. This test set contains 247 AMP and non-AMP sequences. AmpGram also used the dataset from [Gabere and Noble 2017](https://doi.org/10.1093/bioinformatics/btx081) which used AMPs from the [DAMPD](https://dx.doi.org/10.1093%2Fnar%2Fgkr1063) and [APD3](https://doi.org/10.1093/nar/gkv1278) AMP databases and non-AMPs from UniProt.
 

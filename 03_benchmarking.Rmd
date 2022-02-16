@@ -8,7 +8,7 @@ bibliography: bibliography.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
 ```{r, echo = FALSE}
@@ -17,137 +17,139 @@ library(ampir)
 library(patchwork)
 ```
 
-The reference proteomes for the organisms *Homo sapiens* (human), proteome ID: up000005640, and *Arabidopsis thaliana* (mouse-ear cress), proteome ID: up000006548, were downloaded from UniProt proteomes (accessed 23 Jan 2021). *H. sapiens* contained 20,379 reviewed proteins and 55,398 unreviewed proteins. *A. thaliana* contained 15,956 reviewed and 23,390 unreviewed proteins. 
+# Preparing Prediction Data
+
+We benchmarked each of the AMP predictors against the following datasets:
+
+- A balanced test dataset as close as possible to the original test data used by the authors of the predictor
+- An unbalanced ($\alpha=0.1$) dataset created as a random subsample of the original test data used by the authors
+- The reference proteome of *Homo sapiens* (human), obtained from Uniprot, proteome ID: up000005640
+- The reference proteome of *Arabidopsis thaliana* (mouse-ear cress), obtained from Uniprot, proteome ID: up000006548
+
+Both Uniprot datasets were downloaded from UniProt proteomes (accessed 23 Jan 2021). In order to ensure that the same data could be used across all predictors we first preprocessed these proteomes to comply with input requirements of all predictors. Specifically we:
+
+- Removed all non-standard amino acids
+- Removed all peptides shorter than 10 amino acids
+
+```{r}
+reference_proteomes <- c("data/proteomes/uniprot-proteome UP000005640.tab","data/proteomes/uniprot-proteome UP000006548.tab") %>% 
+  map_dfr( ~ read_tsv(.x) %>% mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg"))) %>% 
+  filter(grepl('^[ARNDCEQGHILKMFPSTWYV]+$', Sequence)) %>% 
+  filter(nchar(Sequence) >= 10)
+```
+
+
+```{r, eval=FALSE}
+# Write fasta data for each organism for later use when benchmarking predictors
+#
+reference_proteomes %>% 
+  filter(Organism=="Arabidopsis thaliana (Mouse-ear cress)") %>% 
+  select(`Entry name`, Sequence) %>% 
+  df_to_faa("data/proteomes/arabidopsis_benchmark_data.fasta")
+
+reference_proteomes %>% 
+  filter(Organism=="Homo sapiens (Human)") %>% 
+  select(`Entry name`, Sequence) %>% 
+  df_to_faa("data/proteomes/human_benchmark_data.fasta")
+```
+
+### ampir
+
+As shown in Figure 1.1 the training data for `ampir` includes precursor protein sequences for both Human and Arabidopsis.  In order to avoid calculating inflated performance metrics for `ampir` we therefore retrained its model after first removing any *H. sapiens* or *A. thaliana* proteins. We report three separate benchmarks for `ampir` (v1.1) as follows:
+
+- `ampir_prec` : ampir using the unmodified precursor model
+- `ampir_prec_nb` : ampir using the precursor model with Human and Arabidopsis proteins removed
+- `ampir_mat` : ampir using mature peptides
 
 
 ```{r}
-human_proteome <- read_tsv("data/proteomes/uniprot-proteome UP000005640.tab") %>% mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg"))
-cress_proteome <- read_tsv("data/proteomes/uniprot-proteome UP000006548.tab") %>% mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg"))
+if ( file.exists("data/prediction_results/ampir/ampirv1.1_refproteomes_predictions.rds")){
+  ampir_v1.1_proteome_predictions <- readRDS("data/prediction_results/ampir/ampirv1.1_refproteomes_predictions.rds")
+} else {
 
-reference_proteomes <- rbind(human_proteome, cress_proteome)
-```
+  ampirv1.1_precursor_imbal <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_imbal_full.rds")
+  ampirv1.1_mature <- readRDS("data/ampir_v1.1.0_data/tuned_mature_full.rds")
+  ampirv1.1_precursor_bal <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_bal_full.rds")
+  ampir_v1.1prec_model_nobench <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_imbal_nobench.rds")
 
-## ampir 
+  ampir_models <- list("ampir_v1.1_precursor_imbal"=ampirv1.1_precursor_imbal,
+                       "ampir_v1.1_precursor_bal"=ampirv1.1_precursor_bal,
+                       "ampir_v1.1_mature"=ampirv1.1_mature,
+                       "ampir_v1.1prec_model_nobench"=ampir_v1.1prec_model_nobench)
 
-```{r, eval = FALSE}
-cress_pred_ampir_prec <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3) %>% add_column(Model = "ampir_precursor")
-
-cress_pred_ampir_mat <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = "mature")%>% add_column(Model = "ampir_mature")
-
-human_pred_ampir_prec <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3) %>% add_column(Model = "ampir_precursor")
-
-human_pred_ampir_mat <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = "mature")  %>% add_column(Model = "ampir_mature")
-```
-
-In addition to ampir's standard models (`ampir_precursor` and `ampir_mature`), a special model was trained with sequences present in the `ampir_precursor` model, **minus** any *H. sapiens* or *A. thaliana* proteins (see ampir's analysis repository, [AMP_pub](https://github.com/Legana/AMP_pub), workflow 02_build_training_data for details). This was done to remove any potential biases when testing the trained models on the *H. sapiens* and *A. thaliana* proteomes. 
-
-```{r, eval = FALSE}
-ampir_prec_model_nobench <- readRDS("data/ampir_v1/tuned_precursor_imbal_nobench.rds")
-
-cress_pred_ampir_nobench <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_prec_model_nobench) %>% add_column(Model = "ampir_precursor_nobench")
-
-human_pred_ampir_nobench <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_prec_model_nobench) %>% add_column(Model = "ampir_precursor_nobench")
-```
-
-```{r, eval = FALSE}
-ampir_proteome_predictions <- rbind(cress_pred_ampir_prec, cress_pred_ampir_mat, cress_pred_ampir_nobench, human_pred_ampir_prec, human_pred_ampir_mat, human_pred_ampir_nobench) %>% left_join(reference_proteomes, by = "Entry name") %>% select(ID = `Entry name`, prob_AMP, Organism, Label, Model)
-```
+  run_ampir_models_for_proteome <- function(organism_name){
+    names(ampir_models) %>% map_dfr( ~ reference_proteomes %>% 
+                                          filter(Organism==organism_name) %>% 
+                                          select(`Entry name`, Sequence) %>% 
+                                          as.data.frame() %>% 
+                                          predict_amps(n_cores = 3, model = ampir_models[[.x]]) %>% 
+                                          add_column(Model = .x)
+                                          )
+  }
+  
+  # These are quite time consuming (~10 minutes on a Mac Mini)
+  cress_pred <- run_ampir_models_for_proteome("Arabidopsis thaliana (Mouse-ear cress)")
+  human_pred <- run_ampir_models_for_proteome("Homo sapiens (Human)")
 
 
-```{r, eval = FALSE, echo = FALSE}
-saveRDS(ampir_proteome_predictions, "data/prediction_results/ampir/ampir_refproteomes_predictions.rds")
-```
-
-```{r, echo = FALSE}
-ampir_proteome_predictions <- readRDS("data/prediction_results/ampir/ampir_refproteomes_predictions.rds")
-```
-
-Use ampir v1.1.0 models (updated with additional AMPs) as well as a balanced model
-```{r, eval = FALSE}
-ampirv1.1_precursor_imbal <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_imbal_full.rds")
-
-ampirv1.1_mature <- readRDS("data/ampir_v1.1.0_data/tuned_mature_full.rds")
-
-ampirv1.1_precursor_bal <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_bal_full.rds")
-
-cress_pred_ampirv1.1_prec_imbal <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_precursor_imbal) %>% add_column(Model = "ampir_v1.1_precursor_imbal")
-
-cress_pred_ampirv1.1_prec_bal <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_precursor_imbal) %>% add_column(Model = "ampir_v1.1_precursor_bal")
-
-cress_pred_ampirv1.1_mat <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_mature )%>% add_column(Model = "ampir_v1.1_mature")
-
-human_pred_ampirv1.1_prec_imbal <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_precursor_imbal) %>% add_column(Model = "ampir_v1.1_precursor_imbal")
-
-human_pred_ampirv1.1_prec_bal <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_precursor_imbal) %>% add_column(Model = "ampir_v1.1_precursor_bal")
-
-human_pred_ampirv1.1_mat <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_mature) %>% add_column(Model = "ampir_v1.1_mature")
-
-ampir_v1.1prec_model_nobench <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_imbal_nobench.rds")
-
-cress_pred_ampirv1.1_nobench <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_v1.1prec_model_nobench) %>% add_column(Model = "ampir_v1.1_precursor_imbal_nobench")
-
-human_pred_ampirv1.1_nobench <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_v1.1prec_model_nobench) %>% add_column(Model = "ampir_v1.1_precursor_imbal_nobench")
-
-ampir_v1.1_proteome_predictions <- rbind(cress_pred_ampirv1.1_prec_imbal, cress_pred_ampirv1.1_prec_bal, cress_pred_ampirv1.1_mat, cress_pred_ampirv1.1_nobench, human_pred_ampirv1.1_prec_imbal, human_pred_ampirv1.1_prec_bal, human_pred_ampirv1.1_mat,human_pred_ampirv1.1_nobench) %>% left_join(reference_proteomes, by = "Entry name") %>% select(ID = `Entry name`, prob_AMP, Organism, Label, Model)
-```
-
-```{r, eval = FALSE, echo = FALSE}
-saveRDS(ampir_v1.1_proteome_predictions, "data/prediction_results/ampir/ampirv1.1_refproteomes_predictions.rds")
-```
-
-```{r, echo = FALSE}
-ampir_v1.1_proteome_predictions <- readRDS("data/prediction_results/ampir/ampirv1.1_refproteomes_predictions.rds")
+  ampir_v1.1_proteome_predictions <- rbind(cress_pred,human_pred) %>% 
+    left_join(reference_proteomes, by = "Entry name") %>% 
+    select(ID = `Entry name`, prob_AMP, Organism, Label, Model)
+  
+  saveRDS(ampir_v1.1_proteome_predictions, "data/prediction_results/ampir/ampirv1.1_refproteomes_predictions.rds")
+}
 ```
 
 
-To use the human and *Arabidopsis* proteomes in other predictors, first the non-standard amino acids are removed. This is because the majority of AMP predictors only accept sequences that contain standard amino acids. ampir contains a function that removes everything which is not a standard amino acid, but other predictors, such as AMP scanner, require sequences to be preprocessed to have these sequences removed prior to analysing the sequences. Therefore, the `remove_nonstandard_aa.R` function from ampir is used to remove sequences that contain nonstandard amino acids, and ampir's `df_to_faa.R` function is used to write the files as FASTA files as input to other predictors. In addition, due to sequence amount restrictions using predictor web interfaces, the *Arabidopsis* proteome is split in half and the human proteome is split threefold.  
+## Antimicrobial Peptide Scanner vr. 2 ()
 
-```{r, eval = FALSE}
-arab_prot_clean <- read_faa("data/proteomes/arabidopsis-proteomeUP000006548.fasta") %>% remove_nonstandard_aa() 
-df_to_faa(arab_prot_clean, "cache/arab_proteome_standardaa.fasta")
-
-arab_prot_clean %>% slice((1:19669)) %>% df_to_faa("cache/arab_prot_clean1.fasta")
-arab_prot_clean %>% slice((19670:n())) %>% df_to_faa("cache/arab_prot_clean2.fasta")
-
-homo_prot_clean <- read_faa("data/proteomes/human-proteomeUP000005640.fasta") %>% remove_nonstandard_aa()
-df_to_faa(homo_prot_clean, "cache/homo_proteome_standardaa.fasta")
-
-homo_prot_clean %>% slice((1:22494)) %>% df_to_faa("cache/homo_prot_clean1.fasta")
-homo_prot_clean %>% slice((22495:44988)) %>% df_to_faa("cache/homo_prot_clean2.fasta")
-homo_prot_clean %>% slice((44989:n())) %>% df_to_faa("cache/homo_prot_clean3.fasta")
-```
-
-## Antimicrobial Peptide Scanner vr. 2
-
-AMP scanner vr. 2 (model Feb 2020)
-
+Something here about the test data. Was it identical to the data mentioned in Table 1.1? When was it run? Was the webserver used to make predictions?
 
 ```{r}
 ampscanner_file_paths <- c(list.files("data/prediction_results/ampscanner_v2", pattern="*.csv",full.names = T))
 
-ampscan_genome_bench <- do.call(rbind,lapply(ampscanner_file_paths,read_csv)) %>% 
-  separate(SeqID,into = c("database","Entry","Entry name"),sep = "\\|") %>% 
+#    add_column(Model = "AMPscanner_v2") 
+
+ampscan_genome_bench <- list.files("data/prediction_results/ampscanner_v2", pattern="[ha][ro][am].*.csv",full.names = T) %>% 
+  map_dfr( ~ read_csv(.x) %>% separate(SeqID,into = c("database","Entry","Entry name"),sep = "\\|") ) %>% 
   left_join(reference_proteomes,by="Entry name") %>% 
-  select(ID = `Entry name`, prob_AMP = Prediction_Probability, Organism, Label) %>% 
-  add_column(Model = "AMPscanner_v2")
+  select(ID = `Entry name`, prob_AMP = Prediction_Probability, dataset=Organism, Label)
+
+ampscan_pub_bench <- list.files("data/prediction_results/ampscanner_v2", pattern="amps_.*.csv",full.names = T) %>% 
+  map_dfr( ~ read_csv(.x) %>% add_column(Label = ifelse(grepl("nonamps",.x),"Neg","Pos"))) %>% 
+  add_column(dataset = "published") %>% 
+  select(ID = SeqID, prob_AMP = Prediction_Probability, dataset, Label)
+
+ampscan_bench <- rbind(ampscan_genome_bench,ampscan_pub_bench) %>% add_column(Model = "AMPscanner_v2")
 ```
 
 ## amPEP
 
-```{r}
-ampep_file_paths <- c("data/prediction_results/ampep/arab_proteome_standardaa_ampep.txt","data/prediction_results/ampep/homo_proteome_standardaa_ampep.txt")
+Something here about the test data. Was it identical to the data mentioned in Table 1.1? When was it run? Was the webserver used to make predictions?
 
-ampep_genome_bench <- do.call(rbind,lapply(ampep_file_paths,read_csv)) %>% 
-  separate(Row, into = c("database","Entry","Entry name"),sep = "\\|") %>% 
-  left_join(reference_proteomes, by = "Entry name") %>% 
-  select(ID = `Entry name`, prob_AMP = score, Organism, Label) %>% 
+```{r}
+ampep_genome_bench <- c("data/prediction_results/ampep/arab_proteome_standardaa_ampep.txt","data/prediction_results/ampep/homo_proteome_standardaa_ampep.txt") %>% 
+  map_dfr( ~ read_csv(.x) %>% 
+             separate(Row, into = c("database","Entry","Entry name"),sep = "\\|") %>% 
+             left_join(reference_proteomes, by = "Entry name") %>% 
+             select(ID = `Entry name`, prob_AMP = score, dataset=Organism, Label)
+           )
+
+ampep_pub_bench <- read_csv("data/prediction_results/ampep/xiao_independent_ampep.txt") %>% 
+  mutate(Label = ifelse(grepl(Row,pattern = "^AP"), "Pos", "Neg")) %>% 
+  add_column(dataset="published") %>% 
+  select(ID = Row, prob_AMP = score, dataset, Label)
+
+ampep_bench <- rbind(ampep_genome_bench,ampep_pub_bench) %>%
   add_column(Model = "amPEP")
 ```
 
 
 ## amPEPpy
 
-amPEPpy was run according to the example provided on the [amPEPpy GitHub repository](https://github.com/tlawrence3/amPEPpy) in a Conda environment. The prediction results consist of 67,484 predictions from the original 
+amPEPpy was run according to the example provided on the [amPEPpy GitHub repository](https://github.com/tlawrence3/amPEPpy) in a Conda environment (commands shown below). 
+
+?? What version was used? 
 
 ```bash
 ampep predict -m pretrained_models/amPEP.model -i ../cache/arab_proteome_standardaa.fasta -o arab_results.tsv --seed 2012
@@ -155,13 +157,18 @@ ampep predict -m pretrained_models/amPEP.model -i ../cache/homo_proteome_standar
 ```
 
 ```{r}
-ampeppy_file_paths <- list.files("data/prediction_results/amPEPpy", pattern="*.tsv",full.names = T)
+ampeppy_genome_bench <- list.files("data/prediction_results/amPEPpy", pattern="[ah][or][am].*.tsv",full.names = T) %>% 
+  map_dfr( ~ read_tsv(.x) %>% 
+             separate(seq_id, into = c(NA, NA,"Entry name"),sep = "\\|") %>%
+             left_join(reference_proteomes, by = "Entry name") %>% 
+             select(ID = `Entry name`, prob_AMP = probability_AMP, dataset = Organism, Label))
+  
+ampeppy_pub_bench <-  read_tsv("data/prediction_results/amPEPpy/xiao_independent_ampeppy_results.tsv") %>% 
+  mutate(Label = ifelse(grepl(seq_id,pattern = "^AP"), "Pos", "Neg")) %>% 
+  add_column(dataset="published") %>% 
+  select(ID = seq_id, prob_AMP = probability_AMP, dataset, Label)
 
-ampeppy_genome_bench <- do.call(rbind,lapply(ampeppy_file_paths,read_tsv)) %>%
-  separate(seq_id, into = c(NA, NA,"Entry name"),sep = "\\|") %>%
-  left_join(reference_proteomes, by = "Entry name") %>% 
-  select(ID = `Entry name`, prob_AMP = probability_AMP, Organism, Label) %>% 
-  add_column(Model = "amPEPpy")
+ampeppy_bench <- rbind(ampeppy_genome_bench,ampeppy_pub_bench) %>% add_column(Model = "amPEPpy")
 ```
 
 ## AMPlify
@@ -177,15 +184,28 @@ AMPlify is optimised for protein sequences that are 200 AA or less and do not al
 cat data/prediction_results/AMPlify1.0.0/AMPlify_results_20210405153447_Athaliana.txt | sed 's/\r//' | awk '$0~/^Sequence ID:/{spid=$3};$0~/^Score:/{printf("%s\t%s\n",spid,$2)}' > data/prediction_results/AMPlify1.0.0/AMPlify_Athaliana.txt 
 
 cat data/prediction_results/AMPlify1.0.0/AMPlify_results_20210405182202_Hsapiens.txt | sed 's/\r//' | awk '$0~/^Sequence ID:/{spid=$3};$0~/^Score:/{printf("%s\t%s\n",spid,$2)}' > data/prediction_results/AMPlify1.0.0/AMPlify_Hsapiens.txt 
+
+cat data/prediction_results/AMPlify1.0.0/AMPlify_results_20210531101008amps.txt | sed 's/\r//' | awk '$0~/^Sequence ID:/{spid=$3};$0~/^Score:/{printf("%s\t%s\n",spid,$2)}' > data/prediction_results/AMPlify1.0.0/AMPlify_amps.txt 
+
+cat data/prediction_results/AMPlify1.0.0/AMPlify_results_20210531101827nonamps.txt | sed 's/\r//' | awk '$0~/^Sequence ID:/{spid=$3};$0~/^Score:/{printf("%s\t%s\n",spid,$2)}' > data/prediction_results/AMPlify1.0.0/AMPlify_nonamps.txt 
 ```
 
 ```{r}
-amplify_file_paths <- c("data/prediction_results/AMPlify1.0.0/AMPlify_Athaliana.txt","data/prediction_results/AMPlify1.0.0/AMPlify_Hsapiens.txt")
+amplify_genome_bench <- c("data/prediction_results/AMPlify1.0.0/AMPlify_Athaliana.txt","data/prediction_results/AMPlify1.0.0/AMPlify_Hsapiens.txt") %>% 
+  map_dfr( ~ read_delim(.x,delim = "\t", col_names = c("Entry name", "prob_AMP")) %>% 
+             separate(`Entry name`, into = c(NA, NA,"Entry name"),sep = "\\|") %>%
+             left_join(reference_proteomes, by = "Entry name") %>% 
+             select(ID = `Entry name`, prob_AMP, dataset=Organism, Label)
+             )
 
-amplify_genome_bench <- do.call(rbind,lapply(amplify_file_paths,read_delim, delim = "\t", col_names = c("Entry name", "prob_AMP"))) %>%
-  separate(`Entry name`, into = c(NA, NA,"Entry name"),sep = "\\|") %>%
-  left_join(reference_proteomes, by = "Entry name") %>% 
-  select(ID = `Entry name`, prob_AMP, Organism, Label) %>% 
+amplify_pub_bench <- c("data/prediction_results/AMPlify1.0.0/AMPlify_amps.txt","data/prediction_results/AMPlify1.0.0/AMPlify_nonamps.txt") %>% 
+  map_dfr( ~ read_delim(.x,delim = "\t", col_names = c("Entry name", "prob_AMP")) %>% 
+             add_column(Label = ifelse(grepl("nonamps",.x),"Neg","Pos")) %>% 
+             add_column(dataset="published") %>% 
+             select(ID = `Entry name`, prob_AMP, dataset, Label)
+  )
+
+amplify_bench <- rbind(amplify_genome_bench,amplify_pub_bench) %>% 
   add_column(Model = "AMPlify")
 
 ```
