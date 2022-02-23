@@ -1,4 +1,4 @@
-Training datasets in other AMP predictors
+Training datasets used for AMP prediction
 ================
 
 # Introduction
@@ -17,22 +17,34 @@ precursor vs mature peptides, (b) the extent to which positive and
 negative data have length-matched distributions, and (c) the ratio of
 positive and negative cases (balance).
 
-Our focus in on the use of AMP predictors as part of an ’omics-based
+Our focus is on the use of AMP predictors as part of an ’omics-based
 novel AMP discovery workflow. In this context the input/query data is
 usually the complete set of predicted proteins for an organism, which
 might be derived from translations of gene models or from translated
-transcriptome sequences. Here we refer to such a dataset as a proteome,
-and in this document we will refer to proteomes of two very well studied
-organisms, Humans (*Homo sapiens*) and *Arabidopsis thaliana* (a plant)
-both of which have relatively completely classified proteomes.
+transcriptome sequences. Here we refer to such a dataset as a proteome.
+
+# Reference proteomes
+
+As representative examples of the type of data that would be used as
+input in ’omics scanning applications we used the complete proteome sets
+of *Arabidopsis thaliana* (a plant) and *Homo sapiens* (human). Both
+organisms have been intensively studied and as a consequence, their
+reference proteomes are likely to include sequences for the vast
+majority of protein-coding genes. Functional information for the
+proteins, including AMPs in these species is among the most complete
+available, but even for these organisms it is highly likely that some
+known AMPs have not been identified. Our assumption here is that these
+proteomes are completely classified for AMP activity (ie every AMP
+correctly identified).
 
 # AMP predictor data
 
-The training and test sets of six recent AMP predictors were examined to
-assess the degree to which they varied between predictors, and how well
-they matched the proteomes of *Arabidopsis thaliana* and *Homo sapiens*.
+The training and test sets of nine AMP predictors (**Table 1.2**) were
+examined to assess the degree to which they varied between predictors,
+and how well they matched the proteomes of *Arabidopsis thaliana* and
+*Homo sapiens*.
 
-**Table 2.1:** Summary table of the number of positive and negative
+**Table 1.1:** Summary table of the number of positive and negative
 sequences present in the training and test set in six AMP predictors
 
 | AMP predictor       | Train - AMPs | Train - non-AMPs | Test - AMPs | Test - non-AMPs |
@@ -48,6 +60,19 @@ sequences present in the training and test set in six AMP predictors
 | ampir\_mature v1    |    2,586     |      2,657       |     646     |       664       |
 
 \*NS: not specified
+
+**Table 1.2:** AMP Predictors with their publications and accessibility
+
+| AMP predictor name | Reference                                                                                                         | Availability                                                                          |
+|--------------------|-------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| iAMPpred (iAMP-2L) | [Meher et al. 2017](https://doi.org/10.1038/srep42362)                                                            | [iAMPpred webserver](http://cabgrid.res.in:8080/amppred/)                             |
+| amPEP              | [Bhadra et al. 2018](https://doi.org/10.1038/s41598-018-19752-w)                                                  | [MATLAB source code](https://sourceforge.net/projects/axpep/files/AmPEP_MATLAB_code/) |
+| Deep-amPEP30       | [Yan et al. 2020](https://doi.org/10.1016/j.omtn.2020.05.006)                                                     | [Web Server](https://cbbio.online/AxPEP/)                                             |
+| amPEPpy            | [Lawrence et al 2020](http://dx.doi.org/10.1093/bioinformatics/btaa917)                                           | [Python script](https://github.com/tlawrence3/amPEPpy)                                |
+| AMP scanner v2     | [Veltri et al. 2018](https://doi.org/10.1093/bioinformatics/bty179)                                               | [amp scanner webserver](https://www.dveltri.com/ascan/v2/ascan.html)                  |
+| AMPlify            | [Li et al. 2020](https://www.biorxiv.org/content/10.1101/2020.06.16.155705v1.full)                                | [Github repository](https://github.com/bcgsc/AMPlify)                                 |
+| AmpGram            | [Burdukiewicz et al 2020](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7352166/)                                  | [Github repository](https://github.com/michbur/AmpGram)                               |
+| ampir              | [Fingerhut et al 2020](https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bioinformatics/btaa653) | [Github repository](https://github.com/legana/ampir)                                  |
 
 **iAMP-2L Data**
 
@@ -113,6 +138,8 @@ page](https://github.com/bcgsc/AMPlify). Their training set consists of
 3,338 AMPs and 3,338 non-AMPs and their test set consists of 835 AMPs
 and 835 non-AMPs.
 
+**AmpGram data**
+
 AmpGram was created in 2020 and in addition to the standard AMPs, it
 also focuses on predicting longer proteins that contain antimicrobial
 activity, such as the milk protein, lactoferrin, and on non-AMP proteins
@@ -136,20 +163,6 @@ ampir was divided in two different models, precursor, which focuses on
 longer sequences (between 60-300) and mature, which only contains short
 sequences (between 10-50)
 
-# Reference proteomes
-
-As representative examples of the type of data that would be used as
-input in ’omics scanning applications we used the complete proteome sets
-of *Arabidopsis thaliana* (a plant) and *Homo sapiens* (human). Both
-organisms have been intensively studied and as a consequence their
-reference proteomes are likely to include sequences for the vast
-majority of protein-coding genes. Functional information for the
-proteins, including AMPs in these species is among the most complete
-available, but it even for these organisms it is highly likely that some
-known AMPs have not been identified. Our assumption here is that these
-proteomes are completely classified for AMP activity (ie every AMP
-correctly identified).
-
 First we compare the test and training data of each predictor. For all
 predictors other than AmPEP the length distributions of test and
 training were almost identical reflecting the fact the in most cases the
@@ -158,7 +171,7 @@ generate the training set. AmPEP is the exception to this and has a
 different distribution for the test data, this being derived from the
 Xiao et al benchmark set.
 
-![](01_data_comparison_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](01_data_comparison_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 **Figure Supp\_1.1:** Comparison of sequence length distributions for
 positive (AMP; purple) and negative (non-AMP; green) fractions in test
@@ -168,7 +181,7 @@ Given the close correspondence in composition between test and training
 data for most predictors we will simply consider the entire dataset (ie
 both test and train merged together).
 
-![](01_data_comparison_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](01_data_comparison_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 **Figure 1.2:** Comparison of sequence length distributions for positive
 (AMP; purple) and negative (non-AMP; green) fractions in merged (test
@@ -194,22 +207,30 @@ To examine sequence overlap between databases we used the stringdist
 package to calculate the [Jaro
 distance](https://en.wikipedia.org/wiki/Jaro–Winkler_distance) between
 all pairs of positive AMP sequences across all predictor training/test
-datasets. The Jaro distance was chosen because it is normalised for the
-length of both sequences and produces a value between 0 (exact match)
-and 1 (completely dissimilar). Highly similar sequences (Jaro distance
-&lt;0.2) were considered to be the same as these are likely strong
-homologs and manual inspection revealed that in many cases these matches
-occurred between mostly identical sequences with minor differences,
-likely due to reporting conventions and/or minor discrepancies between
-databases.
+datasets as well as reference proteomes for Arabidopsis and Human. The
+Jaro distance was chosen because it is normalised for the length of both
+sequences and produces a value between 0 (exact match) and 1 (completely
+dissimilar). Highly similar sequences (Jaro distance &lt;0.2) were
+considered to be the same as these are likely strong homologs and manual
+inspection revealed that in many cases these matches occurred between
+mostly identical sequences with minor differences, likely due to
+reporting conventions and/or minor discrepancies between databases.
 
-![](01_data_comparison_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](01_data_comparison_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
-**Figure 1.3:** UpSet plot showing overlap between training data used
-for eight AMP predictors. Note that overlaps between predictors,
-`ampirprecursor`, `ampeppy` and `ampep` (shown in red) contain
-relatively large fractions of longer sequences and sequences with signal
-peptides.
+**Figure 1.3:** UpSet plot showing overlap between positive training
+data used for eight AMP predictors, and known AMPs within the reference
+proteomes of Arabidopsis thaliana and Homo sapiens.
+
+The UpSet plot shown highlights some key patterns of overlap between
+datasets and how this relates to their length and precursor protein
+status (indicated by signal peptide). One key trend is the high degree
+of uniqueness of sequences used by `ampir` (first and second bars). Also
+note that there are several large groups of AMPs shared by many
+predictors (columns 3 and 4) which appear to be almost exclusively
+comprised of mature sequences (red bars, short length distributions).
+These mature peptides comprise only a very small fraction of the A.
+thaliana and H. sapiens proteomes.
 
 # Typical Sequence Structure of AMP Precursor Proteins
 
@@ -228,7 +249,7 @@ of precursors. Here we take advantage of the fact that for many well
 characterised AMPs in Uniprot the positions of the signal peptide,
 mature peptide and c-terminal sequence are given.
 
-![](01_data_comparison_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](01_data_comparison_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 **Figure 1.4:** Sequence composition of 831 AMP sequences with length
 &gt; 50 (likely precursors) in Uniprot showing the relative locations of

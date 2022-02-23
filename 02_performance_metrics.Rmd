@@ -148,7 +148,6 @@ pr_plot
 
 **Figure 2.1:** The precision and recall curves for four different values of $\alpha$.
 
-
 Another way to look at the effect of alpha on precision and recall is to plot one against the other in a so called precision-recall curve.  In these curves the probability threshold does not appear explicitly but still controls the variation in precision and recall across their range of values. 
 A useful way to think of precision is that it defines the "purity" of our predicted set of AMPs whereas the sensitivity or recall defines the "completeness" of the predicted AMP set. This shows that at $\alpha=0.5$ it is possible to maintain high precision even at relatively high values of recall but this is not the case as $\alpha$ decreases. At values of $\alpha$ that are realistic for 'omics-scanning (~1%) it is necessary to choose between precision or recall as it is no longer possible to achieve high values for both.
 
@@ -177,6 +176,17 @@ pr_plot_combo
 combo_plot <- (pr_plot) / pr_plot_combo + plot_annotation(tag_levels = 'A')
 ggsave(combo_plot,filename = "figures/alpha_gradient_and_variousalphas.png", height = 8, width = 7)
 ```
+
+# Effect of alpha on ROC curves
+
+Previous work has highlighted the fact that with unbalanced data, ROC curves are less informative of algorithm performance compared with precision-recall curves [@Davis2006-di]. This can easily be seen by considering the two axes in a ROC curve (y=TPR,x=FPR), and the way that these scale with $\alpha$.  The equations below clearly show that neither the x or y axes of a ROC curve are affected by changes in $\alpha$ which implies that both ROC curves themselves and associated metrics (AUROC) are completely invariant with the dataset balance.  In some situations this may be desirable, however, for omics-scanning where there is a strong requirement for high precision (which does vary with $\alpha$) ROC-based metrics can provide a misleading estimate of performance.
+
+$$
+ROC_{y} = TPR = \frac{TP}{TP+FN} \\
+ROC_{y}^{\alpha} = \frac{\alpha TP}{\alpha TP + \alpha FN} = TPR = ROC_y \\
+ROC_{x} = FPR = \frac{FP}{FP+TN} \\
+ROC_{x}^{\alpha} = \frac{(1-\alpha)FP}{(1-\alpha)FP + (1-\alpha)TN} = FPR = ROC_{x}
+$$
 
 # Supplementary: Empirical test that the formulae for alpha scaling of the confusion matrix are correct
 

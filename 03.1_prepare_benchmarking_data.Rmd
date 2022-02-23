@@ -1,5 +1,5 @@
 ---
-title: "Benchmarking in an 'omics-scanning context"
+title: "Preparing b"
 output: 
   github_document:
     pandoc_args: "--webtex"
@@ -26,130 +26,130 @@ We benchmarked each of the AMP predictors against the following datasets:
 - The reference proteome of *Homo sapiens* (human), obtained from Uniprot, proteome ID: up000005640
 - The reference proteome of *Arabidopsis thaliana* (mouse-ear cress), obtained from Uniprot, proteome ID: up000006548
 
-Both Uniprot datasets were downloaded from UniProt proteomes (accessed 23 Jan 2021). In order to ensure that the same data could be used across all predictors we first preprocessed these proteomes to comply with input requirements of all predictors. Specifically we:
-
-- Removed all non-standard amino acids
-- Removed all peptides shorter than 10 amino acids
-
-```{r}
-reference_proteomes <- c("data/proteomes/uniprot-proteome UP000005640.tab","data/proteomes/uniprot-proteome UP000006548.tab") %>% 
-  map_dfr( ~ read_tsv(.x) %>% mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg"))) %>% 
-  filter(grepl('^[ARNDCEQGHILKMFPSTWYV]+$', Sequence)) %>% 
-  filter(nchar(Sequence) >= 10)
-```
+Both Uniprot datasets were downloaded from UniProt proteomes (accessed 23 Jan 2021). 
 
 
 ```{r, eval=FALSE}
-# Write fasta data for each organism for later use when benchmarking predictors
-#
-reference_proteomes %>% 
-  filter(Organism=="Arabidopsis thaliana (Mouse-ear cress)") %>% 
-  select(`Entry name`, Sequence) %>% 
-  df_to_faa("data/proteomes/arabidopsis_benchmark_data.fasta")
+human_proteome <- read_tsv("data/proteomes/uniprot-proteome UP000005640.tab") %>% mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg"))
+cress_proteome <- read_tsv("data/proteomes/uniprot-proteome UP000006548.tab") %>% mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg"))
 
-reference_proteomes %>% 
-  filter(Organism=="Homo sapiens (Human)") %>% 
-  select(`Entry name`, Sequence) %>% 
-  df_to_faa("data/proteomes/human_benchmark_data.fasta")
+reference_proteomes <- rbind(human_proteome, cress_proteome)
 ```
 
-### ampir
-
-As shown in Figure 1.1 the training data for `ampir` includes precursor protein sequences for both Human and Arabidopsis.  In order to avoid calculating inflated performance metrics for `ampir` we therefore retrained its model after first removing any *H. sapiens* or *A. thaliana* proteins. We report three separate benchmarks for `ampir` (v1.1) as follows:
-
-- `ampir_prec` : ampir using the unmodified precursor model
-- `ampir_prec_nb` : ampir using the precursor model with Human and Arabidopsis proteins removed
-- `ampir_mat` : ampir using mature peptides
 
 
-```{r}
-if ( file.exists("data/prediction_results/ampir/ampirv1.1_refproteomes_predictions.rds")){
-  ampir_v1.1_proteome_predictions <- readRDS("data/prediction_results/ampir/ampirv1.1_refproteomes_predictions.rds")
+```{r, eval = FALSE}
+if ( file.exists("data/prediction_results/ampir/ampir_refproteomes_predictions.rds")){
+  ampir_proteome_predictions <- readRDS("data/prediction_results/ampir/ampir_refproteomes_predictions.rds")
 } else {
-
-  ampirv1.1_precursor_imbal <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_imbal_full.rds")
-  ampirv1.1_mature <- readRDS("data/ampir_v1.1.0_data/tuned_mature_full.rds")
-  ampirv1.1_precursor_bal <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_bal_full.rds")
-  ampir_v1.1prec_model_nobench <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_imbal_nobench.rds")
-
-  ampir_models <- list("ampir_v1.1_precursor_imbal"=ampirv1.1_precursor_imbal,
-                       "ampir_v1.1_precursor_bal"=ampirv1.1_precursor_bal,
-                       "ampir_v1.1_mature"=ampirv1.1_mature,
-                       "ampir_v1.1prec_model_nobench"=ampir_v1.1prec_model_nobench)
-
-  run_ampir_models_for_proteome <- function(organism_name){
-    names(ampir_models) %>% map_dfr( ~ reference_proteomes %>% 
-                                          filter(Organism==organism_name) %>% 
-                                          select(`Entry name`, Sequence) %>% 
-                                          as.data.frame() %>% 
-                                          predict_amps(n_cores = 3, model = ampir_models[[.x]]) %>% 
-                                          add_column(Model = .x)
-                                          )
-  }
   
-  # These are quite time consuming (~10 minutes on a Mac Mini)
-  cress_pred <- run_ampir_models_for_proteome("Arabidopsis thaliana (Mouse-ear cress)")
-  human_pred <- run_ampir_models_for_proteome("Homo sapiens (Human)")
+  cress_pred_ampir_prec <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3) %>% add_column(Model = "ampir_precursor")
+
+  cress_pred_ampir_mat <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = "mature")%>% add_column(Model = "ampir_mature")
+
+  human_pred_ampir_prec <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3) %>% add_column(Model = "ampir_precursor")
+
+  human_pred_ampir_mat <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = "mature")  %>% add_column(Model = "ampir_mature")
 
 
-  ampir_v1.1_proteome_predictions <- rbind(cress_pred,human_pred) %>% 
-    left_join(reference_proteomes, by = "Entry name") %>% 
-    select(ID = `Entry name`, prob_AMP, Organism, Label, Model)
-  
-  saveRDS(ampir_v1.1_proteome_predictions, "data/prediction_results/ampir/ampirv1.1_refproteomes_predictions.rds")
-}
+  ampir_prec_model_nobench <- readRDS("data/ampir_v1/tuned_precursor_imbal_nobench.rds")
+
+  cress_pred_ampir_nobench <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_prec_model_nobench) %>% add_column(Model = "ampir_precursor_nobench")
+
+  human_pred_ampir_nobench <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_prec_model_nobench) %>% add_column(Model = "ampir_precursor_nobench")
+
+  ampir_proteome_predictions <- rbind(cress_pred_ampir_prec, cress_pred_ampir_mat, cress_pred_ampir_nobench, human_pred_ampir_prec, human_pred_ampir_mat, human_pred_ampir_nobench) %>% left_join(reference_proteomes, by = "Entry name") %>% select(ID = `Entry name`, prob_AMP, Organism, Label, Model)
+
+  saveRDS(ampir_proteome_predictions, "data/prediction_results/ampir/ampir_refproteomes_predictions.rds")
+} 
+```
+
+Use ampir v1.1.0 models (updated with additional AMPs) as well as a balanced model
+```{r, eval = FALSE}
+ampirv1.1_precursor_imbal <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_imbal_full.rds")
+
+ampirv1.1_mature <- readRDS("data/ampir_v1.1.0_data/tuned_mature_full.rds")
+
+ampirv1.1_precursor_bal <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_bal_full.rds")
+
+cress_pred_ampirv1.1_prec_imbal <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_precursor_imbal) %>% add_column(Model = "ampir_v1.1_precursor_imbal")
+
+cress_pred_ampirv1.1_prec_bal <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_precursor_imbal) %>% add_column(Model = "ampir_v1.1_precursor_bal")
+
+cress_pred_ampirv1.1_mat <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_mature )%>% add_column(Model = "ampir_v1.1_mature")
+
+human_pred_ampirv1.1_prec_imbal <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_precursor_imbal) %>% add_column(Model = "ampir_v1.1_precursor_imbal")
+
+human_pred_ampirv1.1_prec_bal <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_precursor_imbal) %>% add_column(Model = "ampir_v1.1_precursor_bal")
+
+human_pred_ampirv1.1_mat <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps(n_cores = 3, model = ampirv1.1_mature) %>% add_column(Model = "ampir_v1.1_mature")
+
+ampir_v1.1prec_model_nobench <- readRDS("data/ampir_v1.1.0_data/tuned_precursor_imbal_nobench.rds")
+
+cress_pred_ampirv1.1_nobench <- cress_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_v1.1prec_model_nobench) %>% add_column(Model = "ampir_v1.1_precursor_imbal_nobench")
+
+human_pred_ampirv1.1_nobench <- human_proteome %>% select(`Entry name`, Sequence) %>% as.data.frame() %>% predict_amps( n_cores=1, model = ampir_v1.1prec_model_nobench) %>% add_column(Model = "ampir_v1.1_precursor_imbal_nobench")
+
+ampir_v1.1_proteome_predictions <- rbind(cress_pred_ampirv1.1_prec_imbal, cress_pred_ampirv1.1_prec_bal, cress_pred_ampirv1.1_mat, cress_pred_ampirv1.1_nobench, human_pred_ampirv1.1_prec_imbal, human_pred_ampirv1.1_prec_bal, human_pred_ampirv1.1_mat,human_pred_ampirv1.1_nobench) %>% left_join(reference_proteomes, by = "Entry name") %>% select(ID = `Entry name`, prob_AMP, Organism, Label, Model)
+```
+
+```{r, eval = FALSE, echo = FALSE}
+saveRDS(ampir_v1.1_proteome_predictions, "data/prediction_results/ampir/ampirv1.1_refproteomes_predictions.rds")
+```
+
+```{r, echo = FALSE}
+ampir_v1.1_proteome_predictions <- readRDS("data/prediction_results/ampir/ampirv1.1_refproteomes_predictions.rds")
 ```
 
 
-## Antimicrobial Peptide Scanner vr. 2 ()
+To use the human and *Arabidopsis* proteomes in other predictors, first the non-standard amino acids are removed. This is because the majority of AMP predictors only accept sequences that contain standard amino acids. ampir contains a function that removes everything which is not a standard amino acid, but other predictors, such as AMP scanner, require sequences to be preprocessed to have these sequences removed prior to analysing the sequences. Therefore, the `remove_nonstandard_aa.R` function from ampir is used to remove sequences that contain nonstandard amino acids, and ampir's `df_to_faa.R` function is used to write the files as FASTA files as input to other predictors. In addition, due to sequence amount restrictions using predictor web interfaces, the *Arabidopsis* proteome is split in half and the human proteome is split threefold.  
 
-Something here about the test data. Was it identical to the data mentioned in Table 1.1? When was it run? Was the webserver used to make predictions?
+```{r, eval = FALSE}
+arab_prot_clean <- read_faa("data/proteomes/arabidopsis-proteomeUP000006548.fasta") %>% remove_nonstandard_aa() 
+df_to_faa(arab_prot_clean, "cache/arab_proteome_standardaa.fasta")
+
+arab_prot_clean %>% slice((1:19669)) %>% df_to_faa("cache/arab_prot_clean1.fasta")
+arab_prot_clean %>% slice((19670:n())) %>% df_to_faa("cache/arab_prot_clean2.fasta")
+
+homo_prot_clean <- read_faa("data/proteomes/human-proteomeUP000005640.fasta") %>% remove_nonstandard_aa()
+df_to_faa(homo_prot_clean, "cache/homo_proteome_standardaa.fasta")
+
+homo_prot_clean %>% slice((1:22494)) %>% df_to_faa("cache/homo_prot_clean1.fasta")
+homo_prot_clean %>% slice((22495:44988)) %>% df_to_faa("cache/homo_prot_clean2.fasta")
+homo_prot_clean %>% slice((44989:n())) %>% df_to_faa("cache/homo_prot_clean3.fasta")
+```
+
+## Antimicrobial Peptide Scanner vr. 2
+
+AMP scanner vr. 2 (model Feb 2020)
+
 
 ```{r}
 ampscanner_file_paths <- c(list.files("data/prediction_results/ampscanner_v2", pattern="*.csv",full.names = T))
 
-#    add_column(Model = "AMPscanner_v2") 
-
-ampscan_genome_bench <- list.files("data/prediction_results/ampscanner_v2", pattern="[ha][ro][am].*.csv",full.names = T) %>% 
-  map_dfr( ~ read_csv(.x) %>% separate(SeqID,into = c("database","Entry","Entry name"),sep = "\\|") ) %>% 
+ampscan_genome_bench <- do.call(rbind,lapply(ampscanner_file_paths,read_csv)) %>% 
+  separate(SeqID,into = c("database","Entry","Entry name"),sep = "\\|") %>% 
   left_join(reference_proteomes,by="Entry name") %>% 
-  select(ID = `Entry name`, prob_AMP = Prediction_Probability, dataset=Organism, Label)
-
-ampscan_pub_bench <- list.files("data/prediction_results/ampscanner_v2", pattern="amps_.*.csv",full.names = T) %>% 
-  map_dfr( ~ read_csv(.x) %>% add_column(Label = ifelse(grepl("nonamps",.x),"Neg","Pos"))) %>% 
-  add_column(dataset = "published") %>% 
-  select(ID = SeqID, prob_AMP = Prediction_Probability, dataset, Label)
-
-ampscan_bench <- rbind(ampscan_genome_bench,ampscan_pub_bench) %>% add_column(Model = "AMPscanner_v2")
+  select(ID = `Entry name`, prob_AMP = Prediction_Probability, Organism, Label) %>% 
+  add_column(Model = "AMPscanner_v2")
 ```
 
 ## amPEP
 
-Something here about the test data. Was it identical to the data mentioned in Table 1.1? When was it run? Was the webserver used to make predictions?
-
 ```{r}
-ampep_genome_bench <- c("data/prediction_results/ampep/arab_proteome_standardaa_ampep.txt","data/prediction_results/ampep/homo_proteome_standardaa_ampep.txt") %>% 
-  map_dfr( ~ read_csv(.x) %>% 
-             separate(Row, into = c("database","Entry","Entry name"),sep = "\\|") %>% 
-             left_join(reference_proteomes, by = "Entry name") %>% 
-             select(ID = `Entry name`, prob_AMP = score, dataset=Organism, Label)
-           )
+ampep_file_paths <- c("data/prediction_results/ampep/arab_proteome_standardaa_ampep.txt","data/prediction_results/ampep/homo_proteome_standardaa_ampep.txt")
 
-ampep_pub_bench <- read_csv("data/prediction_results/ampep/xiao_independent_ampep.txt") %>% 
-  mutate(Label = ifelse(grepl(Row,pattern = "^AP"), "Pos", "Neg")) %>% 
-  add_column(dataset="published") %>% 
-  select(ID = Row, prob_AMP = score, dataset, Label)
-
-ampep_bench <- rbind(ampep_genome_bench,ampep_pub_bench) %>%
+ampep_genome_bench <- do.call(rbind,lapply(ampep_file_paths,read_csv)) %>% 
+  separate(Row, into = c("database","Entry","Entry name"),sep = "\\|") %>% 
+  left_join(reference_proteomes, by = "Entry name") %>% 
+  select(ID = `Entry name`, prob_AMP = score, Organism, Label) %>% 
   add_column(Model = "amPEP")
 ```
 
 
 ## amPEPpy
 
-amPEPpy was run according to the example provided on the [amPEPpy GitHub repository](https://github.com/tlawrence3/amPEPpy) in a Conda environment (commands shown below). 
-
-?? What version was used? 
+amPEPpy was run according to the example provided on the [amPEPpy GitHub repository](https://github.com/tlawrence3/amPEPpy) in a Conda environment. The prediction results consist of 67,484 predictions from the original 
 
 ```bash
 ampep predict -m pretrained_models/amPEP.model -i ../cache/arab_proteome_standardaa.fasta -o arab_results.tsv --seed 2012
@@ -157,18 +157,13 @@ ampep predict -m pretrained_models/amPEP.model -i ../cache/homo_proteome_standar
 ```
 
 ```{r}
-ampeppy_genome_bench <- list.files("data/prediction_results/amPEPpy", pattern="[ah][or][am].*.tsv",full.names = T) %>% 
-  map_dfr( ~ read_tsv(.x) %>% 
-             separate(seq_id, into = c(NA, NA,"Entry name"),sep = "\\|") %>%
-             left_join(reference_proteomes, by = "Entry name") %>% 
-             select(ID = `Entry name`, prob_AMP = probability_AMP, dataset = Organism, Label))
-  
-ampeppy_pub_bench <-  read_tsv("data/prediction_results/amPEPpy/xiao_independent_ampeppy_results.tsv") %>% 
-  mutate(Label = ifelse(grepl(seq_id,pattern = "^AP"), "Pos", "Neg")) %>% 
-  add_column(dataset="published") %>% 
-  select(ID = seq_id, prob_AMP = probability_AMP, dataset, Label)
+ampeppy_file_paths <- list.files("data/prediction_results/amPEPpy", pattern="*.tsv",full.names = T)
 
-ampeppy_bench <- rbind(ampeppy_genome_bench,ampeppy_pub_bench) %>% add_column(Model = "amPEPpy")
+ampeppy_genome_bench <- do.call(rbind,lapply(ampeppy_file_paths,read_tsv)) %>%
+  separate(seq_id, into = c(NA, NA,"Entry name"),sep = "\\|") %>%
+  left_join(reference_proteomes, by = "Entry name") %>% 
+  select(ID = `Entry name`, prob_AMP = probability_AMP, Organism, Label) %>% 
+  add_column(Model = "amPEPpy")
 ```
 
 ## AMPlify
@@ -184,28 +179,15 @@ AMPlify is optimised for protein sequences that are 200 AA or less and do not al
 cat data/prediction_results/AMPlify1.0.0/AMPlify_results_20210405153447_Athaliana.txt | sed 's/\r//' | awk '$0~/^Sequence ID:/{spid=$3};$0~/^Score:/{printf("%s\t%s\n",spid,$2)}' > data/prediction_results/AMPlify1.0.0/AMPlify_Athaliana.txt 
 
 cat data/prediction_results/AMPlify1.0.0/AMPlify_results_20210405182202_Hsapiens.txt | sed 's/\r//' | awk '$0~/^Sequence ID:/{spid=$3};$0~/^Score:/{printf("%s\t%s\n",spid,$2)}' > data/prediction_results/AMPlify1.0.0/AMPlify_Hsapiens.txt 
-
-cat data/prediction_results/AMPlify1.0.0/AMPlify_results_20210531101008amps.txt | sed 's/\r//' | awk '$0~/^Sequence ID:/{spid=$3};$0~/^Score:/{printf("%s\t%s\n",spid,$2)}' > data/prediction_results/AMPlify1.0.0/AMPlify_amps.txt 
-
-cat data/prediction_results/AMPlify1.0.0/AMPlify_results_20210531101827nonamps.txt | sed 's/\r//' | awk '$0~/^Sequence ID:/{spid=$3};$0~/^Score:/{printf("%s\t%s\n",spid,$2)}' > data/prediction_results/AMPlify1.0.0/AMPlify_nonamps.txt 
 ```
 
 ```{r}
-amplify_genome_bench <- c("data/prediction_results/AMPlify1.0.0/AMPlify_Athaliana.txt","data/prediction_results/AMPlify1.0.0/AMPlify_Hsapiens.txt") %>% 
-  map_dfr( ~ read_delim(.x,delim = "\t", col_names = c("Entry name", "prob_AMP")) %>% 
-             separate(`Entry name`, into = c(NA, NA,"Entry name"),sep = "\\|") %>%
-             left_join(reference_proteomes, by = "Entry name") %>% 
-             select(ID = `Entry name`, prob_AMP, dataset=Organism, Label)
-             )
+amplify_file_paths <- c("data/prediction_results/AMPlify1.0.0/AMPlify_Athaliana.txt","data/prediction_results/AMPlify1.0.0/AMPlify_Hsapiens.txt")
 
-amplify_pub_bench <- c("data/prediction_results/AMPlify1.0.0/AMPlify_amps.txt","data/prediction_results/AMPlify1.0.0/AMPlify_nonamps.txt") %>% 
-  map_dfr( ~ read_delim(.x,delim = "\t", col_names = c("Entry name", "prob_AMP")) %>% 
-             add_column(Label = ifelse(grepl("nonamps",.x),"Neg","Pos")) %>% 
-             add_column(dataset="published") %>% 
-             select(ID = `Entry name`, prob_AMP, dataset, Label)
-  )
-
-amplify_bench <- rbind(amplify_genome_bench,amplify_pub_bench) %>% 
+amplify_genome_bench <- do.call(rbind,lapply(amplify_file_paths,read_delim, delim = "\t", col_names = c("Entry name", "prob_AMP"))) %>%
+  separate(`Entry name`, into = c(NA, NA,"Entry name"),sep = "\\|") %>%
+  left_join(reference_proteomes, by = "Entry name") %>% 
+  select(ID = `Entry name`, prob_AMP, Organism, Label) %>% 
   add_column(Model = "AMPlify")
 
 ```
@@ -232,7 +214,7 @@ gimme_ampgram_predictions <- function(filepath) {
 ```
 
 
-```{r}
+```{r, eval = FALSE}
 if (file.exists("cache/ampgram_genome_bench.rds")) {
   ampgram_genome_bench <- readRDS("cache/ampgram_genome_bench.rds")
 } else {
@@ -247,11 +229,16 @@ ampgram_genome_bench <- ampgram_predictions %>%
   left_join(reference_proteomes, by = "Entry name") %>% 
   select(ID = `Entry name`, prob_AMP = "TRUE", Organism, Label) %>% 
   add_column(Model = "AmpGram")
-
-  saveRDS(ampgram_genome_bench, "cache/ampgram_genome_bench.rds")
 }
 ```
 
+```{r, echo = FALSE, eval = FALSE}
+saveRDS(ampgram_genome_bench, "cache/ampgram_genome_bench.rds")
+```
+
+```{r, echo = FALSE}
+ampgram_genome_bench <- readRDS("cache/ampgram_genome_bench.rds")
+```
 
 
 ### Calculating performance metrics - ROC curves
@@ -275,21 +262,21 @@ get_genome_roc <- function(data, model_name){
 To use `get_genome_roc.R` on ampir data, an additional loop had to be implemented as in this case, ampir is subdivided into three different models and therefore metric calculations needed to be done three different times, one for each model.
 
 ```{r}
-ampir_genome_roc <- do.call(rbind,lapply(c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature", "ampir_v1.1prec_model_nobench"),function(meth){
-    get_genome_roc(ampir_v1.1_proteome_predictions %>% filter(Model==meth),meth)}))
+ampir_genome_roc <- do.call(rbind,lapply(c("ampir_precursor","ampir_mature", "ampir_precursor_nobench"),function(meth){
+    get_genome_roc(ampir_proteome_predictions %>% filter(Model==meth),meth)}))
 ```
 
 
 ```{r}
-ampscanner_roc <- get_genome_roc(ampscan_genome_bench %>% rename(Organism=dataset), "AMPscanner_v2")
+ampscanner_roc <- get_genome_roc(ampscan_genome_bench, "AMPscanner_v2")
 
-ampep_roc <- get_genome_roc(ampep_genome_bench %>% rename(Organism=dataset), "amPEP")
+ampep_roc <- get_genome_roc(ampep_genome_bench, "amPEP")
 
 ampgram_roc <- get_genome_roc(ampgram_genome_bench, "AmpGram")
 
-ampeppy_roc <- get_genome_roc(ampeppy_genome_bench %>% rename(Organism=dataset), "amPEPpy")
+ampeppy_roc <- get_genome_roc(ampeppy_genome_bench, "amPEPpy")
 
-amplify_roc <- get_genome_roc(amplify_genome_bench %>% rename(Organism=dataset), "AMPlify")
+amplify_roc <- get_genome_roc(amplify_genome_bench, "AMPlify")
 
 ```
 
@@ -314,12 +301,12 @@ rocplot <- ggplot(proteome_rocs) +
         strip.background = element_blank(),
         strip.text = element_text(face = "italic",
                                   size = 10)) +
- scale_colour_manual(breaks = c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature", "ampir_v1.1prec_model_nobench",
+ scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature",
                                 "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     labels = c("ampir_prec_imbal\nH .92 A .99","ampir_prec_bal","ampir_mature","ampir_prec_nb",
+                     labels = c("ampir_prec\nH .92 A .99", "ampir_prec_nb\nH .86 A .93", "ampir_mat\nH .75 A .97",
                                 "AMPscanner\nH .79 A .92", "amPEP\nH .43 A .16", "AmpGram\nH .81 A .86", "amPEPpy\nH .49 A .24",
                                 "AMPlify\n H .67 A .62"),
-                     values = c("blueviolet", "goldenrod2", "darkslategray","black", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
+                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
  guides(colour = guide_legend(nrow = 1))
 
 prplot <- ggplot(proteome_rocs) + 
@@ -330,12 +317,12 @@ prplot <- ggplot(proteome_rocs) +
   theme(legend.position = "bottom",
         strip.background = element_blank(),
         strip.text = element_blank()) +
- scale_colour_manual(breaks = c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature", "ampir_v1.1prec_model_nobench",
+ scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature",
                                 "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     labels = c("ampir_prec_imbal\nH .92 A .99","ampir_prec_bal","ampir_mature","ampir_prec_nb",
+                     labels = c("ampir_prec\nH .15 A .73", "ampir_prec_nb\nH .09 A .31", "ampir_mat\nH .004 A .15",
                                 "AMPscanner\nH .006 A .09", "amPEP\nH .001 A .004", "AmpGram\nH .01 A .1", "amPEPpy\nH .001 A .005",
                                 "AMPlify\n H .004 A .05"),
-                     values = c("blueviolet", "goldenrod2", "darkslategray","black", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
+                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
    guides(colour = guide_legend(nrow = 1))
 
 rocplot / prplot  + plot_annotation(tag_levels = 'A')
@@ -363,15 +350,15 @@ get_metrics <- function(bench_data, model_name) {
     }))
 }
 
-ampir_metrics <- do.call(rbind, lapply(c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature", "ampir_v1.1prec_model_nobench"),function(meth) {
-  get_metrics(ampir_v1.1_proteome_predictions %>% filter(Model==meth), model_name = meth)
+ampir_metrics <- do.call(rbind, lapply(c("ampir_precursor","ampir_mature", "ampir_precursor_nobench"),function(meth) {
+  get_metrics(ampir_proteome_predictions %>% filter(Model==meth), model_name = meth)
 }))
 
-ampscan_metrics <- get_metrics(ampscan_genome_bench %>% rename(Organism=dataset), "AMPscanner_v2")
-ampep_metrics <- get_metrics(ampep_genome_bench %>% rename(Organism=dataset), "amPEP")
+ampscan_metrics <- get_metrics(ampscan_genome_bench, "AMPscanner_v2")
+ampep_metrics <- get_metrics(ampep_genome_bench, "amPEP")
 ampgram_metrics <- get_metrics(ampgram_genome_bench, "AmpGram")
-ampeppy_metrics <- get_metrics(ampeppy_genome_bench %>% rename(Organism=dataset), "amPEPpy")
-amplify_metrics <- get_metrics(amplify_genome_bench %>% rename(Organism=dataset), "AMPlify")
+ampeppy_metrics <- get_metrics(ampeppy_genome_bench, "amPEPpy")
+amplify_metrics <- get_metrics(amplify_genome_bench, "AMPlify")
 
 proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics, ampgram_metrics, ampeppy_metrics, amplify_metrics) %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "H. sapiens", TRUE ~ "A. thaliana"))
 ```
@@ -382,11 +369,62 @@ proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics, ampgram
 knitr::kable(proteome_metrics[,3:11])
 ```
 
+```{r}
+#compare ampir v1.0.0 vs ampir v1.1.0
+
+ampir_v1.1_genome_roc <- do.call(rbind,lapply(c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature","ampir_v1.1_precursor_imbal_nobench"),function(meth){
+    get_genome_roc(ampir_v1.1_proteome_predictions %>% filter(Model==meth),meth)}))
+
+ampir_rocs <- rbind(ampir_genome_roc, ampir_v1.1_genome_roc)
+
+ampir_v1.1_metrics <- do.call(rbind, lapply(c("ampir_v1.1_precursor_imbal","ampir_v1.1_precursor_bal","ampir_v1.1_mature","ampir_v1.1_precursor_imbal_nobench"),function(meth) {
+  get_metrics(ampir_v1.1_proteome_predictions %>% filter(Model==meth), model_name = meth)
+}))
+
+ampir_comparison_metrics <- rbind(ampir_metrics, ampir_v1.1_metrics) %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "H. sapiens", TRUE ~ "A. thaliana"))
+
+ampir_comparison_metrics[,3:11]
+
+write_excel_csv(ampir_comparison_metrics[,3:11], "ampir_comparison.csv")
+```
+
+
+```{r,  fig.width=13, fig.height=5}
+ampir_rocs  <- ampir_rocs  %>% mutate(Organism = case_when(str_detect(Organism, "Homo") ~ "Homo sapiens", TRUE ~ "Arabidopsis thaliana"))
+
+ampir_all <- ggplot(ampir_rocs) + 
+  geom_line(aes(x = FP, y = TP, colour = Model),size = 1.1) + 
+  xlim(0,500) +
+  facet_wrap(~Organism, scales = "free_y", nrow = 1) +
+  labs(x= "False positives", y = "True positives", colour = "") +
+  theme_classic() +
+  theme(legend.position = "bottom",
+        strip.text = element_text(face = "italic"),
+        strip.background = element_blank()) +
+   guides(colour = guide_legend(nrow = 1)) 
+
+ampir_bal <- ggplot(filter(ampir_rocs, Model == "ampir_v1.1_precursor_bal")) + 
+  geom_line(aes(x = FP, y = TP, colour = Model),size = 1.1) + 
+  xlim(0,500) +
+  facet_wrap(~Organism, scales = "free_y", nrow = 1) +
+  labs(x= "False positives", y = "True positives", colour = "") +
+  theme_classic() +
+  theme(legend.position = "bottom",
+        strip.text = element_text(face = "italic"),
+        strip.background = element_blank()) +
+   guides(colour = guide_legend(nrow = 1))
+
+ampir_all / ampir_bal
+
+ggsave("ampir_comparison.png", width = 33, height = 18 ,units = "cm" )
+```
+
 
 ```{r, fig.height=10, fig.width=9}
 proteome_metrics_long <- proteome_metrics %>% 
   select(Recall, Precision, MCC, AUROC, AUPRC, Organism, Model) %>% 
-  pivot_longer(cols = c(-Organism, -Model)) 
+  pivot_longer(cols = c(-Organism, -Model)) %>%
+  mutate(Model = factor(Model, levels = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature", "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify")))
   
 
 ggplot(proteome_metrics_long, aes(x = Organism, y = value)) +
@@ -397,10 +435,10 @@ ggplot(proteome_metrics_long, aes(x = Organism, y = value)) +
         strip.background = element_rect(colour = "white"),
         strip.text = element_text(face = "bold", size = 10),
         axis.text.x = element_text(face = "italic", size = 10)) +
-  scale_fill_manual(breaks = c("ampir_v1.1_precursor_imbal", "ampir_v1.1_precursor_bal", "ampir_v1.1_mature","ampir_v1.1prec_model_nobench",
+  scale_fill_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature",
                                "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     labels = c("ampir_prec_imbal", "ampir_prec_bal", "ampir_mat","ampir_pred_nb","AMPscanner", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     values = c("blueviolet", "goldenrod2", "darkslategray","black", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
+                     labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
+                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
   labs(x = "", fill = "", y = "Performance metric value") +
   guides(fill = guide_legend(nrow = 1))
 ```
@@ -440,7 +478,8 @@ proteome_rocs %>% mutate(Organism = ifelse(Organism=="Homo sapiens (Human)","Hom
         panel.background = element_rect(fill = "black"),
         axis.line = element_line(colour = "grey"),
         axis.text = element_text(colour="grey", size = 10),
-        axis.title = element_text(colour="white", size = 14)) 
+        axis.title = element_text(colour="white", size = 14)) +
+   scale_color_manual(values=c("aquamarine", "#56B4E9", "#D55E00", "#F0E442", "springgreen4", "hotpink", "lightgrey", "burlywood")) 
 ```
 
 ```{r, echo=FALSE, fig.width=9, fig.height=5}
@@ -455,10 +494,10 @@ ggplot(proteome_rocs) +
   theme(legend.position = "bottom",
         strip.text = element_text(face = "italic"),
         strip.background = element_blank()) +
-  scale_colour_manual(breaks = c("ampir_v1.1_precursor_imbal", "ampir_v1.1_precursor_bal", "ampir_v1.1_mature","ampir_v1.1prec_model_nobench",
+  scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature",
                                  "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     labels = c("ampir_prec_imbal", "ampir_prec_bal", "ampir_mat","ampir_pred_nb","AMPscanner", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
-                     values = c("blueviolet", "goldenrod2", "darkslategray","black", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
+                     labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
+                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
    guides(colour = guide_legend(nrow = 1))
 ```
 
@@ -468,3 +507,25 @@ ggplot(proteome_rocs) +
 ggsave("figures/TPFPcountproteomesXLIM.png", width = 21, height = 9 ,units = "cm")
 ```
 
+
+```{r, echo=FALSE, fig.width=9, fig.height=5}
+ggplot(proteome_rocs) + 
+  geom_line(aes(x = FP, y = TP, colour = Model),size = 1.1) + 
+  facet_wrap(~Organism, scales = "free", nrow = 1) +
+  labs(x= "False positives", y = "True positives", colour = "") +
+  theme_classic() +
+  theme(legend.position = "bottom",
+        strip.text = element_text(face = "italic"),
+        strip.background = element_blank()) +
+  scale_colour_manual(breaks = c("ampir_precursor", "ampir_precursor_nobench", "ampir_mature",
+                                 "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
+                     labels = c("ampir_prec", "ampir_prec_nb", "ampir_mat","AMPscanner", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
+                     values = c("blueviolet", "goldenrod2", "darkslategray", "cyan", "green", "darkorange3", "grey50", "deeppink")) +
+   guides(colour = guide_legend(nrow = 1))
+```
+
+**Figure 3.3:** Same as Figure 3.2 but showing the entire false positive regime 
+
+```{r, eval=FALSE, echo=FALSE}
+ggsave("figures/TPFPcountproteomes.png", width = 21, height = 9 ,units = "cm")
+```
