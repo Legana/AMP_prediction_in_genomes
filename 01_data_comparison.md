@@ -34,12 +34,12 @@ majority of protein-coding genes. Functional information for the
 proteins, including AMPs in these species is among the most complete
 available, but even for these organisms it is highly likely that some
 known AMPs have not been identified. Our assumption here is that these
-proteomes are completely classified for AMP activity (ie every AMP
+proteomes are completely classified for AMP activity (i.e. every AMP
 correctly identified).
 
 # AMP predictor data
 
-The training and test sets of nine AMP predictors (**Table 1.2**) were
+The training and test sets of nine AMP predictors (**Table 1.1**) were
 examined to assess the degree to which they varied between predictors,
 and how well they matched the proteomes of *Arabidopsis thaliana* and
 *Homo sapiens*.
@@ -47,17 +47,17 @@ and how well they matched the proteomes of *Arabidopsis thaliana* and
 **Table 1.1:** Summary table of the number of positive and negative
 sequences present in the training and test set in six AMP predictors
 
-| AMP predictor       | Train - AMPs | Train - non-AMPs | Test - AMPs | Test - non-AMPs |
-|:--------------------|:------------:|:----------------:|:-----------:|:---------------:|
-| iAMP-2L             |     897      |      2,405       |     920     |       920       |
-| amPEP               |    3,268     |     166,791      |    *NS*     |      *NS*       |
-| Deep-ampEP30        |    1,529     |      1,529       |     94      |       94        |
-| amPEPpy             |    3,268     |      3,268       |    *NS*     |      *NS*       |
-| AMP Scanner v2      |    1,066     |      1,066       |     712     |       712       |
-| AMPlify             |    3,338     |      3,338       |     835     |       835       |
-| AmpGram             |    2,216     |      2,216       |     247     |       247       |
-| ampir\_precursor v1 |    1,187     |      11,864      |     296     |      2,966      |
-| ampir\_mature v1    |    2,586     |      2,657       |     646     |       664       |
+| AMP predictor      | Train - AMPs | Train - non-AMPs | Test - AMPs | Test - non-AMPs |
+|:-------------------|:------------:|:----------------:|:-----------:|:---------------:|
+| iAMP-2L            |     897      |      2,405       |     920     |       920       |
+| amPEP              |    3,268     |     166,791      |    *NS*     |      *NS*       |
+| Deep-ampEP30       |    1,529     |      1,529       |     94      |       94        |
+| amPEPpy            |    3,268     |      3,268       |    *NS*     |      *NS*       |
+| AMP Scanner v2     |    1,066     |      1,066       |     712     |       712       |
+| AMPlify            |    3,338     |      3,338       |     835     |       835       |
+| AmpGram            |    2,216     |      2,216       |     247     |       247       |
+| ampir_precursor v1 |    1,187     |      11,864      |     296     |      2,966      |
+| ampir_mature v1    |    2,586     |      2,657       |     646     |       664       |
 
 \*NS: not specified
 
@@ -65,7 +65,6 @@ sequences present in the training and test set in six AMP predictors
 
 | AMP predictor name | Reference                                                                                                         | Availability                                                                          |
 |--------------------|-------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
-| iAMPpred (iAMP-2L) | [Meher et al. 2017](https://doi.org/10.1038/srep42362)                                                            | [iAMPpred webserver](http://cabgrid.res.in:8080/amppred/)                             |
 | amPEP              | [Bhadra et al. 2018](https://doi.org/10.1038/s41598-018-19752-w)                                                  | [MATLAB source code](https://sourceforge.net/projects/axpep/files/AmPEP_MATLAB_code/) |
 | Deep-amPEP30       | [Yan et al. 2020](https://doi.org/10.1016/j.omtn.2020.05.006)                                                     | [Web Server](https://cbbio.online/AxPEP/)                                             |
 | amPEPpy            | [Lawrence et al 2020](http://dx.doi.org/10.1093/bioinformatics/btaa917)                                           | [Python script](https://github.com/tlawrence3/amPEPpy)                                |
@@ -81,8 +80,8 @@ al. 2013](https://doi.org/10.1016/j.ab.2013.01.019) used for
 [iAMP-2L](http://www.jci-bioinfo.cn/iAMP/data.html) has been used in
 several studies to provide a somewhat independent estimate of prediction
 accuracy. Their training data, or benchmark dataset as they termed it,
-comprises of 897 AMPs and 2,405 non-AMPs. Their test or independent
-dataset comprises of 920 AMPs and 920 non-AMPs.
+comprises 897 AMPs and 2,405 non-AMPs. Their test or independent dataset
+comprises of 920 AMPs and 920 non-AMPs.
 
 **AmPEP Training Data**
 
@@ -93,8 +92,8 @@ dataset used by amPEP is a large dataset of 166,791 non-AMP sequences
 and 3,268 AMPs. amPEP used the Xiao et al. 2013 dataset from the iAMP-2L
 predictor as a test set (see above).
 
-AmPEP was redesigned in 2020 as Deep-AmPEP30 to focus on short AMPs (
-&lt; 30 amino acids) by [Yan et
+AmPEP was redesigned in 2020 as Deep-AmPEP30 to focus on short AMPs ( \<
+30 amino acids) by [Yan et
 al](https://doi.org/10.1016/j.omtn.2020.05.006) and its training and
 test data is available
 [here](https://cbbio.online/AxPEP/?action=dataset). Deep-AmPEP30’s
@@ -171,22 +170,12 @@ generate the training set. AmPEP is the exception to this and has a
 different distribution for the test data, this being derived from the
 Xiao et al benchmark set.
 
-![](01_data_comparison_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](01_data_comparison_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
-**Figure Supp\_1.1:** Comparison of sequence length distributions for
-positive (AMP; purple) and negative (non-AMP; green) fractions in test
-and training data eight AMP predictors.
-
-Given the close correspondence in composition between test and training
-data for most predictors we will simply consider the entire dataset (ie
-both test and train merged together).
-
-![](01_data_comparison_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
-
-**Figure 1.2:** Comparison of sequence length distributions for positive
-(AMP; purple) and negative (non-AMP; green) fractions in merged (test
-and training) data for eight AMP predictors, and for the proteomes of
-*A. thaliana* and *H. sapiens*.
+**Figure 1.1:** Comparison of sequence length distributions for positive
+(AMP; purple) and negative (non-AMP; green) fractions in training (A)
+and test data (B) of nine AMP predictors, and for the proteomes of *A.
+thaliana* and *H. sapiens* (C).
 
 # Overlap in positive AMP data between predictors
 
@@ -210,17 +199,17 @@ all pairs of positive AMP sequences across all predictor training/test
 datasets as well as reference proteomes for Arabidopsis and Human. The
 Jaro distance was chosen because it is normalised for the length of both
 sequences and produces a value between 0 (exact match) and 1 (completely
-dissimilar). Highly similar sequences (Jaro distance &lt;0.2) were
+dissimilar). Highly similar sequences (Jaro distance \<0.2) were
 considered to be the same as these are likely strong homologs and manual
 inspection revealed that in many cases these matches occurred between
 mostly identical sequences with minor differences, likely due to
 reporting conventions and/or minor discrepancies between databases.
 
-![](01_data_comparison_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](01_data_comparison_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 **Figure 1.3:** UpSet plot showing overlap between positive training
 data used for eight AMP predictors, and known AMPs within the reference
-proteomes of Arabidopsis thaliana and Homo sapiens.
+proteomes of *Arabidopsis thaliana* and *Homo sapiens*.
 
 The UpSet plot shown highlights some key patterns of overlap between
 datasets and how this relates to their length and precursor protein
@@ -246,11 +235,11 @@ correspond to the precursor sequence with no reliable way to accurately
 deduce the mature sequence. A survey of precursor sequences for AMPs
 listed in Uniprot can be used to reveal the typical sequence structure
 of precursors. Here we take advantage of the fact that for many well
-characterised AMPs in Uniprot the positions of the signal peptide,
+characterised AMPs in SwissProt the positions of the signal peptide,
 mature peptide and c-terminal sequence are given.
 
-![](01_data_comparison_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](01_data_comparison_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
-**Figure 1.4:** Sequence composition of 831 AMP sequences with length
-&gt; 50 (likely precursors) in Uniprot showing the relative locations of
+**Figure 1.4:** Sequence composition of 831 AMP sequences with length \>
+50 (likely precursors) in SwissProt showing the relative locations of
 Signal Peptide, Mature AMP and C-terminal sequences.
