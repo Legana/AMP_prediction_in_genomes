@@ -378,7 +378,7 @@ proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics, ampgram
 **Table 3.1:** Performance metrics of various predictors on the proteomes of *Homo sapiens* and *Arabidopsis thaliana*
 
 ```{r, echo = FALSE}
-knitr::kable(proteome_metrics[,3:11])
+knitr::kable(proteome_metrics[,c(3,6, 4:5, 7:11)], digits = 2)
 ```
 
 

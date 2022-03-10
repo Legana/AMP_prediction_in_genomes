@@ -197,24 +197,24 @@ sapiens* and *A. thaliana* proteomes.
 **Table 3.1:** Performance metrics of various predictors on the
 proteomes of *Homo sapiens* and *Arabidopsis thaliana*
 
-| Specificity | Recall | Precision |    F1 |    MCC | AUROC | AUPRC | Organism    | Model                              |
-|------------:|-------:|----------:|------:|-------:|------:|------:|:------------|:-----------------------------------|
-|       0.971 |  0.864 |     0.047 | 0.089 |  0.197 | 0.942 | 0.304 | H. sapiens  | ampir_v1.1_precursor_imbal         |
-|       0.988 |  0.990 |     0.375 | 0.544 |  0.605 | 0.998 | 0.832 | A. thaliana | ampir_v1.1_precursor_imbal         |
-|       0.047 |  1.000 |     0.002 | 0.004 |  0.009 | 0.738 | 0.004 | H. sapiens  | ampir_v1.1_mature                  |
-|       0.007 |  1.000 |     0.008 | 0.016 |  0.007 | 0.971 | 0.153 | A. thaliana | ampir_v1.1_mature                  |
-|       0.972 |  0.555 |     0.032 | 0.061 |  0.128 | 0.846 | 0.112 | H. sapiens  | ampir_v1.1_precursor_imbal_nobench |
-|       0.989 |  0.588 |     0.280 | 0.379 |  0.400 | 0.946 | 0.344 | A. thaliana | ampir_v1.1_precursor_imbal_nobench |
-|       0.498 |  0.918 |     0.003 | 0.006 |  0.034 | 0.787 | 0.006 | H. sapiens  | AMPscanner_v2                      |
-|       0.468 |  0.997 |     0.014 | 0.028 |  0.080 | 0.917 | 0.087 | A. thaliana | AMPscanner_v2                      |
-|       0.494 |  0.391 |     0.001 | 0.002 | -0.009 | 0.425 | 0.001 | H. sapiens  | amPEP                              |
-|       0.484 |  0.024 |     0.000 | 0.000 | -0.085 | 0.158 | 0.004 | A. thaliana | amPEP                              |
-|       0.619 |  0.800 |     0.003 | 0.006 |  0.035 | 0.806 | 0.013 | H. sapiens  | AmpGram                            |
-|       0.591 |  0.864 |     0.016 | 0.031 |  0.080 | 0.859 | 0.138 | A. thaliana | AmpGram                            |
-|       0.521 |  0.273 |     0.001 | 0.002 | -0.017 | 0.487 | 0.001 | H. sapiens  | amPEPpy                            |
-|       0.316 |  0.031 |     0.000 | 0.000 | -0.121 | 0.240 | 0.005 | A. thaliana | amPEPpy                            |
-|       0.902 |  0.159 |     0.004 | 0.008 |  0.011 | 0.667 | 0.004 | H. sapiens  | AMPlify                            |
-|       0.990 |  0.017 |     0.053 | 0.026 |  0.012 | 0.622 | 0.054 | A. thaliana | AMPlify                            |
+| Specificity |   F1 | Recall | Precision |   MCC | AUROC | AUPRC | Organism    | Model                              |
+|------------:|-----:|-------:|----------:|------:|------:|------:|:------------|:-----------------------------------|
+|        0.97 | 0.09 |   0.86 |      0.05 |  0.20 |  0.94 |  0.30 | H. sapiens  | ampir_v1.1_precursor_imbal         |
+|        0.99 | 0.54 |   0.99 |      0.38 |  0.60 |  1.00 |  0.83 | A. thaliana | ampir_v1.1_precursor_imbal         |
+|        0.05 | 0.00 |   1.00 |      0.00 |  0.01 |  0.74 |  0.00 | H. sapiens  | ampir_v1.1_mature                  |
+|        0.01 | 0.02 |   1.00 |      0.01 |  0.01 |  0.97 |  0.15 | A. thaliana | ampir_v1.1_mature                  |
+|        0.97 | 0.06 |   0.56 |      0.03 |  0.13 |  0.85 |  0.11 | H. sapiens  | ampir_v1.1_precursor_imbal_nobench |
+|        0.99 | 0.38 |   0.59 |      0.28 |  0.40 |  0.95 |  0.34 | A. thaliana | ampir_v1.1_precursor_imbal_nobench |
+|        0.50 | 0.01 |   0.92 |      0.00 |  0.03 |  0.79 |  0.01 | H. sapiens  | AMPscanner_v2                      |
+|        0.47 | 0.03 |   1.00 |      0.01 |  0.08 |  0.92 |  0.09 | A. thaliana | AMPscanner_v2                      |
+|        0.49 | 0.00 |   0.39 |      0.00 | -0.01 |  0.42 |  0.00 | H. sapiens  | amPEP                              |
+|        0.48 | 0.00 |   0.02 |      0.00 | -0.09 |  0.16 |  0.00 | A. thaliana | amPEP                              |
+|        0.62 | 0.01 |   0.80 |      0.00 |  0.04 |  0.81 |  0.01 | H. sapiens  | AmpGram                            |
+|        0.59 | 0.03 |   0.86 |      0.02 |  0.08 |  0.86 |  0.14 | A. thaliana | AmpGram                            |
+|        0.52 | 0.00 |   0.27 |      0.00 | -0.02 |  0.49 |  0.00 | H. sapiens  | amPEPpy                            |
+|        0.32 | 0.00 |   0.03 |      0.00 | -0.12 |  0.24 |  0.00 | A. thaliana | amPEPpy                            |
+|        0.90 | 0.01 |   0.16 |      0.00 |  0.01 |  0.67 |  0.00 | H. sapiens  | AMPlify                            |
+|        0.99 | 0.03 |   0.02 |      0.05 |  0.01 |  0.62 |  0.05 | A. thaliana | AMPlify                            |
 
 ![](03_benchmarking_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
