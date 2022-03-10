@@ -34,30 +34,31 @@ retrained its model after first removing any *H. sapiens* or *A.
 thaliana* proteins. We report three separate benchmarks for `ampir`
 (v1.1) as follows:
 
--   `ampir_prec` : ampir using the unmodified precursor model
+-   `ampir_precursor` : ampir using the unmodified precursor model
 -   `ampir_prec_nb` : ampir using the precursor model with Human and
     Arabidopsis proteins removed
--   `ampir_mat` : ampir using mature peptides
+-   `ampir_mature` : ampir using mature peptides
+
+The training and test data for the AMP predictors are outlined in
+[01_data_comparison.md](01_data_comparison.md), Table 1.1. Predictors
+were run in January 2021.
 
 ## Antimicrobial Peptide Scanner vr. 2 ()
 
-Something here about the test data. Was it identical to the data
-mentioned in Table 1.1? When was it run? Was the webserver used to make
-predictions?
+AMPscanner vr.2 Feb2020 model was used via the [AMPscanner
+webserver](https://www.dveltri.com/ascan/v2/ascan.html)
 
 ## amPEP
 
-Something here about the test data. Was it identical to the data
-mentioned in Table 1.1? When was it run? Was the webserver used to make
-predictions?
+amPEP MATLAB source code was accessed from
+[sourceforge](https://sourceforge.net/projects/axpep/files/AmPEP_MATLAB_code/)
+in January 2021.
 
 ## amPEPpy
 
-amPEPpy was run according to the example provided on the [amPEPpy GitHub
-repository](https://github.com/tlawrence3/amPEPpy) in a Conda
-environment (commands shown below).
-
-?? What version was used?
+amPEPpy v.1.0 was run according to the example provided on the [amPEPpy
+GitHub repository](https://github.com/tlawrence3/amPEPpy) in a Conda (v.
+4.10.0) environment (commands shown below).
 
 ``` bash
 ampep predict -m pretrained_models/amPEP.model -i ../cache/arab_proteome_standardaa.fasta -o arab_results.tsv --seed 2012
@@ -82,22 +83,23 @@ to the previously mentioned commit, and the software worked after that.
 
 AMPlify is optimised for protein sequences that are 200 AA or less and
 do not allow input data to contain sequences larger than 200 amino
-acids. Therefore, only proteins that were =&lt; 200 AA were kept in the
+acids. Therefore, only proteins that were =\< 200 AA were kept in the
 proteomes (9,027 for *A. thaliana* from 39,340 standard AA sequences and
 33,584 for *H. sapiens* from 67,484 standard AA sequences)
 
 ## AMPgram
 
-In order to significantly speed up the progress of using AmpGram on the
-*A. thaliana* and *H. sapiens* proteomes, high performance computing
-(HPC) scheduler (PBS) with job arrays submissions were used. To
-accomplish this, first, both proteomes were split into FASTA files
-containing 100 protein sequences (394 FASTA files for *A. thaliana* and
-675 for *H. sapiens*) using the scripts `scripts/subset_arab_file.zsh`
-and `subset_homo_proteome.zsh`. Per job, approximately 100 subjobs which
-referenced to 100 FASTA files were used. See `scripts/runampgram_h1.sh`
-and `scripts/runampgram_h1.R` as example scripts used for the first 100
-subjobs/FASTA files from the *H. sapiens* proteome.
+In order to significantly speed up the progress of using AmpGram v. 1.0
+on the *A. thaliana* and *H. sapiens* proteomes, high performance
+computing (HPC) scheduler (PBS) with job arrays submissions were used
+(with R v. 4.0.3). To accomplish this, first, both proteomes were split
+into FASTA files containing 100 protein sequences (394 FASTA files for
+*A. thaliana* and 675 for *H. sapiens*) using the scripts
+`scripts/subset_arab_file.zsh` and `subset_homo_proteome.zsh`. Per job,
+approximately 100 subjobs which referenced to 100 FASTA files were used.
+See `scripts/runampgram_h1.sh` and `scripts/runampgram_h1.R` as example
+scripts used for the first 100 subjobs/FASTA files from the *H. sapiens*
+proteome.
 
 Initially when the jobs were submitted, various subjobs failed (three
 for *A. thaliana* and 62 for *H. sapiens*). After examining the [source
@@ -126,8 +128,6 @@ To use `get_genome_roc.R` on ampir data, an additional loop had to be
 implemented as in this case, ampir is subdivided into three different
 models and therefore metric calculations needed to be done three
 different times, one for each model.
-
-*combine ROC metric dataframes*
 
 ## Plots
 
@@ -197,32 +197,30 @@ sapiens* and *A. thaliana* proteomes.
 **Table 3.1:** Performance metrics of various predictors on the
 proteomes of *Homo sapiens* and *Arabidopsis thaliana*
 
-| Specificity | Recall | Precision |    F1 |    MCC | AUROC | AUPRC | Organism    | Model                           |
-|------------:|-------:|----------:|------:|-------:|------:|------:|:------------|:--------------------------------|
-|       0.971 |  0.864 |     0.047 | 0.089 |  0.197 | 0.942 | 0.304 | H. sapiens  | ampir\_v1.1\_precursor\_imbal   |
-|       0.988 |  0.990 |     0.375 | 0.544 |  0.605 | 0.998 | 0.832 | A. thaliana | ampir\_v1.1\_precursor\_imbal   |
-|       0.792 |  0.918 |     0.007 | 0.014 |  0.070 | 0.934 | 0.029 | H. sapiens  | ampir\_v1.1\_precursor\_bal     |
-|       0.911 |  0.997 |     0.078 | 0.145 |  0.266 | 0.993 | 0.455 | A. thaliana | ampir\_v1.1\_precursor\_bal     |
-|       0.047 |  1.000 |     0.002 | 0.004 |  0.009 | 0.738 | 0.004 | H. sapiens  | ampir\_v1.1\_mature             |
-|       0.007 |  1.000 |     0.008 | 0.016 |  0.007 | 0.971 | 0.153 | A. thaliana | ampir\_v1.1\_mature             |
-|       0.972 |  0.555 |     0.032 | 0.061 |  0.128 | 0.846 | 0.112 | H. sapiens  | ampir\_v1.1prec\_model\_nobench |
-|       0.989 |  0.588 |     0.280 | 0.379 |  0.400 | 0.946 | 0.344 | A. thaliana | ampir\_v1.1prec\_model\_nobench |
-|       0.498 |  0.918 |     0.003 | 0.006 |  0.034 | 0.787 | 0.006 | H. sapiens  | AMPscanner\_v2                  |
-|       0.468 |  0.997 |     0.014 | 0.028 |  0.080 | 0.917 | 0.087 | A. thaliana | AMPscanner\_v2                  |
-|       0.494 |  0.391 |     0.001 | 0.002 | -0.009 | 0.425 | 0.001 | H. sapiens  | amPEP                           |
-|       0.484 |  0.024 |     0.000 | 0.000 | -0.085 | 0.158 | 0.004 | A. thaliana | amPEP                           |
-|       0.619 |  0.800 |     0.003 | 0.006 |  0.035 | 0.806 | 0.013 | H. sapiens  | AmpGram                         |
-|       0.591 |  0.864 |     0.016 | 0.031 |  0.080 | 0.859 | 0.138 | A. thaliana | AmpGram                         |
-|       0.521 |  0.273 |     0.001 | 0.002 | -0.017 | 0.487 | 0.001 | H. sapiens  | amPEPpy                         |
-|       0.316 |  0.031 |     0.000 | 0.000 | -0.121 | 0.240 | 0.005 | A. thaliana | amPEPpy                         |
-|       0.902 |  0.159 |     0.004 | 0.008 |  0.011 | 0.667 | 0.004 | H. sapiens  | AMPlify                         |
-|       0.990 |  0.017 |     0.053 | 0.026 |  0.012 | 0.622 | 0.054 | A. thaliana | AMPlify                         |
+| Specificity | Recall | Precision |    F1 |    MCC | AUROC | AUPRC | Organism    | Model                              |
+|------------:|-------:|----------:|------:|-------:|------:|------:|:------------|:-----------------------------------|
+|       0.971 |  0.864 |     0.047 | 0.089 |  0.197 | 0.942 | 0.304 | H. sapiens  | ampir_v1.1_precursor_imbal         |
+|       0.988 |  0.990 |     0.375 | 0.544 |  0.605 | 0.998 | 0.832 | A. thaliana | ampir_v1.1_precursor_imbal         |
+|       0.047 |  1.000 |     0.002 | 0.004 |  0.009 | 0.738 | 0.004 | H. sapiens  | ampir_v1.1_mature                  |
+|       0.007 |  1.000 |     0.008 | 0.016 |  0.007 | 0.971 | 0.153 | A. thaliana | ampir_v1.1_mature                  |
+|       0.972 |  0.555 |     0.032 | 0.061 |  0.128 | 0.846 | 0.112 | H. sapiens  | ampir_v1.1_precursor_imbal_nobench |
+|       0.989 |  0.588 |     0.280 | 0.379 |  0.400 | 0.946 | 0.344 | A. thaliana | ampir_v1.1_precursor_imbal_nobench |
+|       0.498 |  0.918 |     0.003 | 0.006 |  0.034 | 0.787 | 0.006 | H. sapiens  | AMPscanner_v2                      |
+|       0.468 |  0.997 |     0.014 | 0.028 |  0.080 | 0.917 | 0.087 | A. thaliana | AMPscanner_v2                      |
+|       0.494 |  0.391 |     0.001 | 0.002 | -0.009 | 0.425 | 0.001 | H. sapiens  | amPEP                              |
+|       0.484 |  0.024 |     0.000 | 0.000 | -0.085 | 0.158 | 0.004 | A. thaliana | amPEP                              |
+|       0.619 |  0.800 |     0.003 | 0.006 |  0.035 | 0.806 | 0.013 | H. sapiens  | AmpGram                            |
+|       0.591 |  0.864 |     0.016 | 0.031 |  0.080 | 0.859 | 0.138 | A. thaliana | AmpGram                            |
+|       0.521 |  0.273 |     0.001 | 0.002 | -0.017 | 0.487 | 0.001 | H. sapiens  | amPEPpy                            |
+|       0.316 |  0.031 |     0.000 | 0.000 | -0.121 | 0.240 | 0.005 | A. thaliana | amPEPpy                            |
+|       0.902 |  0.159 |     0.004 | 0.008 |  0.011 | 0.667 | 0.004 | H. sapiens  | AMPlify                            |
+|       0.990 |  0.017 |     0.053 | 0.026 |  0.012 | 0.622 | 0.054 | A. thaliana | AMPlify                            |
 
 ![](03_benchmarking_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
-**Figure lost count:** Performance of various AMP predictors in
-classifying AMPs in whole proteome data for *Homo sapiens* and
-*Arabidopsis thaliana*.
+**Figure 3.2:** Performance of various AMP predictors in classifying
+AMPs in whole proteome data for *Homo sapiens* and *Arabidopsis
+thaliana*.
 
 The metrics overall are really low for the ability of models to predict
 AMPs in proteomes. However, these metrics may not be a very informative
@@ -236,12 +234,21 @@ numbers of true and false positives were used, with a focus on the low
 false positive regime, as this is what matters most in whole proteome
 scans (Figure 3.2)
 
-![](03_benchmarking_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
-**Figure 3.2:** The ability of various models to predict AMPs in the low
-false positive regime (&lt;500) in the proteomes of *Arabidopsis
-thaliana* and *Homo sapiens*. It is scaled so that the limits of the
-y-axis show the full complement of known AMPs in each genome (294 for
-*A. thaliana*, 112 for *H. sapiens*), and the limits of the x-axis are
-restricted to emphasise behaviour in the low false positive (FP) regime
-(FP &lt; 500).
+**Figure 3.3:** The ability of various models to predict AMPs in the low
+false positive regime (\<500) in the proteomes of *Arabidopsis thaliana*
+and *Homo sapiens*. It is scaled so that the limits of the y-axis show
+the full complement of known AMPs in each genome (294 for *A. thaliana*,
+112 for *H. sapiens*), and the limits of the x-axis are restricted to
+emphasise behaviour in the low false positive (FP) regime (FP \< 500).
+
+Note that AMP scanner isn’t visible in Figure 3.3 as it only predicts
+outside the false positive regime (see Figure 3.4 below which is
+identical to Figure 3.3 except that it shows the full x-axis)
+
+![](03_benchmarking_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+
+**Figure 3.4:** The ability of various models to predict AMPs in the
+proteomes of *Arabidopsis thaliana* and *Homo sapiens* using the full
+x-axis range.
