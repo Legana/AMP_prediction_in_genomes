@@ -33,7 +33,7 @@ Both Uniprot datasets were downloaded from UniProt proteomes (accessed 23 Jan 20
 
 ```{r}
 reference_proteomes <- c("data/proteomes/uniprot-proteome UP000005640.tab","data/proteomes/uniprot-proteome UP000006548.tab") %>% 
-  map_dfr( ~ read_tsv(.x) %>% mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg"))) %>% 
+  map_dfr( ~ read_tsv(.x, show_col_types = FALSE) %>% mutate(Label = case_when(str_detect(`Keyword ID`, "KW-0929") ~ "Pos", TRUE ~ "Neg"))) %>% 
   filter(grepl('^[ARNDCEQGHILKMFPSTWYV]+$', Sequence)) %>% 
   filter(nchar(Sequence) >= 10)
 ```
@@ -132,7 +132,7 @@ ampep_genome_bench <- c("data/prediction_results/ampep/arab_proteome_standardaa_
              select(ID = `Entry name`, prob_AMP = score, dataset=Organism, Label)
            )
 
-ampep_pub_bench <- read_csv("data/prediction_results/ampep/xiao_independent_ampep.txt") %>% 
+ampep_pub_bench <- read_csv("data/prediction_results/ampep/xiao_independent_ampep.txt", show_col_types = FALSE) %>% 
   mutate(Label = ifelse(grepl(Row,pattern = "^AP"), "Pos", "Neg")) %>% 
   add_column(dataset="published") %>% 
   select(ID = Row, prob_AMP = score, dataset, Label)
@@ -378,7 +378,7 @@ proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics, ampgram
 **Table 3.1:** Performance metrics of various predictors on the proteomes of *Homo sapiens* and *Arabidopsis thaliana*
 
 ```{r, echo = FALSE}
-knitr::kable(proteome_metrics[,c(3,6, 4:5, 7:11)], digits = 2)
+knitr::kable(proteome_metrics[,c(4:5, 7:11)], digits = 2)
 ```
 
 
