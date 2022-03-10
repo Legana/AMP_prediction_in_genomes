@@ -378,7 +378,7 @@ proteome_metrics <- rbind(ampir_metrics, ampscan_metrics, ampep_metrics, ampgram
 **Table 3.1:** Performance metrics of various predictors on the proteomes of *Homo sapiens* and *Arabidopsis thaliana*
 
 ```{r, echo = FALSE}
-knitr::kable(proteome_metrics[,c(4:5, 7:11)], digits = 2)
+knitr::kable(proteome_metrics, digits = 2)
 ```
 
 
@@ -430,7 +430,7 @@ ggplot(proteome_rocs) +
   theme(legend.position = "bottom",
         strip.text = element_text(face = "italic"),
         strip.background = element_blank()) +
-  scale_colour_manual(breaks = c("ampir_v1.1_precursor_imbal", "ampir_v1.1_mature","ampir_v1.1prec_model_nobench",
+  scale_colour_manual(breaks = c("ampir_v1.1_precursor_imbal", "ampir_v1.1_mature","ampir_v1.1_precursor_imbal_nobench",
                                  "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
                      labels = model_labels,
                      values = model_col_values) +
@@ -440,7 +440,7 @@ ggplot(proteome_rocs) +
 **Figure 3.3:** The ability of various models to predict AMPs in the low false positive regime (<500) in the proteomes of *Arabidopsis thaliana* and *Homo sapiens*. It is scaled so that the limits of the y-axis show the full complement of known AMPs in each genome (294 for *A. thaliana*, 112 for *H. sapiens*), and the limits of the x-axis are restricted to emphasise behaviour in the low false positive (FP) regime (FP < 500). 
 
 ```{r, eval=FALSE, echo=FALSE}
-ggsave("figures/TPFPcountproteomesXLIM.png", width = 21, height = 9 ,units = "cm")
+ggsave("figures/TPFPcountproteomesXLIM.png", width = 22.3, height = 9 ,units = "cm")
 ```
 
 Note that AMP scanner isn't visible in Figure 3.3 as it only predicts outside the false positive regime (see Figure 3.4 below which is identical to Figure 3.3 except that it shows the full x-axis)
@@ -456,7 +456,7 @@ ggplot(proteome_rocs) +
   theme(legend.position = "bottom",
         strip.text = element_text(face = "italic"),
         strip.background = element_blank()) +
-  scale_colour_manual(breaks = c("ampir_v1.1_precursor_imbal", "ampir_v1.1_mature","ampir_v1.1prec_model_nobench",
+  scale_colour_manual(breaks = c("ampir_v1.1_precursor_imbal", "ampir_v1.1_mature","ampir_v1.1_precursor_imbal_nobench",
                                  "AMPscanner_v2", "amPEP", "AmpGram", "amPEPpy", "AMPlify"),
                      labels = model_labels,
                      values = model_col_values) +
@@ -466,5 +466,5 @@ ggplot(proteome_rocs) +
 **Figure 3.4:** The ability of various models to predict AMPs in the proteomes of *Arabidopsis thaliana* and *Homo sapiens* using the full x-axis range.
 
 ```{r, eval=FALSE, echo=FALSE}
-ggsave("figures/TPFPcountproteomes.png", width = 21, height = 9 ,units = "cm")
+ggsave("figures/TPFPcountproteomes.png", width = 22.3, height = 9 ,units = "cm")
 ```
