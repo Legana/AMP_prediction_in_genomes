@@ -1,9 +1,9 @@
 ---
 title: "Performance Metrics in an 'Omics-Scanning Context"
-output:
-   github_document:
-     math_method: NULL
-     pandoc_args: --webtex=http://chart.apis.google.com/chart?cht=tx&chl=
+output: 
+  github_document:
+   math_method: NULL
+   pandoc_args: --webtex=http://chart.apis.google.com/chart?cht=tx&chl=
 
 bibliography: bibliography.bib
 ---
