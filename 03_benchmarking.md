@@ -9,7 +9,7 @@ datasets:
 -   A balanced test dataset as close as possible to the original test
     data used by the authors of the predictor
 -   An unbalanced
-    (![\\alpha=0.1](https://latex.codecogs.com/png.latex?%5Calpha%3D0.1 "\alpha=0.1"))
+    (![\\alpha=0.1](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;%5Calpha%3D0.1 "\alpha=0.1"))
     dataset created as a random subsample of the original test data used
     by the authors
 -   The reference proteome of *Homo sapiens* (human), obtained from
@@ -165,15 +165,15 @@ sapiens* and *A. thaliana* proteomes. It is clear that the ROC curves
 overall show a better performance compared to the PR curves which
 corroborates the findings of David and Goadrich (2006) and Saito and
 Rehsmeier (2015). The AUC values for the ROC curves range between 0.16 -
-0.99 for *A. thaliana* and 0.43 - 0.92 for *H. sapiens*. The AUC values
-for the PR curves are between 0.004 - 0.73 for *A. thaliana* and 0.001 -
-0.15 for *H. sapiens*, which are overall much lower compared to the
+0.99 for *A. thaliana* and 0.43 - 0.94 for *H. sapiens*. The AUC values
+for the PR curves are between 0.004 - 0.83 for *A. thaliana* and 0.001 -
+0.30 for *H. sapiens*, which are overall much lower compared to the
 AUROC values. Interestingly, all models, with exception to amPEP, had
 higher AUC values for both ROC and PR curves for *A thaliana*. This may
 indicate the models were better at detecting AMPs in *A. thaliana*
 compared to *H. sapiens*. The ampir precursor model had the highest
-PRAUC value on the *A. thaliana* proteome (PRAUC: 0.73). However, the
-remaining PRAUC values (for both proteomes) are below 0.31. Therefore,
+PRAUC value on the *A. thaliana* proteome (PRAUC: 0.83). However, the
+remaining PRAUC values (for both proteomes) are below 0.34. Therefore,
 according to the AUPRC metric, which has been stated to be more
 informative on imbalanced datasets, none of the models (save perhaps the
 ampir precursor model on *A. thaliana*) were skilled enough to detect
