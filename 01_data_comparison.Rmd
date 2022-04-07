@@ -365,17 +365,17 @@ amps_upset <- upset(set_data, preds,
     queries=list(
         upset_query(
             intersect = c("ampep","ampeppy"),
-            color="red",
+            color="black",
             only_components = c("intersections_matrix")
         ),
         upset_query(
             intersect = c("ampirprecursor"),
-            color="red",
+            color="black",
             only_components = c("intersections_matrix")
         ),
         upset_query(
             intersect=c("ampep","ampeppy","ampirprecursor"),
-            color="red",
+            color="black",
             only_components = c("intersections_matrix")
         )
     ),
