@@ -46,5 +46,4 @@ vignettes/*.pdf
 /figures/
 data.tgz
 data_list
-old/
 data_amp_pred.tgz

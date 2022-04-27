@@ -5,23 +5,10 @@ echo data/ampir_0.1.0_data/features98TrainNov19.rds >> data_list
 echo data/ampir_0.1.0_data/features98TestNov19.rds >> data_list
 echo data/ampir_0.1.0_data/ampir_prob_data.rds >> data_list
 
-# ampir v_1 related data
-
-echo data/ampir_v1/tuned_precursor_imbal_nobench.rds >> data_list
-echo data/ampir_v1/featuresTrain_precursor_imbal.rds >> data_list
-echo data/ampir_v1/featuresTest_precursor_imbal.rds >> data_list
-echo data/ampir_v1/featuresTrain_mature.rds >> data_list
-echo data/ampir_v1/featuresTest_mature.rds >> data_list
-
 # ampir v1.1.0 models 
 echo data/ampir_v1.1.0_data/tuned_precursor_imbal_full.rds >> data_list
 echo data/ampir_v1.1.0_data/tuned_mature_full.rds >> data_list
-echo data/ampir_v1.1.0_data/tuned_precursor_bal_full.rds >> data_list
 echo data/ampir_v1.1.0_data/tuned_precursor_imbal_nobench.rds >> data_list
-
-# Features for PCA of predictors and proteomes
-echo cache/all_predictor_data_feats.rds >> data_list
-
 
 # Data from AMP predictors 
 
@@ -47,7 +34,6 @@ echo data/amp_predictors/AMPlify/non_AMP_test_20190414.fa >> data_list
 echo data/amp_predictors/AMPlify/non_AMP_train_20190414.fa >> data_list
 echo data/amp_predictors/AmpGram/benchmark.fasta >> data_list
 
-
 # Data for comparing between predictors
 
 ls data/clustering/*train.amp.fasta >> data_list
@@ -65,56 +51,15 @@ echo data/prediction_results/ampscanner_v2/amps_testset1622422872011_Prediction_
 echo data/prediction_results/ampscanner_v2/nonamps_testset1622423918497_Prediction_Summary.csv >> data_list
 
 
-# Positive and negative datasets from the Swiss-Prot database (accessed January 2021)
-echo data/uniprot-keyword Antimicrobial+[KW-0929] -filtered-reviewed yes.tab >> data_list
-echo data/uniprot-taxonomy Deuterostomia+[33511] +reviewed yes+NOT+keyword--.fasta >> data_list
-echo data/uniprot-taxonomy Protostomia+[33317] +reviewed yes+NOT+keyword--.fasta >> data_list
 
+# Arabidopsis thaliana and Homo sapiens proteomes
 
-# Deuterostome and protostome model data
-
-echo cache/deuterostome_neg.rds >> data_list
-echo cache/protostome_neg.rds >> data_list
-echo cache/features_deutTrain.rds >> data_list
-echo cache/features_deutTrain2.rds >> data_list
-echo cache/features_deutTest.rds >> data_list
-echo cache/features_deutTest2.rds >> data_list
-echo cache/features_protostome.rds >> data_list
-echo cache/deut_svm.rds >> data_list
-echo cache/deut_svm2.rds >> data_list
-echo cache/deutprottsne.rds >> data_list
-
-# Metazoa and plant model data 
-
-echo cache/features_metazoaTest.rds >> data_list
-echo cache/features_metazoaTrain.rds >> data_list
-echo cache/features_metazoaTest2.rds >> data_list
-echo cache/features_metazoaTrain2.rds >> data_list
-echo cache/metaplanttsne.rds >> data_list
-echo cache/metazoa_neg.rds >> data_list
-echo cache/metazoa_svm.rds >> data_list
-echo cache/metazoa_svm2.rds >> data_list
-echo cache/plants_neg.rds >> data_list
-
-# tree data 
-echo data/tree/phylum_tree.phy >> data_list
-echo data/tree/chordata_arthropodatree.phy >> data_list
-echo data/tree/fulltree.phy >> data_list
-
-echo data/uniprot-keyword-Antimicrobial+[KW-0929]-reviewed-April2021.xlsx >> data_list
-
-# Arabidopsis thaliana and Homo sapiens proteomes without and with standard AA
-
-echo data/proteomes/arabidopsis-proteomeUP000006548.fasta >> data_list
-echo data/proteomes/human-proteomeUP000005640.fasta >> data_list
 echo data/proteomes/uniprot-proteome UP000005640.tab >> data_list
 echo data/proteomes/uniprot-proteome UP000006548.tab >> data_list
-echo cache/arab_proteome_standardaa.fasta >> data_list
-echo cache/homo_proteome_standardaa.fasta >> data_list
 
 # Benchmark prediction results
 
-echo data/prediction_results/ampir/ampir_refproteomes_predictions.rds >> data_list
+echo data/prediction_results/ampir/ampirv1.1_refproteomes_predictions.rds >> data_list
 echo data/prediction_results/ampscanner_v2/arab1_1611719550167_Prediction_Summary.csv >> data_list
 echo data/prediction_results/ampscanner_v2/arab2_1611719690212_Prediction_Summary.csv >> data_list
 echo data/prediction_results/ampscanner_v2/homo1_1611718866504_Prediction_Summary.csv >> data_list
@@ -130,6 +75,7 @@ echo data/prediction_results/AMPlify1.0.0/AMPlify_Athaliana.txt >> data_list
 echo data/prediction_results/AMPlify1.0.0/AMPlify_Hsapiens.txt >> data_list
 echo data/prediction_results/ampir/ampirv1.1_refproteomes_predictions.rds >> data_list 
 echo cache/ampgram_genome_bench.rds >> data_list
+
 ### AmpGram 
 
 echo data/prediction_results/ampgram/homo/ampin1.fasta.rds >> data_list
@@ -1201,9 +1147,6 @@ echo data/prediction_results/ampgram/arab/ampin96.fasta.rds >> data_list
 echo data/prediction_results/ampgram/arab/ampin97.fasta.rds >> data_list
 echo data/prediction_results/ampgram/arab/ampin98.fasta.rds >> data_list
 echo data/prediction_results/ampgram/arab/ampin99.fasta.rds >> data_list
-
-
-
 
 
 tar -zcvf data_amp_pred.tgz -T data_list
