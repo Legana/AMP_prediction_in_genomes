@@ -20,6 +20,7 @@ echo data/ampir_v1/featuresTest_mature.rds >> data_list
 #UniProt data
 echo data/uniprot-keyword-Antimicrobial+[KW-0929]-reviewed-April2021.xlsx >> data_list
 
+
 # Data from AMP predictors 
 
 echo data/amp_predictors/amPEP/M_model_train_nonAMP_sequence.fasta >> data_list
@@ -46,16 +47,16 @@ echo data/amp_predictors/AmpGram/benchmark.fasta >> data_list
 
 # Data for comparing between predictors
 
-ls data/clustering/*train.amp.fasta >> data_list
-echo data/clustering/train.amp.signalp >> data_list
-echo data/clustering/test.amp.signalp >> data_list
+echo data/clustering >> data_list
 
 # Prediction results from AMP predictors on their respective test sets
 
 echo data/prediction_results/ampep/xiao_independent_ampep.txt >> data_list
 echo data/prediction_results/amPEPpy/xiao_independent_ampeppy_results.tsv >> data_list
-echo data/prediction_results/AMPlify1.0.0/AMPlify_results_20210531101008amps.txt >> data_list
-echo data/prediction_results/AMPlify1.0.0/AMPlify_results_20210531101827nonamps.txt >> data_list
+echo data/prediction_results/AMPlify1.0.0/AMPlify_Athaliana.txt >> data_list
+echo data/prediction_results/AMPlify1.0.0/AMPlify_Hsapiens.txt >> data_list
+echo data/prediction_results/AMPlify1.0.0/AMPlify_amps.txt >> data_list
+echo data/prediction_results/AMPlify1.0.0/AMPlify_nonamps.txt >> data_list
 echo data/prediction_results/ampgram/ampgram_testset_pred.rds >> data_list 
 echo data/prediction_results/ampscanner_v2/amps_testset1622422872011_Prediction_Summary.csv >> data_list
 echo data/prediction_results/ampscanner_v2/nonamps_testset1622423918497_Prediction_Summary.csv >> data_list
@@ -1158,6 +1159,7 @@ echo data/prediction_results/ampgram/arab/ampin97.fasta.rds >> data_list
 echo data/prediction_results/ampgram/arab/ampin98.fasta.rds >> data_list
 echo data/prediction_results/ampgram/arab/ampin99.fasta.rds >> data_list
 
+echo figures/ampir_hex.png >> data_list
 
 tar -zcvf data_amp_pred.tgz -T data_list
 
