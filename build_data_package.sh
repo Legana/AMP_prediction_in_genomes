@@ -10,6 +10,16 @@ echo data/ampir_v1.1.0_data/tuned_precursor_imbal_full.rds >> data_list
 echo data/ampir_v1.1.0_data/tuned_mature_full.rds >> data_list
 echo data/ampir_v1.1.0_data/tuned_precursor_imbal_nobench.rds >> data_list
 
+# ampir v_1 related data
+echo data/ampir_v1/tuned_precursor_imbal_nobench.rds >> data_list
+echo data/ampir_v1/featuresTrain_precursor_imbal.rds >> data_list
+echo data/ampir_v1/featuresTest_precursor_imbal.rds >> data_list
+echo data/ampir_v1/featuresTrain_mature.rds >> data_list
+echo data/ampir_v1/featuresTest_mature.rds >> data_list
+
+#UniProt data
+echo data/uniprot-keyword-Antimicrobial+[KW-0929]-reviewed-April2021.xlsx >> data_list
+
 # Data from AMP predictors 
 
 echo data/amp_predictors/amPEP/M_model_train_nonAMP_sequence.fasta >> data_list
