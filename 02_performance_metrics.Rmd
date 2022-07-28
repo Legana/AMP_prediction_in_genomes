@@ -120,10 +120,10 @@ pr_data <- c(0.01,0.05,0.1,0.5) %>% map_dfr( ~ scale_precision_recall(ampir_roc_
 
 
 ```{r}
-variable_names <- c("0.01" = "alpha: 0.01",
-                    "0.05" = "alpha: 0.05",
-                    "0.1" = "alpha: 0.10",
-                    "0.5" = "alpha: 0.50")
+variable_names <- c("0.01" = "\u03b1: 0.01",
+                    "0.05" = "\u03b1: 0.05",
+                    "0.1" = "\u03b1: 0.10",
+                    "0.5" = "\u03b1: 0.50")
 
 pr_plot <- pr_data %>% gather("metric","value",-p_threshold,-alpha) %>% 
   ggplot(aes(x=p_threshold,y=value)) + 
@@ -161,10 +161,9 @@ pr_plot_combo <- pr_data %>%
         panel.grid.major.x = element_blank(),
         panel.background = element_blank(),
         axis.line = element_line(colour = "grey")) +
-  labs(colour = "alpha", linetype = "alpha") +
+  labs(colour = "\u03b1", linetype = "\u03b1") +
   guides(colour = guide_legend(reverse=TRUE)) +
   guides(linetype = guide_legend(reverse=TRUE))
-
 
 pr_plot_combo
 ```
